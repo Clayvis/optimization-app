@@ -62,6 +62,12 @@ final class LiftService {
         session.durationMinutes = durationMinutes
         session.avgHR = avgHR
         try modelContext.save()
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        let day = cal.startOfDay(for: session.date)
+        modelContext.insert(WorkoutEvent(date: day, completed: true, source: .lift))
+        try modelContext.save()
+        CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
         logger.info("Ended \(session.template, privacy: .public) volume=\(session.totalVolumeLbs, privacy: .public) lbs duration=\(durationMinutes, privacy: .public) min")
 
         if let healthKit {

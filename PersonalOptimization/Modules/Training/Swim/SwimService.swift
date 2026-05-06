@@ -37,6 +37,12 @@ final class SwimService {
         session.avgHR = avgHR
         session.totalMeters = Double(session.laps) * session.poolLengthMeters
         try modelContext.save()
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        let day = cal.startOfDay(for: session.date)
+        modelContext.insert(WorkoutEvent(date: day, completed: true, source: .swim))
+        try modelContext.save()
+        CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
         logger.info("Ended swim session laps=\(session.laps, privacy: .public) meters=\(session.totalMeters, privacy: .public)")
 
         if let healthKit {

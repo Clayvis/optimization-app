@@ -46,6 +46,7 @@ final class HydrationService {
         let log = upsertDailyLog(for: date)
         log.waterOz += oz
         try modelContext.save()
+        CompletionHistoryWriter.record(domain: .hydration, at: date, modelContext: modelContext)
         logger.info("Logged \(oz, privacy: .public) oz, day total now \(log.waterOz, privacy: .public)")
         return log
     }

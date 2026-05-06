@@ -4,6 +4,8 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
+    @State private var travelDays: Int = 7
+    @State private var graceFeedback: String?
 
     var body: some View {
         NavigationStack {
@@ -77,6 +79,8 @@ struct SettingsView: View {
                 Toggle("Reduced motion", isOn: $profile.reducedMotion)
             }
 
+            graceModeSection(profile: profile)
+
             Section("Rollout") {
                 Picker("Phase", selection: $profile.rolloutPhase) {
                     Text("Weeks 1-2 (training-day fast)").tag(1)
@@ -85,10 +89,63 @@ struct SettingsView: View {
             }
         }
     }
+
+    @ViewBuilder
+    private func graceModeSection(profile: UserProfile) -> some View {
+        @Bindable var profile = profile
+        let now = Date()
+        let sickActive = (profile.sickDayActiveUntil ?? .distantPast) >= now
+        let travelActive = (profile.travelModeActiveUntil ?? .distantPast) >= now
+
+        Section {
+            Toggle("Sick today", isOn: Binding(
+                get: { sickActive },
+                set: { newValue in
+                    let service = StreakService(modelContext: modelContext)
+                    if newValue {
+                        try? service.activateSickDay()
+                        graceFeedback = IdentityCopy.sickBanner
+                    } else {
+                        profile.sickDayActiveUntil = nil
+                    }
+                }
+            ))
+
+            HStack {
+                Text("Travel mode")
+                Spacer()
+                if travelActive {
+                    Button("End travel mode", role: .destructive) {
+                        try? StreakService(modelContext: modelContext).deactivateTravelMode()
+                    }
+                } else {
+                    Stepper("\(travelDays) days", value: $travelDays, in: 1...14)
+                        .fixedSize()
+                }
+            }
+
+            if !travelActive {
+                Button {
+                    try? StreakService(modelContext: modelContext).activateTravelMode(days: travelDays)
+                    graceFeedback = IdentityCopy.travelBanner
+                } label: {
+                    Label("Activate travel mode", systemImage: "airplane.departure")
+                }
+            }
+
+            if let feedback = graceFeedback {
+                Text(feedback).font(.footnote).foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Streak grace")
+        } footer: {
+            Text("Sick day covers today. Travel mode covers the next \(travelDays) days. Streaks are preserved through ledger entries; nothing fakes a workout.")
+        }
+    }
 }
 
-#Preview {
-    let schema = Schema(versionedSchema: SchemaV1.self)
+#Preview("Settings") {
+    let schema = Schema(versionedSchema: SchemaV2.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return SettingsView().modelContainer(container)

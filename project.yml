@@ -141,6 +141,10 @@ targets:
         excludes:
           - "Views/**"
           - "LearningReminderInstaller.swift"
+      - path: PersonalOptimization/Modules/Character/CharacterStateService.swift
+        name: SharedCharacter
+      - path: PersonalOptimization/Modules/Engagement/AdaptiveNotificationTiming.swift
+        name: SharedEngagement
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/HealthKitService.swift
       - path: PersonalOptimization/AppIntents
@@ -237,6 +241,10 @@ targets:
         name: SharedHydration
         excludes:
           - "Views/**"
+      - path: PersonalOptimization/Modules/Character/CharacterStateService.swift
+        name: SharedCharacter
+      - path: PersonalOptimization/Modules/Engagement/AdaptiveNotificationTiming.swift
+        name: SharedEngagement
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/ProfileService.swift
     resources:

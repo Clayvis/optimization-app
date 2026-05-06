@@ -190,8 +190,8 @@ final class NotificationService {
     func scheduleFastStart(at date: Date, label: String) async throws -> String {
         let id = "fast.start.\(date.timeIntervalSince1970)"
         let content = UNMutableNotificationContent()
-        content.title = "Fast starting"
-        content.body = "Fast window (\(label)) begins now."
+        content.title = IdentityCopy.Notification.fastStartTitle
+        content.body = IdentityCopy.Notification.fastStartBody(label: label)
         content.categoryIdentifier = NotificationIdentifier.fastStartCategory
         content.sound = .default
 
@@ -208,8 +208,8 @@ final class NotificationService {
     func scheduleFastEnd(at date: Date, label: String) async throws -> String {
         let id = "fast.end.\(date.timeIntervalSince1970)"
         let content = UNMutableNotificationContent()
-        content.title = "Fast complete"
-        content.body = "Fast window (\(label)) is over."
+        content.title = IdentityCopy.Notification.fastEndTitle
+        content.body = IdentityCopy.Notification.fastEndBody(label: label)
         content.categoryIdentifier = NotificationIdentifier.fastEndCategory
         content.sound = .default
 
@@ -241,8 +241,8 @@ final class NotificationService {
 
         let id = "hydration.\(date.timeIntervalSince1970)"
         let content = UNMutableNotificationContent()
-        content.title = "Hydration check"
-        content.body = "\(Int(progressOz)) of \(Int(targetMaxOz)) oz so far."
+        content.title = IdentityCopy.Notification.hydrationTitle
+        content.body = IdentityCopy.Notification.hydrationBody(progressOz: progressOz, targetMaxOz: targetMaxOz)
         content.categoryIdentifier = NotificationIdentifier.hydrationCategory
         content.sound = .default
 
@@ -261,8 +261,8 @@ final class NotificationService {
                                   targetMinutes: Int) async throws -> String {
         let id = "learning.\(moduleName).\(date.timeIntervalSince1970)"
         let content = UNMutableNotificationContent()
-        content.title = "\(moduleName) practice"
-        content.body = "Time for \(targetMinutes) min of \(moduleName.lowercased())."
+        content.title = IdentityCopy.Notification.learningTitle(moduleName: moduleName)
+        content.body = IdentityCopy.Notification.learningBody(moduleName: moduleName, targetMinutes: targetMinutes)
         content.categoryIdentifier = NotificationIdentifier.learningCategory
         content.sound = .default
 

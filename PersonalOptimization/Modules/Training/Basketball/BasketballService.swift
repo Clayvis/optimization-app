@@ -54,7 +54,12 @@ final class BasketballService {
             modelContext.insert(dailyLog)
         }
         dailyLog.achillesPain = achillesPostScore
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        let day = cal.startOfDay(for: session.date)
+        modelContext.insert(WorkoutEvent(date: day, completed: true, source: .basketball))
         try modelContext.save()
+        CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
         logger.info("Ended basketball session, achilles=\(achillesPostScore, privacy: .public)")
 
         if let healthKit {

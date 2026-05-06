@@ -23,6 +23,7 @@ final class LearningService {
         case .guitar:   log.guitarMinutes += minutes
         }
         try modelContext.save()
+        CompletionHistoryWriter.record(domain: .learning, at: date, modelContext: modelContext)
         return try recomputeStreak(module: module, asOf: date)
     }
 
