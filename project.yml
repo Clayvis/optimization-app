@@ -79,6 +79,7 @@ targets:
         NSHealthShareUsageDescription: Tracks sleep, heart rate, and HRV to power character emotional state and weekly review insights.
         NSHealthUpdateUsageDescription: Logs workouts and water intake to Apple Health for cross-app integration.
         NSUserNotificationUsageDescription: Sends reminders for hydration, fast transitions, and scheduled blocks.
+        NSSupportsLiveActivities: true
     entitlements:
       path: PersonalOptimization/PersonalOptimization.entitlements
       properties:
@@ -103,6 +104,7 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     dependencies:
       - target: PersonalOptimizationWatch
+      - target: PersonalOptimizationLiveActivity
 
   PersonalOptimizationWatch:
     type: application
@@ -120,6 +122,7 @@ targets:
         name: SharedFasting
         excludes:
           - "Views/**"
+          - "LiveActivity/**"
       - path: PersonalOptimization/Modules/Hydration
         name: SharedHydration
         excludes:
@@ -164,6 +167,35 @@ targets:
     dependencies:
       - target: PersonalOptimizationWatchComplications
 
+  PersonalOptimizationLiveActivity:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: PersonalOptimizationLiveActivity
+        excludes:
+          - "**/.DS_Store"
+      - path: PersonalOptimization/Modules/Fasting/LiveActivity/FastingActivityAttributes.swift
+    info:
+      path: PersonalOptimizationLiveActivity/Info.plist
+      properties:
+        CFBundleDisplayName: Live Activities
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: PersonalOptimizationLiveActivity/PersonalOptimizationLiveActivity.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.rawlins.PersonalOptimization
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.liveactivity
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_KEY_CFBundlePackageType: XPC!
+        ENABLE_PREVIEWS: YES
+
   PersonalOptimizationWatchComplications:
     type: app-extension
     platform: watchOS
@@ -180,6 +212,7 @@ targets:
         name: SharedFasting
         excludes:
           - "Views/**"
+          - "LiveActivity/**"
       - path: PersonalOptimization/Modules/Hydration
         name: SharedHydration
         excludes:

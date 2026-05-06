@@ -26,6 +26,8 @@
 	<string>Tracks sleep, heart rate, and HRV to power character emotional state and weekly review insights.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Logs workouts and water intake to Apple Health for cross-app integration.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>Sends reminders for hydration, fast transitions, and scheduled blocks.</string>
 	<key>UIApplicationSceneManifest</key>

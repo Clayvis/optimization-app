@@ -63,7 +63,17 @@ struct FastingView: View {
                     .background(Color(.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                    if state == .fasting {
+                    if state == .fasting, let window {
+                        Button {
+                            Task {
+                                _ = await FastingLiveActivityController.start(window: window)
+                            }
+                        } label: {
+                            Label("Pin to Lock Screen", systemImage: "lock.iphone")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+
                         Button(role: .destructive) {
                             showingBreakSheet = true
                         } label: {
@@ -198,7 +208,11 @@ private struct EarlyBreakSheet: View {
 
     private func confirm() {
         let reason = selectedReason == "Custom" && !customReason.isEmpty ? customReason : selectedReason
+        // try? justified: SwiftData write to local container; on the rare
+        // failure we still want the sheet to dismiss and the user to see
+        // unchanged state. Errors logged inside the service.
         try? service.logEarlyBreak(at: Date(), reason: reason, profile: profile)
+        Task { await FastingLiveActivityController.endAll() }
         dismiss()
     }
 }

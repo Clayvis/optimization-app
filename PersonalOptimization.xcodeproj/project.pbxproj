@@ -20,6 +20,7 @@
 		1AE5576A4F2426A5015B7C36 /* PersonalOptimizationWatchComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E46D2FE0AD37E504371C8F05 /* PersonalOptimizationWatchComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */; };
 		2011D16E82C404E75BD21390 /* Logger+Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */; };
+		255D8374E9BA90839391CC13 /* FastingLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7089E4ECC4F61306ED1464CC /* FastingLiveActivityController.swift */; };
 		2732AB89C3CA4CA9A702EE98 /* ProtocolEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F30C85E85590C6112D02188 /* ProtocolEntry.swift */; };
 		2960497AAA345C8DCE2559C9 /* HydrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF87431FBC0828ACD063558 /* HydrationService.swift */; };
 		2B950ADB27E765EFDD1276C8 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
@@ -64,6 +65,8 @@
 		8B1A15455BE8C010AF127747 /* JSONExportImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8784746AB1A5E716335FC51 /* JSONExportImportTests.swift */; };
 		9539BA572E007D3F4BDF9529 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E17A5E10EFA803A2312758C1 /* ErrorBanner.swift */; };
 		95A58B0B7CDEF94B64FDF7B5 /* SwimSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CFF9D4CAF217C0577FCF84 /* SwimSession.swift */; };
+		9917F8765CFAF3D69DB3FC23 /* FastingActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5AFA108A9EEF4E2CE42A2C /* FastingActivityAttributes.swift */; };
+		9D1E68AD1664E20E23A2A895 /* FastingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C70A73F43D115EF06D2B6348 /* FastingLiveActivity.swift */; };
 		9D3153BAAA1A6171A07BFCD2 /* PersonalOptimizationWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB3766332CCC85C5B7A7765 /* PersonalOptimizationWatchApp.swift */; };
 		9E3778818C6E6EB9782DBB0C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2890BCBC13A3A36541B1425 /* SettingsView.swift */; };
 		9F06EE5AE7131494B82A592D /* FastCountdownTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C608CA325D483F55214ED4BE /* FastCountdownTimelineProvider.swift */; };
@@ -85,7 +88,9 @@
 		D029431C4F2B4048CAC2FD28 /* ProtocolEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F30C85E85590C6112D02188 /* ProtocolEntry.swift */; };
 		D233FCEE7344F8763F0E3F2D /* WearableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */; };
 		D7454F6A195563E1DF6DCBDC /* ScheduleServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4802E896C8352210A8A52524 /* ScheduleServiceTests.swift */; };
+		D7679AEA78367E5C772D5CFA /* LiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 424CC7EBA7731934A798C2B9 /* LiveActivityBundle.swift */; };
 		D88710D92BC1761C9AFA3ED6 /* CharacterStateLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1584E714556DEC27402B9AB6 /* CharacterStateLog.swift */; };
+		D899269E7126A1E9AAF4D4FB /* PersonalOptimizationLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DB80C72EEA7682E39EDA859B /* SchemaV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C21B1F183A1B8E72B77E9EE /* SchemaV1.swift */; };
 		DB8AA9B4CB309C2E9D120330 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */; };
 		DC3598DF9C384F7BBA1D00C9 /* ScheduleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F31266DF504D0F540B369D /* ScheduleBlock.swift */; };
@@ -102,6 +107,7 @@
 		FB5CFE3EBCB20739974FAC5A /* ScheduleConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 360D242A8530DF3073145608 /* ScheduleConfig.swift */; };
 		FBE012E8CC00A4B68F92A687 /* ScheduleConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 360D242A8530DF3073145608 /* ScheduleConfig.swift */; };
 		FC164E4A639AE36B6499265D /* FastingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF0F1E795AB55462D194D73 /* FastingService.swift */; };
+		FCB84214E09EB0BB0AE4D3FE /* FastingActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5AFA108A9EEF4E2CE42A2C /* FastingActivityAttributes.swift */; };
 		FFF0502D54A687E6A77D4865 /* PomodoroSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */; };
 /* End PBXBuildFile section */
 
@@ -119,6 +125,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = F3CFED518427A5D76A61AD72;
 			remoteInfo = PersonalOptimizationWatchComplications;
+		};
+		8DB0A0351136048B751D5273 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 496A0317F23D5B15FD688A31 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B6201484E68115E04CC159C4;
+			remoteInfo = PersonalOptimizationLiveActivity;
 		};
 		D283EF9CA6CABDC280D0E5D9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -152,6 +165,17 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EBEE590CD9961173B47FDCFB /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D899269E7126A1E9AAF4D4FB /* PersonalOptimizationLiveActivity.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -172,6 +196,7 @@
 		280C8DC3E36757B1E548A6F0 /* FastCountdownComplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastCountdownComplication.swift; sourceTree = "<group>"; };
 		2980B95DAC2C5D2BF8D46211 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		29B2ED03B44C2BC7563DECA8 /* JSONImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONImportService.swift; sourceTree = "<group>"; };
+		2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PersonalOptimizationLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F30C85E85590C6112D02188 /* ProtocolEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolEntry.swift; sourceTree = "<group>"; };
 		360D242A8530DF3073145608 /* ScheduleConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleConfig.swift; sourceTree = "<group>"; };
 		37D09A08E65B464C2974BD2F /* ComplicationBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplicationBundle.swift; sourceTree = "<group>"; };
@@ -180,6 +205,7 @@
 		3FF0F1E795AB55462D194D73 /* FastingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingService.swift; sourceTree = "<group>"; };
 		40B79B0DE348C5B10A3C13DA /* BasketballSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballSession.swift; sourceTree = "<group>"; };
 		40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalOptimizationWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		424CC7EBA7731934A798C2B9 /* LiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityBundle.swift; sourceTree = "<group>"; };
 		45B10FAC14B0FE5A66B6567D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		476F48D9D87CCC605C712ABE /* HydrationWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationWatchView.swift; sourceTree = "<group>"; };
 		4802E896C8352210A8A52524 /* ScheduleServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleServiceTests.swift; sourceTree = "<group>"; };
@@ -192,7 +218,9 @@
 		6BB3766332CCC85C5B7A7765 /* PersonalOptimizationWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalOptimizationWatchApp.swift; sourceTree = "<group>"; };
 		6CF9747FFFE5089E9B33D74F /* PersonalOptimizationWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimizationWatch.entitlements; sourceTree = "<group>"; };
 		6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroSession.swift; sourceTree = "<group>"; };
+		7089E4ECC4F61306ED1464CC /* FastingLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingLiveActivityController.swift; sourceTree = "<group>"; };
 		7838EE32258FECAA2335A612 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainServiceTests.swift; sourceTree = "<group>"; };
+		7A52017AF0403E7BFD35E053 /* PersonalOptimizationLiveActivity.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimizationLiveActivity.entitlements; sourceTree = "<group>"; };
 		81284154F15F132A77F952B8 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		82221D5BC1BA379932EC9A6A /* default_schedule.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_schedule.json; sourceTree = "<group>"; };
 		823154A880207FCF1C483BA8 /* ScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleService.swift; sourceTree = "<group>"; };
@@ -208,13 +236,16 @@
 		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C3F31266DF504D0F540B369D /* ScheduleBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleBlock.swift; sourceTree = "<group>"; };
 		C608CA325D483F55214ED4BE /* FastCountdownTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastCountdownTimelineProvider.swift; sourceTree = "<group>"; };
+		C70A73F43D115EF06D2B6348 /* FastingLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingLiveActivity.swift; sourceTree = "<group>"; };
 		D1B2C04F97651585073980FF /* PersonalOptimization.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimization.entitlements; sourceTree = "<group>"; };
 		D2890BCBC13A3A36541B1425 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		D336D7B9EFE5E76B62ADDB3F /* PersonalOptimizationWatchComplications.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimizationWatchComplications.entitlements; sourceTree = "<group>"; };
+		DF5AFA108A9EEF4E2CE42A2C /* FastingActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingActivityAttributes.swift; sourceTree = "<group>"; };
 		E17A5E10EFA803A2312758C1 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
 		E46D2FE0AD37E504371C8F05 /* PersonalOptimizationWatchComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PersonalOptimizationWatchComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSeed.swift; sourceTree = "<group>"; };
 		EFE07D74DECEAE97388D869D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F6B0B7A3633B51BD8E9A8CAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F8784746AB1A5E716335FC51 /* JSONExportImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONExportImportTests.swift; sourceTree = "<group>"; };
 		F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FF3E8E2C56CA679596E1AC22 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -225,6 +256,7 @@
 			isa = PBXGroup;
 			children = (
 				B68F807399134D4E375D023D /* PersonalOptimization.app */,
+				2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */,
 				206905E3BDC577894B8FAD18 /* PersonalOptimizationTests.xctest */,
 				40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */,
 				E46D2FE0AD37E504371C8F05 /* PersonalOptimizationWatchComplications.appex */,
@@ -279,12 +311,32 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		46A53FE4EEB7105579AA2039 /* PersonalOptimizationLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				C70A73F43D115EF06D2B6348 /* FastingLiveActivity.swift */,
+				F6B0B7A3633B51BD8E9A8CAF /* Info.plist */,
+				424CC7EBA7731934A798C2B9 /* LiveActivityBundle.swift */,
+				7A52017AF0403E7BFD35E053 /* PersonalOptimizationLiveActivity.entitlements */,
+			);
+			path = PersonalOptimizationLiveActivity;
+			sourceTree = "<group>";
+		};
 		567720BD1CEE31348D46C9FE /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				82221D5BC1BA379932EC9A6A /* default_schedule.json */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		576CA4F2CD9313E4BD0F5768 /* LiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				DF5AFA108A9EEF4E2CE42A2C /* FastingActivityAttributes.swift */,
+				7089E4ECC4F61306ED1464CC /* FastingLiveActivityController.swift */,
+			);
+			path = LiveActivity;
 			sourceTree = "<group>";
 		};
 		588244BE00D5970A043209B4 /* Modules */ = {
@@ -325,6 +377,7 @@
 		83490179F5D1A1B2CA5412E0 /* SharedFasting */ = {
 			isa = PBXGroup;
 			children = (
+				576CA4F2CD9313E4BD0F5768 /* LiveActivity */,
 				5E0CDCE4EA3BE999D9573C6E /* Views */,
 				3FF0F1E795AB55462D194D73 /* FastingService.swift */,
 			);
@@ -406,6 +459,7 @@
 			isa = PBXGroup;
 			children = (
 				5E8DF68DB309BD5D61DC4539 /* PersonalOptimization */,
+				46A53FE4EEB7105579AA2039 /* PersonalOptimizationLiveActivity */,
 				E7EB987FEDBF768594B0919B /* PersonalOptimizationTests */,
 				35549F935C6A83DE7059536F /* PersonalOptimizationWatch */,
 				E36BB1747AD928926C4AD7EE /* PersonalOptimizationWatchComplications */,
@@ -489,12 +543,14 @@
 			buildPhases = (
 				A86DBD89BDAC1C5FE5B4E848 /* Sources */,
 				2653562709E5D7B6445ACB45 /* Resources */,
+				EBEE590CD9961173B47FDCFB /* Embed Foundation Extensions */,
 				A3E7027785F3BB11BD25EDAF /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				EAF5245197FC40D59293151A /* PBXTargetDependency */,
+				1FDEF8A50DFF41F2E259B8C7 /* PBXTargetDependency */,
 			);
 			name = PersonalOptimization;
 			packageProductDependencies = (
@@ -502,6 +558,23 @@
 			productName = PersonalOptimization;
 			productReference = B68F807399134D4E375D023D /* PersonalOptimization.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B6201484E68115E04CC159C4 /* PersonalOptimizationLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 61AAC01AFF425BFF7C50C9A5 /* Build configuration list for PBXNativeTarget "PersonalOptimizationLiveActivity" */;
+			buildPhases = (
+				D5E0E33CE0131CB8F8C58BF0 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PersonalOptimizationLiveActivity;
+			packageProductDependencies = (
+			);
+			productName = PersonalOptimizationLiveActivity;
+			productReference = 2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		DCD2789BA57123BBBDA8BB4C /* PersonalOptimizationWatch */ = {
 			isa = PBXNativeTarget;
@@ -556,6 +629,10 @@
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
+					B6201484E68115E04CC159C4 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
 					DCD2789BA57123BBBDA8BB4C = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
@@ -581,6 +658,7 @@
 			projectRoot = "";
 			targets = (
 				692B5EE5792A31D5D1CC07D5 /* PersonalOptimization */,
+				B6201484E68115E04CC159C4 /* PersonalOptimizationLiveActivity */,
 				64278B1349F1AAB7E16AFDA2 /* PersonalOptimizationTests */,
 				DCD2789BA57123BBBDA8BB4C /* PersonalOptimizationWatch */,
 				F3CFED518427A5D76A61AD72 /* PersonalOptimizationWatchComplications */,
@@ -628,6 +706,8 @@
 				D88710D92BC1761C9AFA3ED6 /* CharacterStateLog.swift in Sources */,
 				A512C5031B5B03CBBFE4C1CC /* DailyLog.swift in Sources */,
 				9539BA572E007D3F4BDF9529 /* ErrorBanner.swift in Sources */,
+				FCB84214E09EB0BB0AE4D3FE /* FastingActivityAttributes.swift in Sources */,
+				255D8374E9BA90839391CC13 /* FastingLiveActivityController.swift in Sources */,
 				51DAFCAA807FAD8A286570E4 /* FastingService.swift in Sources */,
 				B2590EA43AA467BA42CD498F /* FastingView.swift in Sources */,
 				2960497AAA345C8DCE2559C9 /* HydrationService.swift in Sources */,
@@ -721,6 +801,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D5E0E33CE0131CB8F8C58BF0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9917F8765CFAF3D69DB3FC23 /* FastingActivityAttributes.swift in Sources */,
+				9D1E68AD1664E20E23A2A895 /* FastingLiveActivity.swift in Sources */,
+				D7679AEA78367E5C772D5CFA /* LiveActivityBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -728,6 +818,11 @@
 			isa = PBXTargetDependency;
 			target = F3CFED518427A5D76A61AD72 /* PersonalOptimizationWatchComplications */;
 			targetProxy = 422B6F35E2409B3DE69D94E0 /* PBXContainerItemProxy */;
+		};
+		1FDEF8A50DFF41F2E259B8C7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B6201484E68115E04CC159C4 /* PersonalOptimizationLiveActivity */;
+			targetProxy = 8DB0A0351136048B751D5273 /* PBXContainerItemProxy */;
 		};
 		4265F0E1DDE2125AACBF326C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -844,6 +939,25 @@
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
+		35FAA33218BA4FD0A1A8C9C0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PersonalOptimizationLiveActivity/PersonalOptimizationLiveActivity.entitlements;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = PersonalOptimizationLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundlePackageType = "XPC!";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rawlins.PersonalOptimization.liveactivity;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -1036,6 +1150,25 @@
 			};
 			name = Release;
 		};
+		E9457CE70744527D3D894815 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PersonalOptimizationLiveActivity/PersonalOptimizationLiveActivity.entitlements;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = PersonalOptimizationLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundlePackageType = "XPC!";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rawlins.PersonalOptimization.liveactivity;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1044,6 +1177,15 @@
 			buildConfigurations = (
 				85B1DBBB9A1391FCC99AD3C1 /* Debug */,
 				160D2C108BD92F643E844FE2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		61AAC01AFF425BFF7C50C9A5 /* Build configuration list for PBXNativeTarget "PersonalOptimizationLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E9457CE70744527D3D894815 /* Debug */,
+				35FAA33218BA4FD0A1A8C9C0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
