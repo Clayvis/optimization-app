@@ -90,6 +90,389 @@ final class CoachService {
         return try await generateAndPersist(refresh: false)
     }
 
+    // MARK: - Coach v2 (M3.7)
+
+    /// Builds the full v2 context (M3.6 today snapshot + historical summary + goals
+    /// + equipment + restrictions + minutes-available + temperature stub).
+    func gatherFullContext(profile: UserProfile,
+                           historicalRange: DateRange? = nil) -> CoachContextV2 {
+        let today = gatherContext(profile: profile)
+        let range = historicalRange ?? DateRange.lastNDays(30, asOf: now(), timezone: timezone)
+        let trends = TrendAnalyticsService(
+            modelContext: modelContext,
+            timezone: timezone,
+            hydrationTargets: try? ScheduleConfigLoader.load().hydrationTargetsOz
+        )
+        let historical = trends.summaryForCoach(over: range)
+
+        let secondary = profile.secondaryGoalsCSV
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        let restrictions = profile.restrictionsCSV
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+
+        return CoachContextV2(
+            today: today,
+            historical: historical,
+            primaryGoal: profile.primaryGoal,
+            secondaryGoals: secondary,
+            equipmentAccess: profile.equipmentAccess,
+            weeklyTrainingTargetSessions: profile.weeklyTrainingTargetSessions,
+            restrictions: restrictions,
+            minutesAvailableToday: minutesAvailableToday(),
+            temperatureF: nil
+        )
+    }
+
+    /// Generates and persists today's PrescribedWorkout. Idempotent: a second call
+    /// for the same day reuses the existing row in `.suggested` status. Manual
+    /// re-prescription requires deleting the prior row (or using a new `forDate`).
+    func prescribeTodaysWorkout(profile: UserProfile? = nil,
+                                forceRefresh: Bool = false) async throws -> PrescribedWorkout {
+        let resolvedProfile = profile ?? ensureProfile()
+        let cal = jstCalendar()
+        let today = cal.startOfDay(for: now())
+
+        if !forceRefresh, let existing = existingPrescription(for: today) {
+            return existing
+        }
+
+        let context = gatherFullContext(profile: resolvedProfile)
+        let systemPrompt = CoachPrompts.system(
+            for: .prescribeWorkout,
+            style: resolvedProfile.motivationStyle,
+            customStylePrompt: resolvedProfile.customStylePrompt
+        )
+        let response: ClaudeAPIClient.Response
+        do {
+            response = try await api.complete(
+                model: resolvedProfile.anthropicModel,
+                systemPrompt: systemPrompt,
+                userPrompt: context.summaryForPrompt,
+                maxTokens: CoachPrompts.defaultMaxTokens(for: .prescribeWorkout)
+            )
+        } catch ClaudeAPIError.missingAPIKey {
+            throw CoachServiceError.missingAPIKey
+        } catch {
+            throw CoachServiceError.generationFailed(error)
+        }
+
+        let parsed = parsePrescription(jsonText: response.text)
+        let prescription = upsertPrescription(for: today)
+        prescription.generatedAt = now()
+        prescription.workoutTypeRaw = parsed.workoutType.rawValue
+        prescription.template = parsed.templateJSON
+        prescription.rationale = parsed.rationale
+        prescription.statusRaw = PrescribedWorkoutStatus.suggested.rawValue
+        prescription.tokenUsage = response.totalTokens
+        prescription.modelUsed = resolvedProfile.anthropicModel
+        try? modelContext.save()
+        logger.info("Prescription generated type=\(parsed.workoutType.rawValue, privacy: .public) tokens=\(response.totalTokens, privacy: .public)")
+        return prescription
+    }
+
+    /// Generates 0-1 ScheduleSuggestion rows based on detected patterns. Returns the
+    /// rows persisted this call. Skips API call entirely when no patterns clear the
+    /// confidence threshold (saves cost on quiet weeks).
+    func suggestScheduleOptimizations(profile: UserProfile? = nil,
+                                      lookbackDays: Int = 30) async throws -> [ScheduleSuggestion] {
+        let resolvedProfile = profile ?? ensureProfile()
+        let range = DateRange.lastNDays(lookbackDays, asOf: now(), timezone: timezone)
+        let trends = TrendAnalyticsService(
+            modelContext: modelContext,
+            timezone: timezone,
+            hydrationTargets: try? ScheduleConfigLoader.load().hydrationTargetsOz
+        )
+        let patterns = trends.patternsDetected(over: range, minConfidence: 0.5)
+        guard !patterns.isEmpty else {
+            logger.info("Schedule suggestions skipped — no patterns above threshold")
+            return []
+        }
+
+        let context = gatherFullContext(profile: resolvedProfile, historicalRange: range)
+        let patternsBlock = patterns.prefix(3).map {
+            "- [\($0.patternType.rawValue) conf=\(String(format: "%.2f", $0.confidence))] \($0.summary)"
+        }.joined(separator: "\n")
+        let userPrompt = """
+        \(context.summaryForPrompt)
+
+        === Detected patterns ===
+        \(patternsBlock)
+        """
+
+        let systemPrompt = CoachPrompts.system(
+            for: .suggestSchedule,
+            style: resolvedProfile.motivationStyle,
+            customStylePrompt: resolvedProfile.customStylePrompt
+        )
+        let response: ClaudeAPIClient.Response
+        do {
+            response = try await api.complete(
+                model: resolvedProfile.anthropicModel,
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt,
+                maxTokens: CoachPrompts.defaultMaxTokens(for: .suggestSchedule)
+            )
+        } catch ClaudeAPIError.missingAPIKey {
+            throw CoachServiceError.missingAPIKey
+        } catch {
+            throw CoachServiceError.generationFailed(error)
+        }
+
+        let parsed = parseSuggestion(jsonText: response.text)
+        guard let parsed else {
+            logger.warning("Schedule suggestion parse failed; skipping persistence")
+            return []
+        }
+        let rationaleData = patterns.prefix(3).map { "\($0.patternType.rawValue):\(String(format: "%.2f", $0.confidence))" }.joined(separator: ",")
+        let suggestion = ScheduleSuggestion(
+            generatedAt: now(),
+            summary: parsed.summary,
+            detail: parsed.detail,
+            changeType: parsed.changeType,
+            changePayload: parsed.changePayloadJSON,
+            rationaleData: rationaleData
+        )
+        modelContext.insert(suggestion)
+        try? modelContext.save()
+        logger.info("Schedule suggestion persisted change=\(parsed.changeType.rawValue, privacy: .public) tokens=\(response.totalTokens, privacy: .public)")
+        return [suggestion]
+    }
+
+    /// Generates a WeeklyProgram for the upcoming week. Idempotent per
+    /// `weekStartDate` (Monday of next week, or current week if today is Monday).
+    func generateWeeklyProgrammingPass(profile: UserProfile? = nil,
+                                       forceRefresh: Bool = false) async throws -> WeeklyProgram {
+        let resolvedProfile = profile ?? ensureProfile()
+        let weekStart = mondayOfThisWeek()
+
+        if !forceRefresh, let existing = existingWeeklyProgram(weekStart: weekStart) {
+            return existing
+        }
+
+        let context = gatherFullContext(profile: resolvedProfile)
+        let systemPrompt = CoachPrompts.system(
+            for: .weeklyProgram,
+            style: resolvedProfile.motivationStyle,
+            customStylePrompt: resolvedProfile.customStylePrompt
+        )
+        let response: ClaudeAPIClient.Response
+        do {
+            response = try await api.complete(
+                model: resolvedProfile.anthropicModel,
+                systemPrompt: systemPrompt,
+                userPrompt: context.summaryForPrompt,
+                maxTokens: CoachPrompts.defaultMaxTokens(for: .weeklyProgram)
+            )
+        } catch ClaudeAPIError.missingAPIKey {
+            throw CoachServiceError.missingAPIKey
+        } catch {
+            throw CoachServiceError.generationFailed(error)
+        }
+
+        let parsed = parseWeeklyProgram(jsonText: response.text)
+        let program = upsertWeeklyProgram(weekStart: weekStart)
+        program.generatedAt = now()
+        program.programJSON = parsed.programJSON
+        program.coachNarrative = parsed.narrative
+        program.statusRaw = WeeklyProgramStatus.active.rawValue
+        program.tokenUsage = response.totalTokens
+        program.modelUsed = resolvedProfile.anthropicModel
+        try? modelContext.save()
+        logger.info("Weekly program generated weekStart=\(weekStart, privacy: .public) tokens=\(response.totalTokens, privacy: .public)")
+        return program
+    }
+
+    /// Today's prescription if one exists (any status). Used by TrainView to render
+    /// the prescribed-workout card.
+    func todaysPrescription() -> PrescribedWorkout? {
+        existingPrescription(for: jstCalendar().startOfDay(for: now()))
+    }
+
+    /// Pending schedule suggestions (status == .pending), newest first.
+    func pendingScheduleSuggestions(limit: Int = 5) -> [ScheduleSuggestion] {
+        var descriptor = FetchDescriptor<ScheduleSuggestion>(
+            sortBy: [SortDescriptor(\.generatedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit * 4
+        let pendingRaw = ScheduleSuggestionStatus.pending.rawValue
+        let all = (try? modelContext.fetch(descriptor)) ?? []
+        return Array(all.filter { $0.statusRaw == pendingRaw }.prefix(limit))
+    }
+
+    /// Active weekly program for the current week, if any.
+    func activeWeeklyProgram() -> WeeklyProgram? {
+        existingWeeklyProgram(weekStart: mondayOfThisWeek())
+    }
+
+    // MARK: - Internal helpers (v2)
+
+    private func minutesAvailableToday() -> Int {
+        // Naive heuristic: total minutes of un-blocked time between 06:00 and 22:00,
+        // i.e. (16h * 60) minus sum of training/study block durations from today.
+        let weekday = isoWeekday(for: now())
+        let blocks = ((try? modelContext.fetch(FetchDescriptor<ScheduleBlock>())) ?? [])
+            .filter { $0.dayOfWeek == weekday && !$0.isOverride }
+        let blocked = blocks.reduce(0) { acc, block in
+            guard let s = ScheduleService.parseTimeToMinutes(block.startTime),
+                  let e = ScheduleService.parseTimeToMinutes(block.endTime) else { return acc }
+            return acc + max(0, e - s)
+        }
+        let waking = 16 * 60
+        return max(0, waking - blocked)
+    }
+
+    private func existingPrescription(for day: Date) -> PrescribedWorkout? {
+        let descriptor = FetchDescriptor<PrescribedWorkout>(
+            predicate: #Predicate<PrescribedWorkout> { $0.forDate == day }
+        )
+        return (try? modelContext.fetch(descriptor))?.first
+    }
+
+    private func upsertPrescription(for day: Date) -> PrescribedWorkout {
+        if let existing = existingPrescription(for: day) { return existing }
+        let new = PrescribedWorkout(generatedAt: now(), forDate: day, workoutType: .rest)
+        modelContext.insert(new)
+        return new
+    }
+
+    private func existingWeeklyProgram(weekStart: Date) -> WeeklyProgram? {
+        let descriptor = FetchDescriptor<WeeklyProgram>(
+            predicate: #Predicate<WeeklyProgram> { $0.weekStartDate == weekStart }
+        )
+        return (try? modelContext.fetch(descriptor))?.first
+    }
+
+    private func upsertWeeklyProgram(weekStart: Date) -> WeeklyProgram {
+        if let existing = existingWeeklyProgram(weekStart: weekStart) { return existing }
+        let new = WeeklyProgram(weekStartDate: weekStart, generatedAt: now())
+        modelContext.insert(new)
+        return new
+    }
+
+    private func mondayOfThisWeek() -> Date {
+        let cal = jstCalendar()
+        let today = cal.startOfDay(for: now())
+        let weekday = isoWeekday(for: today)
+        let delta = -(weekday - 1)
+        return cal.date(byAdding: .day, value: delta, to: today) ?? today
+    }
+
+    private func isoWeekday(for date: Date) -> Int {
+        let raw = jstCalendar().component(.weekday, from: date)
+        return raw == 1 ? 7 : raw - 1
+    }
+
+    // MARK: - JSON parsing (Coach v2 outputs)
+
+    private struct ParsedPrescription {
+        var workoutType: PrescribedWorkoutType
+        var templateJSON: String
+        var rationale: String
+    }
+
+    private struct ParsedSuggestion {
+        var summary: String
+        var detail: String
+        var changeType: ScheduleSuggestionChangeType
+        var changePayloadJSON: String
+    }
+
+    private struct ParsedWeeklyProgram {
+        var narrative: String
+        var programJSON: String
+    }
+
+    private func parsePrescription(jsonText: String) -> ParsedPrescription {
+        let cleaned = stripCodeFences(jsonText)
+        guard let data = cleaned.data(using: .utf8),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return ParsedPrescription(
+                workoutType: .rest,
+                templateJSON: "{}",
+                rationale: jsonText.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+        }
+        let typeRaw = (obj["workoutType"] as? String) ?? "rest"
+        let workoutType = PrescribedWorkoutType(rawValue: typeRaw) ?? .rest
+        let rationale = (obj["rationale"] as? String) ?? ""
+        var templateJSON = "{}"
+        if let template = obj["template"], let templateData = try? JSONSerialization.data(withJSONObject: template),
+           let templateString = String(data: templateData, encoding: .utf8) {
+            templateJSON = templateString
+        }
+        return ParsedPrescription(
+            workoutType: workoutType,
+            templateJSON: templateJSON,
+            rationale: rationale
+        )
+    }
+
+    private func parseSuggestion(jsonText: String) -> ParsedSuggestion? {
+        let cleaned = stripCodeFences(jsonText)
+        guard let data = cleaned.data(using: .utf8),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let summary = obj["summary"] as? String,
+              let detail = obj["detail"] as? String,
+              let typeRaw = obj["changeType"] as? String else {
+            return nil
+        }
+        let changeType: ScheduleSuggestionChangeType = {
+            switch typeRaw {
+            case "shift_block": return .shiftBlock
+            case "add_block":   return .addBlock
+            case "remove_block": return .removeBlock
+            case "merge":        return .mergeBlocks
+            case "split":        return .splitBlock
+            default:             return .shiftBlock
+            }
+        }()
+        var payloadJSON = "{}"
+        if let payload = obj["changePayload"],
+           let payloadData = try? JSONSerialization.data(withJSONObject: payload),
+           let payloadString = String(data: payloadData, encoding: .utf8) {
+            payloadJSON = payloadString
+        }
+        return ParsedSuggestion(
+            summary: summary,
+            detail: detail,
+            changeType: changeType,
+            changePayloadJSON: payloadJSON
+        )
+    }
+
+    private func parseWeeklyProgram(jsonText: String) -> ParsedWeeklyProgram {
+        let cleaned = stripCodeFences(jsonText)
+        guard let data = cleaned.data(using: .utf8),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return ParsedWeeklyProgram(
+                narrative: jsonText.trimmingCharacters(in: .whitespacesAndNewlines),
+                programJSON: "{}"
+            )
+        }
+        let narrative = (obj["narrative"] as? String) ?? ""
+        var programJSON = "{}"
+        if let days = obj["days"],
+           let daysData = try? JSONSerialization.data(withJSONObject: days),
+           let daysString = String(data: daysData, encoding: .utf8) {
+            programJSON = daysString
+        }
+        return ParsedWeeklyProgram(narrative: narrative, programJSON: programJSON)
+    }
+
+    private func stripCodeFences(_ text: String) -> String {
+        var s = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fenceLeading = "```json"
+        let fenceLeading2 = "```"
+        if s.hasPrefix(fenceLeading) { s = String(s.dropFirst(fenceLeading.count)) }
+        else if s.hasPrefix(fenceLeading2) { s = String(s.dropFirst(fenceLeading2.count)) }
+        if s.hasSuffix("```") { s = String(s.dropLast(3)) }
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     /// Forces a fresh API call, increments refreshCount on the existing cached row
     /// (or creates a new one if none yet today).
     func refresh() async throws -> CoachInsight {
