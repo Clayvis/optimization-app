@@ -124,6 +124,7 @@ final class FastingService {
         log.fastBrokeEarly = true
         log.fastBreakReason = reason
         try modelContext.save()
+        CompletionHistoryWriter.record(domain: .fasting, at: date, modelContext: modelContext)
         logger.info("Logged early fast break at \(date, privacy: .public), reason length=\(reason.count, privacy: .public)")
     }
 
@@ -137,6 +138,7 @@ final class FastingService {
         log.fastEnd = window.end
         log.fastBrokeEarly = false
         try modelContext.save()
+        CompletionHistoryWriter.record(domain: .fasting, at: date, modelContext: modelContext)
     }
 
     // MARK: - Helpers

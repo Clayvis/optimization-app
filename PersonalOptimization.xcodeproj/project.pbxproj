@@ -22,6 +22,7 @@
 		112CF695517D31A1E87892F7 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
 		13472C39166401253FC4630C /* ScheduleSeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D07E40975A5EFFC26755ECF /* ScheduleSeedTests.swift */; };
 		170E95E49F9B10235C37B18B /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC713F81155648C69F8395C /* ProfileService.swift */; };
+		19226FF02C0F44979A35BE86 /* AdaptiveNotificationTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F4DD826875BB4569DF6A3 /* AdaptiveNotificationTiming.swift */; };
 		1AE5576A4F2426A5015B7C36 /* PersonalOptimizationWatchComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E46D2FE0AD37E504371C8F05 /* PersonalOptimizationWatchComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1C03590F197835DBDC65B8DE /* BasketballSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1E1B4E683B45FFB8DC0FE8 /* BasketballSessionView.swift */; };
 		1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */; };
@@ -29,6 +30,7 @@
 		2011D16E82C404E75BD21390 /* Logger+Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */; };
 		20AAE113C776AFCBD7F32469 /* LiftTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1B2DD2C194F0D71DB98CF8 /* LiftTemplates.swift */; };
 		21F1FC0A16E545C4E20F2CD0 /* FreezeApplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072974B3FC3533149FC8CAF2 /* FreezeApplication.swift */; };
+		237030E260483256E4AACAB1 /* AdaptiveNotificationTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD6AE4177CF18D51EC8EA5E /* AdaptiveNotificationTimingTests.swift */; };
 		255D8374E9BA90839391CC13 /* FastingLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7089E4ECC4F61306ED1464CC /* FastingLiveActivityController.swift */; };
 		2732AB89C3CA4CA9A702EE98 /* ProtocolEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F30C85E85590C6112D02188 /* ProtocolEntry.swift */; };
 		27AA8D32F1DCF8DFF93F97E3 /* LearningTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00706BB90BB75A496A3D1606 /* LearningTimerView.swift */; };
@@ -168,6 +170,7 @@
 		DF86AC64F316D1B1AA37632A /* StartCurrentBlockWorkoutIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63900474B867510B71486008 /* StartCurrentBlockWorkoutIntent.swift */; };
 		DFF74A329A3EBCF0B57A7F19 /* SwimWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2ACC0E2498E4C2E6FBDF1A /* SwimWatchView.swift */; };
 		E0103F98B55735664B45F036 /* SwimService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C827967650D59F6287511D8 /* SwimService.swift */; };
+		E09BC36170C611AC363068EE /* AdaptiveNotificationTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F4DD826875BB4569DF6A3 /* AdaptiveNotificationTiming.swift */; };
 		E292538C81AAC70701EE44CC /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */; };
 		E3671262DF547F8B71F77E6B /* WearableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */; };
 		E39C4A5B0DD8E67C1ABFB4DF /* lift_templates.json in Resources */ = {isa = PBXBuildFile; fileRef = 4A4485BD775F87B682EA483E /* lift_templates.json */; };
@@ -178,6 +181,7 @@
 		F1F85BB2070451DF9CCBB71C /* DailyLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92DC0582F729F67ECB583C5E /* DailyLog.swift */; };
 		F41B28335A6D3E7106DE4A31 /* Logger+Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */; };
 		F4C542F098D6E20BA6AE251D /* SwimSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CFF9D4CAF217C0577FCF84 /* SwimSession.swift */; };
+		F5F43E839A3F184B483A9744 /* AdaptiveNotificationTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F4DD826875BB4569DF6A3 /* AdaptiveNotificationTiming.swift */; };
 		F79BC8736EDF531CB07B23F9 /* LearningModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBB5606768832CD31284D286 /* LearningModule.swift */; };
 		F7D93E2FA5F50C1E667701FC /* LearningStreak.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C76FC65651FC3C15C1D8DB0 /* LearningStreak.swift */; };
 		F966AA2BDCEC732D2A9ABC0C /* SwimService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C827967650D59F6287511D8 /* SwimService.swift */; };
@@ -264,6 +268,7 @@
 		072974B3FC3533149FC8CAF2 /* FreezeApplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreezeApplication.swift; sourceTree = "<group>"; };
 		07EA40251321BD4591EB4760 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		09C53223ECB35D3ECFA24D96 /* SwimServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwimServiceTests.swift; sourceTree = "<group>"; };
+		0A0F4DD826875BB4569DF6A3 /* AdaptiveNotificationTiming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveNotificationTiming.swift; sourceTree = "<group>"; };
 		0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalOptimizationApp.swift; sourceTree = "<group>"; };
 		0CE13FE68863483CD8470256 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
 		107F1D4D82B6EB9F1FC2EF78 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -344,6 +349,7 @@
 		9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WearableEntry.swift; sourceTree = "<group>"; };
 		A3E9897C0A7723B5B1CDAFCC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		ADD6AE4177CF18D51EC8EA5E /* AdaptiveNotificationTimingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveNotificationTimingTests.swift; sourceTree = "<group>"; };
 		AFE3C14010480A8A180A4158 /* MascotComplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotComplication.swift; sourceTree = "<group>"; };
 		AFF13531E1C84E1B6271EB29 /* StreakCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCounter.swift; sourceTree = "<group>"; };
 		B12078C7513677476A637F58 /* LiftServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftServiceTests.swift; sourceTree = "<group>"; };
@@ -451,6 +457,7 @@
 		39C71D7C41D61ADBE6EDC076 /* Modules */ = {
 			isa = PBXGroup;
 			children = (
+				ADD6AE4177CF18D51EC8EA5E /* AdaptiveNotificationTimingTests.swift */,
 				038A8112E68D369AC2CFB1F7 /* BasketballServiceTests.swift */,
 				F3305701E5E1EB65C5834DE5 /* CharacterStateServiceTests.swift */,
 				5E3AA3F6AC15DBA732AE8CE4 /* DailySummaryServiceTests.swift */,
@@ -614,6 +621,7 @@
 		A38941293336A77C3F492D94 /* Engagement */ = {
 			isa = PBXGroup;
 			children = (
+				0A0F4DD826875BB4569DF6A3 /* AdaptiveNotificationTiming.swift */,
 				4AD938A95999E64B4E2A26F2 /* DailySummaryService.swift */,
 				FFE9E9465BD252E3D3BE2D98 /* StreakService.swift */,
 			);
@@ -980,6 +988,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				237030E260483256E4AACAB1 /* AdaptiveNotificationTimingTests.swift in Sources */,
 				653CB3C33C6B2560D1F63C6A /* BasketballServiceTests.swift in Sources */,
 				794B19FDB466608CD49D114C /* CharacterStateServiceTests.swift in Sources */,
 				8B347EA451C4CDD42BDCA11C /* DailySummaryServiceTests.swift in Sources */,
@@ -1009,6 +1018,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				19226FF02C0F44979A35BE86 /* AdaptiveNotificationTiming.swift in Sources */,
 				3D1E11A0B19547AE3605B9ED /* AdminTask.swift in Sources */,
 				0B10F72BCCFD1DA5F75A39CC /* AppShortcuts.swift in Sources */,
 				BB7095FF627C486DE9B74176 /* BasketballService.swift in Sources */,
@@ -1082,6 +1092,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5F43E839A3F184B483A9744 /* AdaptiveNotificationTiming.swift in Sources */,
 				61AFF636A369285390DE5688 /* AdminTask.swift in Sources */,
 				04711B71F53D38C5B330FC4D /* BasketballSession.swift in Sources */,
 				7E13A0278FDC934EE1155D4A /* CharacterStateLog.swift in Sources */,
@@ -1123,6 +1134,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E09BC36170C611AC363068EE /* AdaptiveNotificationTiming.swift in Sources */,
 				82CED799C08A2A19FDA0D1C5 /* AdminTask.swift in Sources */,
 				094DEA195DC0E82EA2913740 /* AppShortcuts.swift in Sources */,
 				2E4E19F22759ACFBE1342BE8 /* BasketballService.swift in Sources */,
