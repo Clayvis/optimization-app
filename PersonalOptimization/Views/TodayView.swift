@@ -63,6 +63,16 @@ struct TodayView: View {
             }
             .navigationTitle(weekdayTitle)
             .listStyle(.insetGrouped)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        ScheduleEditorView()
+                    } label: {
+                        Label("Edit schedule", systemImage: "calendar.badge.plus")
+                    }
+                    .accessibilityLabel("Edit schedule")
+                }
+            }
             .onAppear {
                 now = Date()
                 startTicking()

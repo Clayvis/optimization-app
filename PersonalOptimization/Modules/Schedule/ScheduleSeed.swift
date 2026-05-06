@@ -63,6 +63,21 @@ enum ScheduleSeed {
         Logger.schedule.info("Seeded \(file.blocks.count, privacy: .public) template blocks")
     }
 
+    /// Wipes all non-custom (`isCustom == false`) ScheduleBlocks and re-seeds from the
+    /// default file. User-created blocks (`isCustom == true`) are preserved verbatim.
+    static func resetToDefault(modelContext: ModelContext, bundle: Bundle = .main) throws {
+        let descriptor = FetchDescriptor<ScheduleBlock>(
+            predicate: #Predicate<ScheduleBlock> { $0.isCustom == false && $0.isOverride == false }
+        )
+        let toDelete = try modelContext.fetch(descriptor)
+        for block in toDelete {
+            modelContext.delete(block)
+        }
+        try modelContext.save()
+        try seedIfNeeded(modelContext: modelContext, bundle: bundle)
+        Logger.schedule.info("Reset to default schedule, deleted \(toDelete.count, privacy: .public), re-seeded")
+    }
+
     static func loadDefaultScheduleFile(bundle: Bundle = .main) throws -> DefaultScheduleFile {
         guard let url = bundle.url(forResource: "default_schedule", withExtension: "json") else {
             throw ScheduleSeedError.resourceMissing

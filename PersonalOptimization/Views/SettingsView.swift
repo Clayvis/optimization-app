@@ -64,6 +64,19 @@ struct SettingsView: View {
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                 }
+                LabeledContent("Quick-pick presets (oz)") {
+                    TextField("4,8,12,16,20,24,32", text: $profile.hydrationQuickPicksOzCSV)
+                        .multilineTextAlignment(.trailing)
+                        .autocapitalization(.none)
+                }
+            }
+
+            Section("Schedule") {
+                NavigationLink {
+                    ScheduleEditorView()
+                } label: {
+                    Label("Edit schedule", systemImage: "calendar")
+                }
             }
 
             Section("AI") {
@@ -77,6 +90,32 @@ struct SettingsView: View {
             Section("Mascot") {
                 Toggle("Show mascot", isOn: $profile.mascotEnabled)
                 Toggle("Reduced motion", isOn: $profile.reducedMotion)
+            }
+
+            Section("Coaching") {
+                Picker("Motivation style", selection: $profile.motivationStyle) {
+                    Text("Balanced").tag("balanced")
+                    Text("Stoic").tag("stoic")
+                    Text("Holistic").tag("holistic")
+                    Text("Warrior").tag("warrior")
+                    Text("Spiritual").tag("spiritual")
+                    Text("Scientific").tag("scientific")
+                    Text("Custom").tag("custom")
+                }
+                if profile.motivationStyle == "custom" {
+                    TextField("Custom style notes",
+                              text: Binding(
+                                get: { profile.customStylePrompt ?? "" },
+                                set: { profile.customStylePrompt = $0.isEmpty ? nil : $0 }
+                              ),
+                              axis: .vertical)
+                    .lineLimit(2...5)
+                }
+                Toggle("AI-generated quotes", isOn: $profile.aiQuotesEnabled)
+            }
+
+            Section("Training") {
+                Toggle("Achilles check-in after basketball", isOn: $profile.achillesCheckInEnabled)
             }
 
             graceModeSection(profile: profile)

@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-enum BlockType: String, Codable {
+enum BlockType: String, Codable, CaseIterable, Sendable {
     case transit, training, study, learning, admin, recovery, other
 }
 

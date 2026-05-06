@@ -120,6 +120,8 @@ targets:
         name: SharedModels
       - path: PersonalOptimization/Modules/Schedule
         name: SharedSchedule
+        excludes:
+          - "Views/**"
       - path: PersonalOptimization/Modules/Fasting
         name: SharedFasting
         excludes:
@@ -234,6 +236,8 @@ targets:
         name: SharedModels
       - path: PersonalOptimization/Modules/Schedule
         name: SharedSchedule
+        excludes:
+          - "Views/**"
       - path: PersonalOptimization/Modules/Fasting
         name: SharedFasting
         excludes:
