@@ -2,6 +2,18 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    var body: some View {
+        TabView {
+            ScheduleWatchView()
+                .tag(0)
+            HydrationWatchView()
+                .tag(1)
+        }
+        .tabViewStyle(.verticalPage)
+    }
+}
+
+struct ScheduleWatchView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var now: Date = Date()
 

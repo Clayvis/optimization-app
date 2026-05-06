@@ -70,6 +70,7 @@
 		A783A187296DEA19FFF137B6 /* InMemoryContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 242FCE6D86BAB838E4FD1826 /* InMemoryContainer.swift */; };
 		A87525E6F1E5646C4D35C3E2 /* PersonalOptimizationApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */; };
 		AC0FB05691E5808FE04BA857 /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81284154F15F132A77F952B8 /* NotificationServiceTests.swift */; };
+		AC61B37DA22A6624EFCAAC91 /* HydrationWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476F48D9D87CCC605C712ABE /* HydrationWatchView.swift */; };
 		AD88BE9E2BDDECB2D60AE0F1 /* LiftSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177EF30368767AF7EBD3F9D1 /* LiftSession.swift */; };
 		B2590EA43AA467BA42CD498F /* FastingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A4006DD6BF17DAE6915811 /* FastingView.swift */; };
 		BA5053AEB1922732900343B8 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
@@ -176,6 +177,7 @@
 		40B79B0DE348C5B10A3C13DA /* BasketballSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballSession.swift; sourceTree = "<group>"; };
 		40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalOptimizationWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		45B10FAC14B0FE5A66B6567D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		476F48D9D87CCC605C712ABE /* HydrationWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationWatchView.swift; sourceTree = "<group>"; };
 		4802E896C8352210A8A52524 /* ScheduleServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleServiceTests.swift; sourceTree = "<group>"; };
 		4A14D7CDDD90CC1F2E608509 /* CurrentBlockTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentBlockTimelineProvider.swift; sourceTree = "<group>"; };
 		590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Categories.swift"; sourceTree = "<group>"; };
@@ -229,6 +231,7 @@
 			isa = PBXGroup;
 			children = (
 				2980B95DAC2C5D2BF8D46211 /* ContentView.swift */,
+				476F48D9D87CCC605C712ABE /* HydrationWatchView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -689,6 +692,7 @@
 				F1F85BB2070451DF9CCBB71C /* DailyLog.swift in Sources */,
 				FC164E4A639AE36B6499265D /* FastingService.swift in Sources */,
 				3F21BEE1D079F92B36B6886F /* HydrationService.swift in Sources */,
+				AC61B37DA22A6624EFCAAC91 /* HydrationWatchView.swift in Sources */,
 				C590DB305D5D2A02A51D7B71 /* LabDraw.swift in Sources */,
 				51AD6F928C5FE60EE87736F7 /* LearningStreak.swift in Sources */,
 				819FF06C908089F663E029A5 /* LiftSession.swift in Sources */,
