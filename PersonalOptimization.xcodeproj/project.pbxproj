@@ -32,6 +32,7 @@
 		2732AB89C3CA4CA9A702EE98 /* ProtocolEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F30C85E85590C6112D02188 /* ProtocolEntry.swift */; };
 		27AA8D32F1DCF8DFF93F97E3 /* LearningTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00706BB90BB75A496A3D1606 /* LearningTimerView.swift */; };
 		2960497AAA345C8DCE2559C9 /* HydrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF87431FBC0828ACD063558 /* HydrationService.swift */; };
+		2A6C326EF096BB4884CB3228 /* StreakService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFE9E9465BD252E3D3BE2D98 /* StreakService.swift */; };
 		2B5CA8C9F6430FCE68B5BD00 /* LearningReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C46958AF47AE66EE9773D3CC /* LearningReminderScheduler.swift */; };
 		2B950ADB27E765EFDD1276C8 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
 		2E4E19F22759ACFBE1342BE8 /* BasketballService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9138460973370757A950626 /* BasketballService.swift */; };
@@ -144,6 +145,7 @@
 		D029431C4F2B4048CAC2FD28 /* ProtocolEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F30C85E85590C6112D02188 /* ProtocolEntry.swift */; };
 		D233FCEE7344F8763F0E3F2D /* WearableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */; };
 		D3239AF5B0F77CF6D505F390 /* LiftService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF05F9C5ED65B9EDF34C363 /* LiftService.swift */; };
+		D4031E3167BF4F86ADF456A0 /* StreakServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD05D2192776CD17F346623 /* StreakServiceTests.swift */; };
 		D7454F6A195563E1DF6DCBDC /* ScheduleServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4802E896C8352210A8A52524 /* ScheduleServiceTests.swift */; };
 		D7679AEA78367E5C772D5CFA /* LiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 424CC7EBA7731934A798C2B9 /* LiveActivityBundle.swift */; };
 		D85B5D9F8C1637D4D91C8F2E /* CompletionHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5093DF24E88D099B7076C10A /* CompletionHistory.swift */; };
@@ -323,6 +325,7 @@
 		92DC0582F729F67ECB583C5E /* DailyLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLog.swift; sourceTree = "<group>"; };
 		9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		97A4006DD6BF17DAE6915811 /* FastingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingView.swift; sourceTree = "<group>"; };
+		9DD05D2192776CD17F346623 /* StreakServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakServiceTests.swift; sourceTree = "<group>"; };
 		9EF87431FBC0828ACD063558 /* HydrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationService.swift; sourceTree = "<group>"; };
 		9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WearableEntry.swift; sourceTree = "<group>"; };
@@ -358,6 +361,7 @@
 		F9138460973370757A950626 /* BasketballService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballService.swift; sourceTree = "<group>"; };
 		FBB5606768832CD31284D286 /* LearningModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningModule.swift; sourceTree = "<group>"; };
 		FF3E8E2C56CA679596E1AC22 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		FFE9E9465BD252E3D3BE2D98 /* StreakService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -440,6 +444,7 @@
 				78B6CBBB02D87C77CA3EF209 /* PimsleurDeepLinkTests.swift */,
 				1D07E40975A5EFFC26755ECF /* ScheduleSeedTests.swift */,
 				4802E896C8352210A8A52524 /* ScheduleServiceTests.swift */,
+				9DD05D2192776CD17F346623 /* StreakServiceTests.swift */,
 				09C53223ECB35D3ECFA24D96 /* SwimServiceTests.swift */,
 			);
 			path = Modules;
@@ -494,6 +499,7 @@
 		588244BE00D5970A043209B4 /* Modules */ = {
 			isa = PBXGroup;
 			children = (
+				A38941293336A77C3F492D94 /* Engagement */,
 				83490179F5D1A1B2CA5412E0 /* SharedFasting */,
 				9E1668E11E5753E6600B2D4A /* SharedHydration */,
 				F7DE5F50836E6EFB85F771FE /* SharedLearning */,
@@ -575,6 +581,14 @@
 			);
 			name = SharedHydration;
 			path = Hydration;
+			sourceTree = "<group>";
+		};
+		A38941293336A77C3F492D94 /* Engagement */ = {
+			isa = PBXGroup;
+			children = (
+				FFE9E9465BD252E3D3BE2D98 /* StreakService.swift */,
+			);
+			path = Engagement;
 			sourceTree = "<group>";
 		};
 		A7A2030F28332D486AC44AE0 /* Views */ = {
@@ -953,6 +967,7 @@
 				D7454F6A195563E1DF6DCBDC /* ScheduleServiceTests.swift in Sources */,
 				EFDEF63634B285422CE5A97C /* SchemaV1Tests.swift in Sources */,
 				3FEE81FD2C22A8A2F1BC1A38 /* SchemaV2Tests.swift in Sources */,
+				D4031E3167BF4F86ADF456A0 /* StreakServiceTests.swift in Sources */,
 				71C2B0A490D6661EAB3F2507 /* SwimServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1012,6 +1027,7 @@
 				A4044AA4FFA030197C586BD3 /* StartCurrentBlockWorkoutIntent.swift in Sources */,
 				90C918CC411E53F1864CC318 /* StreakCounter.swift in Sources */,
 				5857CA6B690F61D2505895C7 /* StreakDomain.swift in Sources */,
+				2A6C326EF096BB4884CB3228 /* StreakService.swift in Sources */,
 				E0103F98B55735664B45F036 /* SwimService.swift in Sources */,
 				888AF0FF44CE504D0A896DA8 /* SwimSession.swift in Sources */,
 				96F2846853996961F085C7F9 /* SwimSessionView.swift in Sources */,
