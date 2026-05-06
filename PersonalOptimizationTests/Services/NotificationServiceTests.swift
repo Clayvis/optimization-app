@@ -126,13 +126,14 @@ final class NotificationServiceTests: XCTestCase {
         XCTAssertEqual(fake.authorizationRequestCount, 1)
     }
 
-    func test_register_setsAllThreeCategories() async throws {
+    func test_register_setsAllFourCategories() async throws {
         try await service.register()
         let ids = Set(fake.registeredCategories.map { $0.identifier })
         XCTAssertEqual(ids, [
             NotificationIdentifier.fastStartCategory,
             NotificationIdentifier.fastEndCategory,
-            NotificationIdentifier.hydrationCategory
+            NotificationIdentifier.hydrationCategory,
+            NotificationIdentifier.learningCategory
         ])
     }
 

@@ -140,6 +140,7 @@ targets:
         name: SharedLearning
         excludes:
           - "Views/**"
+          - "LearningReminderInstaller.swift"
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/HealthKitService.swift
       - path: PersonalOptimization/AppIntents

@@ -8,6 +8,7 @@ enum NotificationIdentifier {
     static let fastStartCategory = "fast.start"
     static let fastEndCategory = "fast.end"
     static let hydrationCategory = "hydration"
+    static let learningCategory = "learning"
 
     static let actionLog8oz = "log_8oz"
     static let actionLog16oz = "log_16oz"
@@ -173,7 +174,14 @@ final class NotificationService {
             options: []
         )
 
-        center.setNotificationCategories([hydration, fastStart, fastEnd])
+        let learning = UNNotificationCategory(
+            identifier: NotificationIdentifier.learningCategory,
+            actions: [],
+            intentIdentifiers: [],
+            options: []
+        )
+
+        center.setNotificationCategories([hydration, fastStart, fastEnd, learning])
     }
 
     // MARK: - Scheduling
@@ -236,6 +244,26 @@ final class NotificationService {
         content.title = "Hydration check"
         content.body = "\(Int(progressOz)) of \(Int(targetMaxOz)) oz so far."
         content.categoryIdentifier = NotificationIdentifier.hydrationCategory
+        content.sound = .default
+
+        let trigger = UNCalendarNotificationTrigger(
+            dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date),
+            repeats: false
+        )
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        try await center.add(request)
+        return id
+    }
+
+    @discardableResult
+    func scheduleLearningReminder(at date: Date,
+                                  moduleName: String,
+                                  targetMinutes: Int) async throws -> String {
+        let id = "learning.\(moduleName).\(date.timeIntervalSince1970)"
+        let content = UNMutableNotificationContent()
+        content.title = "\(moduleName) practice"
+        content.body = "Time for \(targetMinutes) min of \(moduleName.lowercased())."
+        content.categoryIdentifier = NotificationIdentifier.learningCategory
         content.sound = .default
 
         let trigger = UNCalendarNotificationTrigger(

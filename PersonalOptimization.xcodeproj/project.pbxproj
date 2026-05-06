@@ -28,6 +28,7 @@
 		2732AB89C3CA4CA9A702EE98 /* ProtocolEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F30C85E85590C6112D02188 /* ProtocolEntry.swift */; };
 		27AA8D32F1DCF8DFF93F97E3 /* LearningTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00706BB90BB75A496A3D1606 /* LearningTimerView.swift */; };
 		2960497AAA345C8DCE2559C9 /* HydrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF87431FBC0828ACD063558 /* HydrationService.swift */; };
+		2B5CA8C9F6430FCE68B5BD00 /* LearningReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C46958AF47AE66EE9773D3CC /* LearningReminderScheduler.swift */; };
 		2B950ADB27E765EFDD1276C8 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
 		2E4E19F22759ACFBE1342BE8 /* BasketballService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9138460973370757A950626 /* BasketballService.swift */; };
 		318514B5249DE71694AA72CF /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA2773372A4E5001F3A6F618 /* WorkoutActivityAttributes.swift */; };
@@ -39,6 +40,7 @@
 		3B34A7A64B8E0F8E59666842 /* HydrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51542D012807C71EE967904 /* HydrationView.swift */; };
 		3D1E11A0B19547AE3605B9ED /* AdminTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961232791C8824387CFFBCE /* AdminTask.swift */; };
 		3F21BEE1D079F92B36B6886F /* HydrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF87431FBC0828ACD063558 /* HydrationService.swift */; };
+		40912402E0219F6D73306264 /* LearningReminderInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66A7C17EA6989DC3F3EC6E2 /* LearningReminderInstaller.swift */; };
 		445E79CE78180CE5E6ABE007 /* PomodoroSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */; };
 		46B1D4A79F4C21DBD433FC63 /* ScheduleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F31266DF504D0F540B369D /* ScheduleBlock.swift */; };
 		497B2D2C8A6376B1BA12FDFE /* ScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 823154A880207FCF1C483BA8 /* ScheduleService.swift */; };
@@ -113,6 +115,7 @@
 		B47A92AA93AC2CB7567DFE36 /* TrainingWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C1405D527E3E5318F280D4F /* TrainingWatchView.swift */; };
 		BA5053AEB1922732900343B8 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
 		BB7095FF627C486DE9B74176 /* BasketballService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9138460973370757A950626 /* BasketballService.swift */; };
+		BBE060D9AD7387A1F0CE9553 /* LearningReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C46958AF47AE66EE9773D3CC /* LearningReminderScheduler.swift */; };
 		BD328769908C6B6473E58C8E /* PomodoroSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */; };
 		C2A16CC968C31009FDB5CF48 /* WorkoutLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F095AE1CB9BE0D92DEE423F /* WorkoutLiveActivity.swift */; };
 		C590DB305D5D2A02A51D7B71 /* LabDraw.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4985E865B7FE2268CC0631 /* LabDraw.swift */; };
@@ -150,6 +153,7 @@
 		F966AA2BDCEC732D2A9ABC0C /* SwimService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C827967650D59F6287511D8 /* SwimService.swift */; };
 		FB5CFE3EBCB20739974FAC5A /* ScheduleConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 360D242A8530DF3073145608 /* ScheduleConfig.swift */; };
 		FBE012E8CC00A4B68F92A687 /* ScheduleConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 360D242A8530DF3073145608 /* ScheduleConfig.swift */; };
+		FC06827C664DBA315B3EE344 /* LearningReminderSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873E62A777CAB922DCCD5038 /* LearningReminderSchedulerTests.swift */; };
 		FC164E4A639AE36B6499265D /* FastingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF0F1E795AB55462D194D73 /* FastingService.swift */; };
 		FCB84214E09EB0BB0AE4D3FE /* FastingActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5AFA108A9EEF4E2CE42A2C /* FastingActivityAttributes.swift */; };
 		FFF0502D54A687E6A77D4865 /* PomodoroSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */; };
@@ -287,6 +291,7 @@
 		81284154F15F132A77F952B8 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		82221D5BC1BA379932EC9A6A /* default_schedule.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_schedule.json; sourceTree = "<group>"; };
 		823154A880207FCF1C483BA8 /* ScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleService.swift; sourceTree = "<group>"; };
+		873E62A777CAB922DCCD5038 /* LearningReminderSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningReminderSchedulerTests.swift; sourceTree = "<group>"; };
 		898DC874ED5F88B3E0C36FE0 /* TrainingHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingHubView.swift; sourceTree = "<group>"; };
 		8AC713F81155648C69F8395C /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
 		8F1B2DD2C194F0D71DB98CF8 /* LiftTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftTemplates.swift; sourceTree = "<group>"; };
@@ -304,6 +309,7 @@
 		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B8DE71D468B74D040F0520D0 /* LearningService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningService.swift; sourceTree = "<group>"; };
 		C3F31266DF504D0F540B369D /* ScheduleBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleBlock.swift; sourceTree = "<group>"; };
+		C46958AF47AE66EE9773D3CC /* LearningReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningReminderScheduler.swift; sourceTree = "<group>"; };
 		C608CA325D483F55214ED4BE /* FastCountdownTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastCountdownTimelineProvider.swift; sourceTree = "<group>"; };
 		C70A73F43D115EF06D2B6348 /* FastingLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingLiveActivity.swift; sourceTree = "<group>"; };
 		CA2773372A4E5001F3A6F618 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
@@ -318,6 +324,7 @@
 		E46D2FE0AD37E504371C8F05 /* PersonalOptimizationWatchComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PersonalOptimizationWatchComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSeed.swift; sourceTree = "<group>"; };
 		EFE07D74DECEAE97388D869D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F66A7C17EA6989DC3F3EC6E2 /* LearningReminderInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningReminderInstaller.swift; sourceTree = "<group>"; };
 		F68E7ED9EFF99DDFABE5121D /* LearningHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningHubView.swift; sourceTree = "<group>"; };
 		F6B0B7A3633B51BD8E9A8CAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F8784746AB1A5E716335FC51 /* JSONExportImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONExportImportTests.swift; sourceTree = "<group>"; };
@@ -401,6 +408,7 @@
 				038A8112E68D369AC2CFB1F7 /* BasketballServiceTests.swift */,
 				026062AB166F1C6F733696D7 /* FastingServiceTests.swift */,
 				21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */,
+				873E62A777CAB922DCCD5038 /* LearningReminderSchedulerTests.swift */,
 				66D72CD6CEDF8A930891B3CF /* LearningServiceTests.swift */,
 				B12078C7513677476A637F58 /* LiftServiceTests.swift */,
 				78B6CBBB02D87C77CA3EF209 /* PimsleurDeepLinkTests.swift */,
@@ -715,6 +723,8 @@
 			children = (
 				BDC1BCC8943A61E71408DB6C /* Views */,
 				FBB5606768832CD31284D286 /* LearningModule.swift */,
+				F66A7C17EA6989DC3F3EC6E2 /* LearningReminderInstaller.swift */,
+				C46958AF47AE66EE9773D3CC /* LearningReminderScheduler.swift */,
 				B8DE71D468B74D040F0520D0 /* LearningService.swift */,
 				3D1014D613B8D66F40EA5159 /* LearningStreakCalculator.swift */,
 				11EC074E2864866FB1F02564 /* PimsleurDeepLink.swift */,
@@ -899,6 +909,7 @@
 				A783A187296DEA19FFF137B6 /* InMemoryContainer.swift in Sources */,
 				8B1A15455BE8C010AF127747 /* JSONExportImportTests.swift in Sources */,
 				7147113C2529BB7745FF6914 /* KeychainServiceTests.swift in Sources */,
+				FC06827C664DBA315B3EE344 /* LearningReminderSchedulerTests.swift in Sources */,
 				7B359875922E4A9EADCEB844 /* LearningServiceTests.swift in Sources */,
 				3B175626FD2742A84887AE78 /* LiftServiceTests.swift in Sources */,
 				AC0FB05691E5808FE04BA857 /* NotificationServiceTests.swift in Sources */,
@@ -937,6 +948,8 @@
 				3910CFFAEF639E97C5F2F8B4 /* LabDraw.swift in Sources */,
 				4F9215C80D0AA3B2ABAF6D74 /* LearningHubView.swift in Sources */,
 				9577C79B850AE654683C4F41 /* LearningModule.swift in Sources */,
+				40912402E0219F6D73306264 /* LearningReminderInstaller.swift in Sources */,
+				2B5CA8C9F6430FCE68B5BD00 /* LearningReminderScheduler.swift in Sources */,
 				A4D04241A8D250919922AAA6 /* LearningService.swift in Sources */,
 				02F1C19855528D0014BA2283 /* LearningStreak.swift in Sources */,
 				8A59A0B8763B34586F272FCF /* LearningStreakCalculator.swift in Sources */,
@@ -1023,6 +1036,7 @@
 				AC61B37DA22A6624EFCAAC91 /* HydrationWatchView.swift in Sources */,
 				C590DB305D5D2A02A51D7B71 /* LabDraw.swift in Sources */,
 				F79BC8736EDF531CB07B23F9 /* LearningModule.swift in Sources */,
+				BBE060D9AD7387A1F0CE9553 /* LearningReminderScheduler.swift in Sources */,
 				DC5E2A96BEBFBEAFA8EEA2AD /* LearningService.swift in Sources */,
 				51AD6F928C5FE60EE87736F7 /* LearningStreak.swift in Sources */,
 				7E56BFE13771815C1577BA22 /* LearningStreakCalculator.swift in Sources */,
