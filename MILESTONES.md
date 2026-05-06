@@ -342,6 +342,73 @@ Estimated effort: 20-26 hours of agent execution.
 
 ---
 
+## M3.7: Coach v2 (Prescriptive) + Long-Term Log + Multi-Mascot
+
+Goal: turn Coach Mode from "daily insight commentary" into "prescriptive holistic optimizer" with year-plus historical context, ship long-term log infrastructure, add multi-mascot variant system (ninja_male default + ninja_female for wife). Source: M3.7_SPEC.md.
+
+Tasks:
+
+Block 1 — Long-term log persistence + trend analytics (~8-12h):
+
+1. Audit and confirm SwiftData retention. No auto-delete code anywhere; document explicitly.
+2. ActivityArchive @Model entity (one row per user per day) + BGAppRefreshTask daily rollup writer.
+3. TrendAnalyticsService with dailyAdherence, volumeProgression, patternsDetected, summaryForCoach. ~10+ unit tests covering empty/partial/full-year data and edge cases.
+4. DetectedPattern detection rules: schedule_drift, volume_decline, hydration_correlation, sleep_impact, fasting_consistency, learning_streak_decay (6+ patterns).
+5. Settings → Data → export/import expansion covering all new entities + round-trip test.
+
+Block 2 — Coach Mode v2 (~10-14h):
+
+6. CoachService.gatherFullContext returning CoachContextV2 (M3.6 context + TrendAnalytics summary + goals + equipment + time-available + temperature stub).
+7. CoachService.prescribeTodaysWorkout → PrescribedWorkout @Model with full template, status (suggested/accepted/modified/skipped/completed). Sonnet 4.6, system prompt tuned to motivationStyle + equipmentAccess + primaryGoal.
+8. CoachService.suggestScheduleOptimizations → ScheduleSuggestion @Model rows. Reads pattern detector. 1-3 suggestions per week.
+9. CoachService.generateWeeklyProgrammingPass → WeeklyProgram @Model. Sundays auto-trigger or manual.
+10. TodayView Coach card: shows prescribed workout above daily insight on training days.
+11. TrainView "Today's Prescribed Workout" section at top of LiftView/BasketballView/SwimView with one-tap accept/modify/skip.
+12. ScheduleSuggestion inbox (TodayView badge + accept/dismiss).
+13. WeeklyProgram view (Sunday Today-tab card).
+14. Locked system prompts in Modules/Coach/CoachPrompts.swift (separate prompts per generation mode and per motivationStyle).
+15. Coach v2 tests (15+) covering prescription generation, schedule suggestion accept flow, weekly programming, prescribed workout → session pipeline, API failure fallback.
+
+Block 3 — Multi-mascot variant system (~4-6h):
+
+16. mascotVariant: String field on UserProfile (default "ninja_male"); SchemaV4 additive migration.
+17. Rename existing Mascot{State}.imageset → NinjaMale_{State}.imageset (8 imagesets).
+18. CharacterState.assetName(for variant:) helper; all consumers updated to call with userProfile.mascotVariant.
+19. Settings → Mascot picker with previews of available variants.
+20. Onboarding stub: first-launch picks variant (full M4 onboarding builds on this).
+21. Female mascot pre-flight: if user picks ninja_female and any of 8 PNGs missing, halt with clear message.
+
+Block 4 — Wife-onboarding-readiness polish (~3-4h):
+
+22. Goals capture in Settings: primaryGoal, secondaryGoals, equipmentAccess picker, weeklyTrainingTargetSessions stepper, restrictions text.
+23. Schedule template chooser (Settings → Schedule): gym-focused, language-focused, fasting-focused, balanced, blank slate.
+24. Per-user mascot variant in onboarding flow stub (foundation for M4).
+
+Definition of Done:
+
+- All 24 tasks complete, tests passing.
+- Long-term log persists; activity from M1 onward visible in TrendAnalytics outputs.
+- ActivityArchive populated; daily rollup verified on simulator.
+- Coach Mode v2 produces real prescriptions for both ninja_male and ninja_female test profiles.
+- TrainView shows today's prescribed workout when on training day.
+- ScheduleSuggestion inbox functional.
+- WeeklyProgram generates on Sundays.
+- mascotVariant switch works; female assets render.
+- Build clean, zero warnings (iOS + watch).
+- Performance: TrendAnalytics queries < 200ms with 1 year of data.
+- PR merged to main, tag m3.7-complete pushed.
+
+Performance benchmarks:
+
+- TrendAnalyticsService.summaryForCoach with 365 days of data: < 200ms.
+- CoachService.prescribeTodaysWorkout cold path (with API call): < 6s.
+- ActivityArchive daily rollup: < 500ms per day.
+- Cold start of TrainView with prescribed workout card: < 1.5s.
+
+Estimated effort: 25-36 hours of agent execution.
+
+---
+
 ## M4: Notifications, Onboarding, Implementation Intentions, Weekly Reflection, Ship
 
 Goal: Wrap v1 with high-quality first-run experience, the implementation intentions habit-stack builder, weekly reflection, and App Store submission readiness.
