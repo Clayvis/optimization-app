@@ -1,0 +1,60 @@
+{
+  "captured_at": "2026-05-06",
+  "captured_on": {
+    "host": "Apple Silicon Mac",
+    "simulator": "iPhone 17 Pro (iOS 26.4)",
+    "xcode": "26.4.1 (17E202)",
+    "configuration": "Debug",
+    "swift_concurrency": "complete"
+  },
+  "note": "Simulator on M-series Mac runs roughly 2-4x faster than the iPhone 13 Pro Max target hardware. Real-device baselines should be captured before M7 close on actual hardware. Numbers below are XCTest measure() wall-clock averages over 10 runs.",
+  "tests": [
+    {
+      "name": "test_perf_currentBlockResolution_100Iterations_under50ms",
+      "target_per_call_ms": 50,
+      "measured_total_ms_for_100_calls": 28,
+      "measured_per_call_ms": 0.28,
+      "headroom_factor": 178,
+      "status": "PASS"
+    },
+    {
+      "name": "test_perf_swiftDataFetch_1000Logs_under100ms",
+      "target_ms": 100,
+      "measured_avg_ms": 22,
+      "headroom_factor": 4.5,
+      "status": "PASS"
+    },
+    {
+      "name": "test_perf_jsonExport_full_under5s",
+      "target_ms": 5000,
+      "measured_avg_ms": 15,
+      "rows": "1 profile + 200 daily logs + 50 lift sessions + 39 schedule blocks",
+      "headroom_factor": 333,
+      "status": "PASS"
+    },
+    {
+      "name": "test_perf_swiftDataWrite_singleEntity_under50ms",
+      "target_per_write_ms": 50,
+      "measured_total_ms_for_100_writes": 33,
+      "measured_per_write_ms": 0.33,
+      "headroom_factor": 150,
+      "status": "PASS"
+    },
+    {
+      "name": "test_currentBlock_under50ms (ScheduleServiceTests)",
+      "target_per_call_ms": 50,
+      "measured_total_ms_for_100_calls": 25,
+      "measured_per_call_ms": 0.25,
+      "headroom_factor": 200,
+      "status": "PASS"
+    }
+  ],
+  "deferred_to_real_device": [
+    "iPhone cold start to TodayView render (<1.5s)",
+    "iPhone cold start to interactive (<2.0s)",
+    "Watch cold start to current block visible (<2.0s)",
+    "Watch complication initial render (<500ms)",
+    "Watch tap-to-log confirmation haptic (<200ms)",
+    "Battery drain numbers"
+  ]
+}

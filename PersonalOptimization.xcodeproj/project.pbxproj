@@ -23,6 +23,7 @@
 		2B950ADB27E765EFDD1276C8 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
 		36D95A9B354F48B865EFA9F0 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4A1D03EFC9DE01812670DF /* TodayView.swift */; };
 		3910CFFAEF639E97C5F2F8B4 /* LabDraw.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4985E865B7FE2268CC0631 /* LabDraw.swift */; };
+		39803EA851C039EFCE0CAED6 /* PerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62C8F58A99782B66ECCDFCB5 /* PerformanceTests.swift */; };
 		3D1E11A0B19547AE3605B9ED /* AdminTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961232791C8824387CFFBCE /* AdminTask.swift */; };
 		445E79CE78180CE5E6ABE007 /* PomodoroSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */; };
 		46B1D4A79F4C21DBD433FC63 /* ScheduleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F31266DF504D0F540B369D /* ScheduleBlock.swift */; };
@@ -159,6 +160,7 @@
 		4A14D7CDDD90CC1F2E608509 /* CurrentBlockTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentBlockTimelineProvider.swift; sourceTree = "<group>"; };
 		590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Categories.swift"; sourceTree = "<group>"; };
 		5B4A1D03EFC9DE01812670DF /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		62C8F58A99782B66ECCDFCB5 /* PerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceTests.swift; sourceTree = "<group>"; };
 		64C01CAA4C1C9882EA8BCA48 /* CurrentBlockComplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentBlockComplication.swift; sourceTree = "<group>"; };
 		6961232791C8824387CFFBCE /* AdminTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminTask.swift; sourceTree = "<group>"; };
 		6BB3766332CCC85C5B7A7765 /* PersonalOptimizationWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalOptimizationWatchApp.swift; sourceTree = "<group>"; };
@@ -355,6 +357,7 @@
 				869E8F27A49AC0C94C596E20 /* Models */,
 				39C71D7C41D61ADBE6EDC076 /* Modules */,
 				A9D5B3F6F4641C800970D7BC /* Services */,
+				62C8F58A99782B66ECCDFCB5 /* PerformanceTests.swift */,
 				2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */,
 			);
 			path = PersonalOptimizationTests;
@@ -528,6 +531,7 @@
 				A783A187296DEA19FFF137B6 /* InMemoryContainer.swift in Sources */,
 				8B1A15455BE8C010AF127747 /* JSONExportImportTests.swift in Sources */,
 				7147113C2529BB7745FF6914 /* KeychainServiceTests.swift in Sources */,
+				39803EA851C039EFCE0CAED6 /* PerformanceTests.swift in Sources */,
 				1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */,
 				13472C39166401253FC4630C /* ScheduleSeedTests.swift in Sources */,
 				D7454F6A195563E1DF6DCBDC /* ScheduleServiceTests.swift in Sources */,
