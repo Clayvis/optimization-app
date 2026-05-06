@@ -88,7 +88,7 @@ struct BasketballSessionView: View {
     private func endWorkout(session: BasketballSession, service: BasketballService) async {
         let end = Date()
         do {
-            try await service.endSession(session,
+            try service.endSession(session,
                                           endTime: end,
                                           achillesPostScore: achillesScore,
                                           hydrationOz: hydrationOz)

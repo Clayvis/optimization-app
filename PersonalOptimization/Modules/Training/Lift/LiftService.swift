@@ -53,11 +53,12 @@ final class LiftService {
     }
 
     /// Closes the session, recomputing totalVolumeLbs and writing duration/avgHR.
-    /// Persists a corresponding HKWorkout to HealthKit when a service is wired.
+    /// HealthKit write is dispatched fire-and-forget via SessionLifecycleService;
+    /// HK failures never propagate here so the UI can update cleanly.
     func endSession(_ session: LiftSession,
                     durationMinutes: Int,
                     avgHR: Int? = nil,
-                    estimatedCalories: Double? = nil) async throws {
+                    estimatedCalories: Double? = nil) throws {
         session.totalVolumeLbs = LiftService.totalVolume(session: session)
         session.durationMinutes = durationMinutes
         session.avgHR = avgHR
@@ -70,16 +71,16 @@ final class LiftService {
         CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
         logger.info("Ended \(session.template, privacy: .public) volume=\(session.totalVolumeLbs, privacy: .public) lbs duration=\(durationMinutes, privacy: .public) min")
 
-        if let healthKit {
-            let end = session.date.addingTimeInterval(TimeInterval(durationMinutes * 60))
-            try await healthKit.saveWorkout(
-                activityType: .functionalStrengthTraining,
-                start: session.date,
-                end: end,
-                totalEnergyBurnedKcal: estimatedCalories,
-                totalDistanceMeters: nil
-            )
-        }
+        let end = session.date.addingTimeInterval(TimeInterval(durationMinutes * 60))
+        SessionLifecycleService.shared.dispatchHealthKitWorkout(
+            activityType: .functionalStrengthTraining,
+            start: session.date,
+            end: end,
+            totalEnergyKcal: estimatedCalories,
+            totalDistanceMeters: nil,
+            healthKit: healthKit,
+            modelContainer: modelContext.container
+        )
     }
 
     /// Pure volume aggregator: sum of (weightLbs * reps) across all sets in all exercises.

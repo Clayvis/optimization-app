@@ -86,7 +86,7 @@ struct LiftWatchView: View {
     private func end(service: LiftService, session: LiftSession) async {
         let mins = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
         do {
-            try await service.endSession(session, durationMinutes: mins)
+            try service.endSession(session, durationMinutes: mins)
             WKInterfaceDevice.current().play(.success)
             dismiss()
         } catch {

@@ -130,7 +130,7 @@ final class LiftServiceTests: XCTestCase {
     func test_endSession_recordsVolumeAndDuration() async throws {
         let session = try service.startSession(templateName: "Lift A")
         try service.logSet(in: session, exerciseName: "Back Squat", weightLbs: 225, reps: 5)
-        try await service.endSession(session, durationMinutes: 75, avgHR: 130)
+        try service.endSession(session, durationMinutes: 75, avgHR: 130)
 
         XCTAssertEqual(session.totalVolumeLbs, 1125)
         XCTAssertEqual(session.durationMinutes, 75)
@@ -142,7 +142,8 @@ final class LiftServiceTests: XCTestCase {
         let serviceWithHK = LiftService(modelContext: context, templatesFile: Self.fixtureTemplates, healthKit: fake)
         let session = try serviceWithHK.startSession(templateName: "Lift A")
         try serviceWithHK.logSet(in: session, exerciseName: "Back Squat", weightLbs: 225, reps: 5)
-        try await serviceWithHK.endSession(session, durationMinutes: 75, estimatedCalories: 350)
+        try serviceWithHK.endSession(session, durationMinutes: 75, estimatedCalories: 350)
+        await SessionLifecycleService.shared.lastDispatchedTask?.value
 
         XCTAssertEqual(fake.savedWorkouts.count, 1)
         XCTAssertEqual(fake.savedWorkouts[0].0, .functionalStrengthTraining)
@@ -159,7 +160,7 @@ final class LiftServiceTests: XCTestCase {
 
     func test_currentSession_returnsNilAfterEnd() async throws {
         let s = try service.startSession(templateName: "Lift A")
-        try await service.endSession(s, durationMinutes: 60)
+        try service.endSession(s, durationMinutes: 60)
         XCTAssertNil(service.currentSession(at: Date()))
     }
 

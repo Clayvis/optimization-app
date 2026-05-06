@@ -145,7 +145,7 @@ struct SettingsView: View {
 }
 
 #Preview("Settings") {
-    let schema = Schema(versionedSchema: SchemaV2.self)
+    let schema = Schema(versionedSchema: SchemaV3.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return SettingsView().modelContainer(container)

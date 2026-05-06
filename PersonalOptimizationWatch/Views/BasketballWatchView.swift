@@ -65,7 +65,7 @@ struct BasketballWatchView: View {
     private func end(service: BasketballService, session: BasketballSession) async {
         let end = Date()
         do {
-            try await service.endSession(session, endTime: end, achillesPostScore: achilles, hydrationOz: hydration)
+            try service.endSession(session, endTime: end, achillesPostScore: achilles, hydrationOz: hydration)
             WKInterfaceDevice.current().play(.success)
             dismiss()
         } catch {

@@ -119,7 +119,7 @@ struct LiftSessionView: View {
     private func endWorkout(service: LiftService, session: LiftSession) async {
         let durationMinutes = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
         do {
-            try await service.endSession(session, durationMinutes: durationMinutes)
+            try service.endSession(session, durationMinutes: durationMinutes)
             await WorkoutLiveActivityController.endAll()
             dismiss()
         } catch {

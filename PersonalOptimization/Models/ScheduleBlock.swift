@@ -15,6 +15,7 @@ final class ScheduleBlock {
     var module: String?
     var isOverride: Bool = false
     var overrideDate: Date?
+    var isCustom: Bool = false
 
     var type: BlockType { BlockType(rawValue: typeRaw) ?? .other }
 

@@ -32,12 +32,12 @@ final class BasketballService {
 
     /// Closes the session and writes check-in fields. Also stamps the DailyLog with
     /// today's Achilles score so the cross-pillar dashboard surfaces it.
-    /// Persists an HKWorkout when a HealthKit service is wired.
+    /// HealthKit write is dispatched fire-and-forget via SessionLifecycleService.
     func endSession(_ session: BasketballSession,
                     endTime: Date,
-                    achillesPostScore: Int,
+                    achillesPostScore: Int?,
                     hydrationOz: Double,
-                    estimatedCalories: Double? = nil) async throws {
+                    estimatedCalories: Double? = nil) throws {
         session.endTime = endTime
         session.achillesPostScore = achillesPostScore
         session.hydrationOz = hydrationOz
@@ -53,24 +53,24 @@ final class BasketballService {
             dailyLog = DailyLog(date: session.date)
             modelContext.insert(dailyLog)
         }
-        dailyLog.achillesPain = achillesPostScore
+        if let achillesPostScore { dailyLog.achillesPain = achillesPostScore }
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
         let day = cal.startOfDay(for: session.date)
         modelContext.insert(WorkoutEvent(date: day, completed: true, source: .basketball))
         try modelContext.save()
         CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
-        logger.info("Ended basketball session, achilles=\(achillesPostScore, privacy: .public)")
+        logger.info("Ended basketball session, achilles=\(achillesPostScore ?? -1, privacy: .public)")
 
-        if let healthKit {
-            try await healthKit.saveWorkout(
-                activityType: .basketball,
-                start: session.startTime,
-                end: endTime,
-                totalEnergyBurnedKcal: estimatedCalories,
-                totalDistanceMeters: nil
-            )
-        }
+        SessionLifecycleService.shared.dispatchHealthKitWorkout(
+            activityType: .basketball,
+            start: session.startTime,
+            end: endTime,
+            totalEnergyKcal: estimatedCalories,
+            totalDistanceMeters: nil,
+            healthKit: healthKit,
+            modelContainer: modelContext.container
+        )
     }
 
     /// Active session = endTime equals startTime (placeholder set by startSession).

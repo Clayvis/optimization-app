@@ -145,6 +145,8 @@ targets:
         name: SharedCharacter
       - path: PersonalOptimization/Modules/Engagement/AdaptiveNotificationTiming.swift
         name: SharedEngagement
+      - path: PersonalOptimization/Modules/Engagement/SessionLifecycleService.swift
+        name: SharedEngagement
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/HealthKitService.swift
       - path: PersonalOptimization/AppIntents

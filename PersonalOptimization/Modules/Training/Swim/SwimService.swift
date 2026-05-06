@@ -32,7 +32,7 @@ final class SwimService {
     func endSession(_ session: SwimSession,
                     durationMinutes: Int,
                     avgHR: Int? = nil,
-                    estimatedCalories: Double? = nil) async throws {
+                    estimatedCalories: Double? = nil) throws {
         session.durationMinutes = durationMinutes
         session.avgHR = avgHR
         session.totalMeters = Double(session.laps) * session.poolLengthMeters
@@ -45,16 +45,16 @@ final class SwimService {
         CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
         logger.info("Ended swim session laps=\(session.laps, privacy: .public) meters=\(session.totalMeters, privacy: .public)")
 
-        if let healthKit {
-            let end = session.date.addingTimeInterval(TimeInterval(durationMinutes * 60))
-            try await healthKit.saveWorkout(
-                activityType: .swimming,
-                start: session.date,
-                end: end,
-                totalEnergyBurnedKcal: estimatedCalories,
-                totalDistanceMeters: session.totalMeters
-            )
-        }
+        let end = session.date.addingTimeInterval(TimeInterval(durationMinutes * 60))
+        SessionLifecycleService.shared.dispatchHealthKitWorkout(
+            activityType: .swimming,
+            start: session.date,
+            end: end,
+            totalEnergyKcal: estimatedCalories,
+            totalDistanceMeters: session.totalMeters,
+            healthKit: healthKit,
+            modelContainer: modelContext.container
+        )
     }
 
     /// Active session = durationMinutes == 0 (placeholder until end).
