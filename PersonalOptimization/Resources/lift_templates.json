@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "name": "Lift A",
+      "focus": "legs, push, pull",
+      "exercises": [
+        { "name": "Back Squat", "orderIndex": 0, "targetSets": 4, "targetReps": 5 },
+        { "name": "Bench Press", "orderIndex": 1, "targetSets": 4, "targetReps": 5 },
+        { "name": "Bent-over Row", "orderIndex": 2, "targetSets": 3, "targetReps": 8 },
+        { "name": "Overhead Press", "orderIndex": 3, "targetSets": 3, "targetReps": 8 },
+        { "name": "Romanian Deadlift", "orderIndex": 4, "targetSets": 3, "targetReps": 8 }
+      ]
+    },
+    {
+      "name": "Lift B",
+      "focus": "legs, push, pull (variation)",
+      "exercises": [
+        { "name": "Front Squat", "orderIndex": 0, "targetSets": 4, "targetReps": 5 },
+        { "name": "Incline Bench Press", "orderIndex": 1, "targetSets": 4, "targetReps": 6 },
+        { "name": "Pull-up", "orderIndex": 2, "targetSets": 3, "targetReps": 8 },
+        { "name": "Push Press", "orderIndex": 3, "targetSets": 3, "targetReps": 5 },
+        { "name": "Hip Thrust", "orderIndex": 4, "targetSets": 3, "targetReps": 10 }
+      ]
+    }
+  ]
+}
