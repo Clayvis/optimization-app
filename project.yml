@@ -134,6 +134,8 @@ targets:
         excludes:
           - "Views/**"
           - "**/Views/**"
+          - "LiveActivity/**"
+          - "**/LiveActivity/**"
       - path: PersonalOptimization/Modules/Learning
         name: SharedLearning
         excludes:
@@ -192,6 +194,7 @@ targets:
         excludes:
           - "**/.DS_Store"
       - path: PersonalOptimization/Modules/Fasting/LiveActivity/FastingActivityAttributes.swift
+      - path: PersonalOptimization/Modules/Training/LiveActivity/WorkoutActivityAttributes.swift
     info:
       path: PersonalOptimizationLiveActivity/Info.plist
       properties:

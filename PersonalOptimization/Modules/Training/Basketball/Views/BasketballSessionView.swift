@@ -79,6 +79,7 @@ struct BasketballSessionView: View {
             startedAt = Date()
             session = s
             service = svc
+            _ = await WorkoutLiveActivityController.start(workoutType: "Basketball", startDate: startedAt)
         } catch {
             // Logged inside service.
         }
@@ -91,6 +92,7 @@ struct BasketballSessionView: View {
                                           endTime: end,
                                           achillesPostScore: achillesScore,
                                           hydrationOz: hydrationOz)
+            await WorkoutLiveActivityController.endAll()
             ended = true
             dismiss()
         } catch {

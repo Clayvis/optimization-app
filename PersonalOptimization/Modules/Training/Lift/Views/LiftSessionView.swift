@@ -110,6 +110,7 @@ struct LiftSessionView: View {
             startedAt = Date()
             session = s
             service = svc
+            _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)
         } catch {
             loadError = error.localizedDescription
         }
@@ -119,6 +120,7 @@ struct LiftSessionView: View {
         let durationMinutes = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
         do {
             try await service.endSession(session, durationMinutes: durationMinutes)
+            await WorkoutLiveActivityController.endAll()
             dismiss()
         } catch {
             loadError = error.localizedDescription

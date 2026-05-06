@@ -94,6 +94,7 @@ struct SwimSessionView: View {
             startedAt = Date()
             session = s
             service = svc
+            Task { _ = await WorkoutLiveActivityController.start(workoutType: "Swim", startDate: startedAt) }
         } catch {
             // logged inside service
         }
@@ -103,6 +104,7 @@ struct SwimSessionView: View {
         let mins = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
         do {
             try await service.endSession(session, durationMinutes: mins)
+            await WorkoutLiveActivityController.endAll()
             dismiss()
         } catch {
             // logged inside service
