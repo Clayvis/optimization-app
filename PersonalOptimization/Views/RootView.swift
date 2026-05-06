@@ -16,6 +16,14 @@ struct RootView: View {
                 .tabItem {
                     Label("Water", systemImage: "drop.fill")
                 }
+            TrainingHubView()
+                .tabItem {
+                    Label("Train", systemImage: "figure.run")
+                }
+            LearningHubView()
+                .tabItem {
+                    Label("Learn", systemImage: "book.fill")
+                }
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
