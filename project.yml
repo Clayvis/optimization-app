@@ -112,6 +112,9 @@ targets:
       - path: PersonalOptimizationWatch
         excludes:
           - "**/.DS_Store"
+      - path: PersonalOptimization/Models
+        name: SharedModels
+      - path: PersonalOptimization/Services/Logger+Categories.swift
     resources:
       - path: PersonalOptimizationWatch/Assets.xcassets
         optional: true
