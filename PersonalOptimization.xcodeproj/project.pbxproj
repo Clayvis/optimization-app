@@ -16,6 +16,7 @@
 		1010CD77E02850FD282ED7A5 /* LiftSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177EF30368767AF7EBD3F9D1 /* LiftSession.swift */; };
 		112CF695517D31A1E87892F7 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
 		13472C39166401253FC4630C /* ScheduleSeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D07E40975A5EFFC26755ECF /* ScheduleSeedTests.swift */; };
+		170E95E49F9B10235C37B18B /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC713F81155648C69F8395C /* ProfileService.swift */; };
 		1AE5576A4F2426A5015B7C36 /* PersonalOptimizationWatchComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E46D2FE0AD37E504371C8F05 /* PersonalOptimizationWatchComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */; };
 		2011D16E82C404E75BD21390 /* Logger+Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */; };
@@ -41,6 +42,7 @@
 		51DAFCAA807FAD8A286570E4 /* FastingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF0F1E795AB55462D194D73 /* FastingService.swift */; };
 		59D4EA48757862313BF7C60F /* FastingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF0F1E795AB55462D194D73 /* FastingService.swift */; };
 		5A8F53ECFBCDD210D40FB27C /* BasketballSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B79B0DE348C5B10A3C13DA /* BasketballSession.swift */; };
+		5BDBC7E58EE2BD6425C9B995 /* FastCountdownComplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 280C8DC3E36757B1E548A6F0 /* FastCountdownComplication.swift */; };
 		5BEB38BAD48C54A65840DD82 /* SchemaV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C21B1F183A1B8E72B77E9EE /* SchemaV1.swift */; };
 		5DEB691CFAFCEB6719E4B821 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC713F81155648C69F8395C /* ProfileService.swift */; };
 		61AFF636A369285390DE5688 /* AdminTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961232791C8824387CFFBCE /* AdminTask.swift */; };
@@ -64,6 +66,7 @@
 		95A58B0B7CDEF94B64FDF7B5 /* SwimSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CFF9D4CAF217C0577FCF84 /* SwimSession.swift */; };
 		9D3153BAAA1A6171A07BFCD2 /* PersonalOptimizationWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB3766332CCC85C5B7A7765 /* PersonalOptimizationWatchApp.swift */; };
 		9E3778818C6E6EB9782DBB0C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2890BCBC13A3A36541B1425 /* SettingsView.swift */; };
+		9F06EE5AE7131494B82A592D /* FastCountdownTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C608CA325D483F55214ED4BE /* FastCountdownTimelineProvider.swift */; };
 		A311E18C454729D3983D3EFA /* FastingServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026062AB166F1C6F733696D7 /* FastingServiceTests.swift */; };
 		A512C5031B5B03CBBFE4C1CC /* DailyLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92DC0582F729F67ECB583C5E /* DailyLog.swift */; };
 		A569E79C88ABCA43E83A42EE /* WearableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */; };
@@ -166,6 +169,7 @@
 		21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationServiceTests.swift; sourceTree = "<group>"; };
 		242FCE6D86BAB838E4FD1826 /* InMemoryContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryContainer.swift; sourceTree = "<group>"; };
 		2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderTests.swift; sourceTree = "<group>"; };
+		280C8DC3E36757B1E548A6F0 /* FastCountdownComplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastCountdownComplication.swift; sourceTree = "<group>"; };
 		2980B95DAC2C5D2BF8D46211 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		29B2ED03B44C2BC7563DECA8 /* JSONImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONImportService.swift; sourceTree = "<group>"; };
 		2F30C85E85590C6112D02188 /* ProtocolEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolEntry.swift; sourceTree = "<group>"; };
@@ -203,6 +207,7 @@
 		B51542D012807C71EE967904 /* HydrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationView.swift; sourceTree = "<group>"; };
 		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C3F31266DF504D0F540B369D /* ScheduleBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleBlock.swift; sourceTree = "<group>"; };
+		C608CA325D483F55214ED4BE /* FastCountdownTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastCountdownTimelineProvider.swift; sourceTree = "<group>"; };
 		D1B2C04F97651585073980FF /* PersonalOptimization.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimization.entitlements; sourceTree = "<group>"; };
 		D2890BCBC13A3A36541B1425 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		D336D7B9EFE5E76B62ADDB3F /* PersonalOptimizationWatchComplications.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimizationWatchComplications.entitlements; sourceTree = "<group>"; };
@@ -414,6 +419,8 @@
 				37D09A08E65B464C2974BD2F /* ComplicationBundle.swift */,
 				64C01CAA4C1C9882EA8BCA48 /* CurrentBlockComplication.swift */,
 				4A14D7CDDD90CC1F2E608509 /* CurrentBlockTimelineProvider.swift */,
+				280C8DC3E36757B1E548A6F0 /* FastCountdownComplication.swift */,
+				C608CA325D483F55214ED4BE /* FastCountdownTimelineProvider.swift */,
 				107F1D4D82B6EB9F1FC2EF78 /* Info.plist */,
 				D336D7B9EFE5E76B62ADDB3F /* PersonalOptimizationWatchComplications.entitlements */,
 			);
@@ -662,6 +669,8 @@
 				4AB094B82026550D98B3B435 /* CurrentBlockComplication.swift in Sources */,
 				68D05DA3A8F8FCD94B355F39 /* CurrentBlockTimelineProvider.swift in Sources */,
 				4A2600F097C24352AED6AF0E /* DailyLog.swift in Sources */,
+				5BDBC7E58EE2BD6425C9B995 /* FastCountdownComplication.swift in Sources */,
+				9F06EE5AE7131494B82A592D /* FastCountdownTimelineProvider.swift in Sources */,
 				59D4EA48757862313BF7C60F /* FastingService.swift in Sources */,
 				DEC8BF1621478B2E38ED591E /* HydrationService.swift in Sources */,
 				7EFA452F1BDAFA36EC715DFE /* LabDraw.swift in Sources */,
@@ -669,6 +678,7 @@
 				1010CD77E02850FD282ED7A5 /* LiftSession.swift in Sources */,
 				2011D16E82C404E75BD21390 /* Logger+Categories.swift in Sources */,
 				445E79CE78180CE5E6ABE007 /* PomodoroSession.swift in Sources */,
+				170E95E49F9B10235C37B18B /* ProfileService.swift in Sources */,
 				2732AB89C3CA4CA9A702EE98 /* ProtocolEntry.swift in Sources */,
 				DC3598DF9C384F7BBA1D00C9 /* ScheduleBlock.swift in Sources */,
 				FBE012E8CC00A4B68F92A687 /* ScheduleConfig.swift in Sources */,

@@ -185,6 +185,7 @@ targets:
         excludes:
           - "Views/**"
       - path: PersonalOptimization/Services/Logger+Categories.swift
+      - path: PersonalOptimization/Services/ProfileService.swift
     resources:
       - path: PersonalOptimization/Resources
         name: SharedResources
