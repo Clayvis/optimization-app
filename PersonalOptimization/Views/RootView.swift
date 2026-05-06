@@ -12,6 +12,10 @@ struct RootView: View {
                 .tabItem {
                     Label("Fast", systemImage: "timer")
                 }
+            HydrationView()
+                .tabItem {
+                    Label("Water", systemImage: "drop.fill")
+                }
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
