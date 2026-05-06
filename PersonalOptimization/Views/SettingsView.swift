@@ -6,6 +6,12 @@ struct SettingsView: View {
     @Query private var profiles: [UserProfile]
     @State private var travelDays: Int = 7
     @State private var graceFeedback: String?
+    @State private var showingKeyEntry = false
+    @State private var apiKeyStatus: APIKeyStatus = .unknown
+
+    enum APIKeyStatus {
+        case unknown, set, missing
+    }
 
     var body: some View {
         NavigationStack {
@@ -20,6 +26,29 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .onAppear { refreshAPIKeyStatus() }
+            .sheet(isPresented: $showingKeyEntry) {
+                APIKeyEntrySheet { _ in
+                    refreshAPIKeyStatus()
+                }
+            }
+        }
+    }
+
+    private var apiKeyStatusText: String {
+        switch apiKeyStatus {
+        case .unknown: return "Checking…"
+        case .set: return "Set"
+        case .missing: return "Not set"
+        }
+    }
+
+    private func refreshAPIKeyStatus() {
+        do {
+            let key = try KeychainService.shared.getApiKey()
+            apiKeyStatus = key.isEmpty ? .missing : .set
+        } catch {
+            apiKeyStatus = .missing
         }
     }
 
@@ -84,6 +113,31 @@ struct SettingsView: View {
                     Text("Sonnet 4.6").tag("claude-sonnet-4-6")
                     Text("Opus 4.7").tag("claude-opus-4-7")
                     Text("Haiku 4.5").tag("claude-haiku-4-5-20251001")
+                }
+                HStack {
+                    Text("API key")
+                    Spacer()
+                    Text(apiKeyStatusText)
+                        .font(.caption)
+                        .foregroundStyle(apiKeyStatus == .set ? .green : .secondary)
+                }
+                Button {
+                    showingKeyEntry = true
+                } label: {
+                    Label(apiKeyStatus == .set ? "Update API key" : "Set API key", systemImage: "key.fill")
+                }
+                if apiKeyStatus == .set {
+                    Button(role: .destructive) {
+                        try? KeychainService.shared.deleteApiKey()
+                        refreshAPIKeyStatus()
+                    } label: {
+                        Label("Remove API key", systemImage: "trash")
+                    }
+                }
+                NavigationLink {
+                    DiagnosticsView()
+                } label: {
+                    Label("Diagnostics", systemImage: "stethoscope")
                 }
             }
 

@@ -8,6 +8,8 @@ struct TodayView: View {
     @State private var tickTimer: Timer?
     @State private var characterService = CharacterStateService.shared
     @State private var showingProtocolDetail = false
+    @State private var quoteService = DailyQuoteService()
+    @State private var dailyQuote: DailyQuote?
 
     private var service: ScheduleService {
         ScheduleService(modelContext: modelContext)
@@ -35,6 +37,19 @@ struct TodayView: View {
 
                 graceBannerSection
 
+                if let quote = dailyQuote {
+                    Section {
+                        Text(quote.displayText)
+                            .font(.footnote.italic())
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+                            .accessibilityLabel(quote.displayText)
+                    }
+                }
+
                 Section {
                     masterMetricCard
                         .listRowSeparator(.hidden)
@@ -44,6 +59,13 @@ struct TodayView: View {
 
                 Section {
                     streakStrip
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
+                    CoachInsightCard()
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
@@ -84,6 +106,7 @@ struct TodayView: View {
                 now = Date()
                 startTicking()
                 characterService.start(modelContext: modelContext)
+                Task { await loadDailyQuote() }
             }
             .onDisappear {
                 stopTicking()
@@ -279,6 +302,18 @@ struct TodayView: View {
     private func stopTicking() {
         tickTimer?.invalidate()
         tickTimer = nil
+    }
+
+    private func loadDailyQuote() async {
+        guard let profile else {
+            dailyQuote = quoteService.curatedQuote(style: "balanced")
+            return
+        }
+        dailyQuote = await quoteService.dailyQuote(
+            style: profile.motivationStyle,
+            customStylePrompt: profile.customStylePrompt,
+            aiEnabled: profile.aiQuotesEnabled
+        )
     }
 }
 
