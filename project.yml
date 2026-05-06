@@ -78,6 +78,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         NSHealthShareUsageDescription: Tracks sleep, heart rate, and HRV to power character emotional state and weekly review insights.
         NSHealthUpdateUsageDescription: Logs workouts and water intake to Apple Health for cross-app integration.
+        NSUserNotificationUsageDescription: Sends reminders for hydration, fast transitions, and scheduled blocks.
     entitlements:
       path: PersonalOptimization/PersonalOptimization.entitlements
       properties:

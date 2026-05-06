@@ -11,6 +11,7 @@
 		674202788BF9960ADE278F7D /* PersonalOptimizationWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9D3153BAAA1A6171A07BFCD2 /* PersonalOptimizationWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB3766332CCC85C5B7A7765 /* PersonalOptimizationWatchApp.swift */; };
 		A87525E6F1E5646C4D35C3E2 /* PersonalOptimizationApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */; };
+		C992BFF071290C2800F971FD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +56,7 @@
 		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1B2C04F97651585073980FF /* PersonalOptimization.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimization.entitlements; sourceTree = "<group>"; };
 		EFE07D74DECEAE97388D869D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -84,6 +86,7 @@
 				45B10FAC14B0FE5A66B6567D /* Info.plist */,
 				D1B2C04F97651585073980FF /* PersonalOptimization.entitlements */,
 				0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */,
+				F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */,
 			);
 			path = PersonalOptimization;
 			sourceTree = "<group>";
@@ -132,6 +135,7 @@
 			buildConfigurationList = ABE87E7E2E3752C1B515918E /* Build configuration list for PBXNativeTarget "PersonalOptimization" */;
 			buildPhases = (
 				A86DBD89BDAC1C5FE5B4E848 /* Sources */,
+				2653562709E5D7B6445ACB45 /* Resources */,
 				A3E7027785F3BB11BD25EDAF /* Embed Watch Content */,
 			);
 			buildRules = (
@@ -206,6 +210,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2653562709E5D7B6445ACB45 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C992BFF071290C2800F971FD /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1A4580FB4D3CFEF58F93428A /* Sources */ = {
