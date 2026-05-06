@@ -140,6 +140,8 @@ targets:
           - "Views/**"
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/HealthKitService.swift
+      - path: PersonalOptimization/AppIntents
+        name: SharedAppIntents
     resources:
       - path: PersonalOptimizationWatch/Assets.xcassets
         optional: true
