@@ -116,6 +116,8 @@ targets:
         name: SharedModels
       - path: PersonalOptimization/Modules/Schedule
         name: SharedSchedule
+      - path: PersonalOptimization/Modules/Fasting
+        name: SharedFasting
       - path: PersonalOptimization/Services/Logger+Categories.swift
     resources:
       - path: PersonalOptimizationWatch/Assets.xcassets
@@ -168,6 +170,8 @@ targets:
         name: SharedModels
       - path: PersonalOptimization/Modules/Schedule
         name: SharedSchedule
+      - path: PersonalOptimization/Modules/Fasting
+        name: SharedFasting
       - path: PersonalOptimization/Services/Logger+Categories.swift
     resources:
       - path: PersonalOptimization/Resources
