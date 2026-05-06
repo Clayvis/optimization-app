@@ -71,6 +71,9 @@ final class BasketballService {
             healthKit: healthKit,
             modelContainer: modelContext.container
         )
+        #if os(iOS)
+        WorkoutLiveActivityController.dismissAllSync()
+        #endif
     }
 
     /// Active session = endTime equals startTime (placeholder set by startSession).

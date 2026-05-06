@@ -81,6 +81,9 @@ final class LiftService {
             healthKit: healthKit,
             modelContainer: modelContext.container
         )
+        #if os(iOS)
+        WorkoutLiveActivityController.dismissAllSync()
+        #endif
     }
 
     /// Pure volume aggregator: sum of (weightLbs * reps) across all sets in all exercises.

@@ -126,6 +126,9 @@ final class FastingService {
         try modelContext.save()
         CompletionHistoryWriter.record(domain: .fasting, at: date, modelContext: modelContext)
         logger.info("Logged early fast break at \(date, privacy: .public), reason length=\(reason.count, privacy: .public)")
+        #if os(iOS)
+        FastingLiveActivityController.dismissAllSync()
+        #endif
     }
 
     /// Records a successful fast end at the scheduled boundary.
@@ -139,6 +142,9 @@ final class FastingService {
         log.fastBrokeEarly = false
         try modelContext.save()
         CompletionHistoryWriter.record(domain: .fasting, at: date, modelContext: modelContext)
+        #if os(iOS)
+        FastingLiveActivityController.dismissAllSync()
+        #endif
     }
 
     // MARK: - Helpers

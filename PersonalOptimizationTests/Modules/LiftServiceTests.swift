@@ -9,7 +9,7 @@ final class LiftServiceTests: XCTestCase {
     private var context: ModelContext!
     private var service: LiftService!
 
-    private static let fixtureTemplates: LiftTemplatesFile = {
+    static let fixtureTemplates: LiftTemplatesFile = {
         let json = """
         {
           "version": 1,

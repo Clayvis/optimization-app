@@ -42,4 +42,10 @@ enum FastingLiveActivityController {
             await activity.end(content, dismissalPolicy: .immediate)
         }
     }
+
+    /// Synchronous dismissal helper for service callers. Schedules an end call on
+    /// the main actor and returns immediately so the caller's path is never blocked.
+    static func dismissAllSync() {
+        Task { @MainActor in await FastingLiveActivityController.endAll() }
+    }
 }

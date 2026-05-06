@@ -55,6 +55,9 @@ final class SwimService {
             healthKit: healthKit,
             modelContainer: modelContext.container
         )
+        #if os(iOS)
+        WorkoutLiveActivityController.dismissAllSync()
+        #endif
     }
 
     /// Active session = durationMinutes == 0 (placeholder until end).
