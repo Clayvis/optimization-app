@@ -20,6 +20,13 @@ struct ExportPayload: Codable {
     let adminTasks: [AdminTaskDTO]
     let learningStreaks: [LearningStreakDTO]
     let characterStateLogs: [CharacterStateLogDTO]
+
+    // M3.7 additions (version >= 2). Optional so version 1 payloads decode unchanged.
+    let activityArchives: [ActivityArchiveDTO]?
+    let detectedPatterns: [DetectedPatternDTO]?
+    let prescribedWorkouts: [PrescribedWorkoutDTO]?
+    let scheduleSuggestions: [ScheduleSuggestionDTO]?
+    let weeklyPrograms: [WeeklyProgramDTO]?
 }
 
 // MARK: - DTOs
@@ -39,6 +46,13 @@ struct UserProfileDTO: Codable {
     let notificationBundling: Bool
     let mascotEnabled: Bool
     let reducedMotion: Bool
+    // M3.7 fields. Optional for backward compatibility with version-1 payloads.
+    let mascotVariant: String?
+    let primaryGoal: String?
+    let secondaryGoalsCSV: String?
+    let equipmentAccess: String?
+    let weeklyTrainingTargetSessions: Int?
+    let restrictionsCSV: String?
 }
 
 struct ScheduleBlockDTO: Codable {
@@ -177,6 +191,69 @@ struct CharacterStateLogDTO: Codable {
     let durationSeconds: Int?
 }
 
+// MARK: - M3.7 DTOs (version >= 2)
+
+struct ActivityArchiveDTO: Codable {
+    let date: Date
+    let workoutVolumeTotal: Double
+    let workoutCount: Int
+    let fastingHours: Double
+    let hydrationOz: Double
+    let learningMinutes: Int
+    let dominantMascotState: String
+    let masterMetric: Double
+    let stepsHK: Int?
+    let activeCaloriesHK: Double?
+    let exerciseMinutesHK: Int?
+    let sleepMinutesHK: Int?
+    let hrvAvgHK: Double?
+    let restingHRHK: Int?
+}
+
+struct DetectedPatternDTO: Codable {
+    let detectedAt: Date
+    let patternTypeRaw: String
+    let confidence: Double
+    let summary: String
+    let detail: String
+    let actionableSuggestion: String?
+    let dismissed: Bool
+    let snoozedUntil: Date?
+}
+
+struct PrescribedWorkoutDTO: Codable {
+    let generatedAt: Date
+    let forDate: Date
+    let workoutTypeRaw: String
+    let template: String
+    let rationale: String
+    let statusRaw: String
+    let sessionUUIDString: String?
+    let tokenUsage: Int
+    let modelUsed: String
+}
+
+struct ScheduleSuggestionDTO: Codable {
+    let generatedAt: Date
+    let summary: String
+    let detail: String
+    let changeTypeRaw: String
+    let changePayload: String
+    let statusRaw: String
+    let rationaleData: String
+    let snoozedUntil: Date?
+}
+
+struct WeeklyProgramDTO: Codable {
+    let weekStartDate: Date
+    let generatedAt: Date
+    let programJSON: String
+    let coachNarrative: String
+    let statusRaw: String
+    let tokenUsage: Int
+    let modelUsed: String
+}
+
 // MARK: - Mappers (model -> DTO)
 
 extension UserProfileDTO {
@@ -188,7 +265,13 @@ extension UserProfileDTO {
             fastWindowStartHour: m.fastWindowStartHour, fastWindowEndHour: m.fastWindowEndHour,
             bottleSizeOz: m.bottleSizeOz, anthropicModel: m.anthropicModel,
             rolloutPhase: m.rolloutPhase, notificationBundling: m.notificationBundling,
-            mascotEnabled: m.mascotEnabled, reducedMotion: m.reducedMotion
+            mascotEnabled: m.mascotEnabled, reducedMotion: m.reducedMotion,
+            mascotVariant: m.mascotVariant,
+            primaryGoal: m.primaryGoal,
+            secondaryGoalsCSV: m.secondaryGoalsCSV,
+            equipmentAccess: m.equipmentAccess,
+            weeklyTrainingTargetSessions: m.weeklyTrainingTargetSessions,
+            restrictionsCSV: m.restrictionsCSV
         )
     }
 }
@@ -325,6 +408,87 @@ extension CharacterStateLogDTO {
     }
 }
 
+extension ActivityArchiveDTO {
+    init(_ m: ActivityArchive) {
+        self.init(
+            date: m.date,
+            workoutVolumeTotal: m.workoutVolumeTotal,
+            workoutCount: m.workoutCount,
+            fastingHours: m.fastingHours,
+            hydrationOz: m.hydrationOz,
+            learningMinutes: m.learningMinutes,
+            dominantMascotState: m.dominantMascotState,
+            masterMetric: m.masterMetric,
+            stepsHK: m.stepsHK,
+            activeCaloriesHK: m.activeCaloriesHK,
+            exerciseMinutesHK: m.exerciseMinutesHK,
+            sleepMinutesHK: m.sleepMinutesHK,
+            hrvAvgHK: m.hrvAvgHK,
+            restingHRHK: m.restingHRHK
+        )
+    }
+}
+
+extension DetectedPatternDTO {
+    init(_ m: DetectedPattern) {
+        self.init(
+            detectedAt: m.detectedAt,
+            patternTypeRaw: m.patternTypeRaw,
+            confidence: m.confidence,
+            summary: m.summary,
+            detail: m.detail,
+            actionableSuggestion: m.actionableSuggestion,
+            dismissed: m.dismissed,
+            snoozedUntil: m.snoozedUntil
+        )
+    }
+}
+
+extension PrescribedWorkoutDTO {
+    init(_ m: PrescribedWorkout) {
+        self.init(
+            generatedAt: m.generatedAt,
+            forDate: m.forDate,
+            workoutTypeRaw: m.workoutTypeRaw,
+            template: m.template,
+            rationale: m.rationale,
+            statusRaw: m.statusRaw,
+            sessionUUIDString: m.sessionUUIDString,
+            tokenUsage: m.tokenUsage,
+            modelUsed: m.modelUsed
+        )
+    }
+}
+
+extension ScheduleSuggestionDTO {
+    init(_ m: ScheduleSuggestion) {
+        self.init(
+            generatedAt: m.generatedAt,
+            summary: m.summary,
+            detail: m.detail,
+            changeTypeRaw: m.changeTypeRaw,
+            changePayload: m.changePayload,
+            statusRaw: m.statusRaw,
+            rationaleData: m.rationaleData,
+            snoozedUntil: m.snoozedUntil
+        )
+    }
+}
+
+extension WeeklyProgramDTO {
+    init(_ m: WeeklyProgram) {
+        self.init(
+            weekStartDate: m.weekStartDate,
+            generatedAt: m.generatedAt,
+            programJSON: m.programJSON,
+            coachNarrative: m.coachNarrative,
+            statusRaw: m.statusRaw,
+            tokenUsage: m.tokenUsage,
+            modelUsed: m.modelUsed
+        )
+    }
+}
+
 // MARK: - Service
 
 @MainActor
@@ -332,6 +496,8 @@ enum JSONExportService {
 
     /// Encodes the full SwiftData store (excluding Keychain items and external files)
     /// into a versioned JSON payload per SECURITY.md.
+    /// Version 2 (M3.7) adds ActivityArchive, DetectedPattern, PrescribedWorkout,
+    /// ScheduleSuggestion, WeeklyProgram, plus expanded UserProfile fields.
     static func export(modelContext: ModelContext, exportedAt: Date = Date()) throws -> Data {
         let profiles = try modelContext.fetch(FetchDescriptor<UserProfile>())
         let scheduleBlocks = try modelContext.fetch(FetchDescriptor<ScheduleBlock>())
@@ -346,9 +512,14 @@ enum JSONExportService {
         let admins = try modelContext.fetch(FetchDescriptor<AdminTask>())
         let streaks = try modelContext.fetch(FetchDescriptor<LearningStreak>())
         let characterLogs = try modelContext.fetch(FetchDescriptor<CharacterStateLog>())
+        let archives = try modelContext.fetch(FetchDescriptor<ActivityArchive>())
+        let patterns = try modelContext.fetch(FetchDescriptor<DetectedPattern>())
+        let prescribed = try modelContext.fetch(FetchDescriptor<PrescribedWorkout>())
+        let suggestions = try modelContext.fetch(FetchDescriptor<ScheduleSuggestion>())
+        let weeklyPrograms = try modelContext.fetch(FetchDescriptor<WeeklyProgram>())
 
         let payload = ExportPayload(
-            version: 1,
+            version: 2,
             exportedAt: exportedAt,
             userProfile: profiles.first.map(UserProfileDTO.init),
             scheduleBlocks: scheduleBlocks.map(ScheduleBlockDTO.init),
@@ -362,7 +533,12 @@ enum JSONExportService {
             pomodoroSessions: pomodoros.map(PomodoroSessionDTO.init),
             adminTasks: admins.map(AdminTaskDTO.init),
             learningStreaks: streaks.map(LearningStreakDTO.init),
-            characterStateLogs: characterLogs.map(CharacterStateLogDTO.init)
+            characterStateLogs: characterLogs.map(CharacterStateLogDTO.init),
+            activityArchives: archives.map(ActivityArchiveDTO.init),
+            detectedPatterns: patterns.map(DetectedPatternDTO.init),
+            prescribedWorkouts: prescribed.map(PrescribedWorkoutDTO.init),
+            scheduleSuggestions: suggestions.map(ScheduleSuggestionDTO.init),
+            weeklyPrograms: weeklyPrograms.map(WeeklyProgramDTO.init)
         )
 
         let encoder = JSONEncoder()

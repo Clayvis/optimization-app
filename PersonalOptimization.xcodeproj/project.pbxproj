@@ -133,6 +133,7 @@
 		8B347EA451C4CDD42BDCA11C /* DailySummaryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E3AA3F6AC15DBA732AE8CE4 /* DailySummaryServiceTests.swift */; };
 		8C95C0DE8B769619B77B0182 /* DetectedPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2C808CB363E93512F0DC87 /* DetectedPattern.swift */; };
 		90C918CC411E53F1864CC318 /* StreakCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF13531E1C84E1B6271EB29 /* StreakCounter.swift */; };
+		9201829C1BF1BBB46F4153AE /* TrendAnalyticsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91D74ACD3F49452CFB17C185 /* TrendAnalyticsServiceTests.swift */; };
 		9539BA572E007D3F4BDF9529 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E17A5E10EFA803A2312758C1 /* ErrorBanner.swift */; };
 		95682A6C8CB03F102809FB92 /* MascotComplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE3C14010480A8A180A4158 /* MascotComplication.swift */; };
 		956FDCF1B79C09CFF8407918 /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CE13FE68863483CD8470256 /* HealthKitService.swift */; };
@@ -156,6 +157,7 @@
 		A512C5031B5B03CBBFE4C1CC /* DailyLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92DC0582F729F67ECB583C5E /* DailyLog.swift */; };
 		A569E79C88ABCA43E83A42EE /* WearableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */; };
 		A783A187296DEA19FFF137B6 /* InMemoryContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 242FCE6D86BAB838E4FD1826 /* InMemoryContainer.swift */; };
+		A7D6425024275C662896EDCD /* TrendAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B2B0266D3524538E14A5EB6 /* TrendAnalyticsService.swift */; };
 		A87525E6F1E5646C4D35C3E2 /* PersonalOptimizationApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */; };
 		AA2D52253FFDB9914022232E /* ActivityArchiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1062CC2459C7A93D354C83F2 /* ActivityArchiveService.swift */; };
 		AA84CC8D1BDF4EB9E10BCE89 /* PimsleurDeepLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B6CBBB02D87C77CA3EF209 /* PimsleurDeepLinkTests.swift */; };
@@ -353,6 +355,7 @@
 		37D09A08E65B464C2974BD2F /* ComplicationBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplicationBundle.swift; sourceTree = "<group>"; };
 		38E2F176E45BD213279FBE22 /* HealthKitWriteFailure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitWriteFailure.swift; sourceTree = "<group>"; };
 		3A4985E865B7FE2268CC0631 /* LabDraw.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabDraw.swift; sourceTree = "<group>"; };
+		3B2B0266D3524538E14A5EB6 /* TrendAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendAnalyticsService.swift; sourceTree = "<group>"; };
 		3C1405D527E3E5318F280D4F /* TrainingWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingWatchView.swift; sourceTree = "<group>"; };
 		3C21B1F183A1B8E72B77E9EE /* SchemaV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV1.swift; sourceTree = "<group>"; };
 		3D1014D613B8D66F40EA5159 /* LearningStreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningStreakCalculator.swift; sourceTree = "<group>"; };
@@ -401,6 +404,7 @@
 		8AC713F81155648C69F8395C /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
 		8F1B2DD2C194F0D71DB98CF8 /* LiftTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftTemplates.swift; sourceTree = "<group>"; };
 		90525181D5415FCDC1A8AD83 /* JSONExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONExportService.swift; sourceTree = "<group>"; };
+		91D74ACD3F49452CFB17C185 /* TrendAnalyticsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendAnalyticsServiceTests.swift; sourceTree = "<group>"; };
 		92DC0582F729F67ECB583C5E /* DailyLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLog.swift; sourceTree = "<group>"; };
 		9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		97A4006DD6BF17DAE6915811 /* FastingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingView.swift; sourceTree = "<group>"; };
@@ -554,6 +558,7 @@
 				0A2A570EDF2D3F344E883CE3 /* SessionLifecycleRegressionTests.swift */,
 				9DD05D2192776CD17F346623 /* StreakServiceTests.swift */,
 				09C53223ECB35D3ECFA24D96 /* SwimServiceTests.swift */,
+				91D74ACD3F49452CFB17C185 /* TrendAnalyticsServiceTests.swift */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
@@ -722,6 +727,7 @@
 				2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */,
 				3F89650DCA4480B234FA0171 /* SessionLifecycleService.swift */,
 				FFE9E9465BD252E3D3BE2D98 /* StreakService.swift */,
+				3B2B0266D3524538E14A5EB6 /* TrendAnalyticsService.swift */,
 			);
 			path = Engagement;
 			sourceTree = "<group>";
@@ -1128,6 +1134,7 @@
 				B775143AD98F189F317F04F2 /* SessionLifecycleRegressionTests.swift in Sources */,
 				D4031E3167BF4F86ADF456A0 /* StreakServiceTests.swift in Sources */,
 				71C2B0A490D6661EAB3F2507 /* SwimServiceTests.swift in Sources */,
+				9201829C1BF1BBB46F4153AE /* TrendAnalyticsServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1216,6 +1223,7 @@
 				96F2846853996961F085C7F9 /* SwimSessionView.swift in Sources */,
 				36D95A9B354F48B865EFA9F0 /* TodayView.swift in Sources */,
 				B3787D2CAC6C2188A21117D8 /* TrainingHubView.swift in Sources */,
+				A7D6425024275C662896EDCD /* TrendAnalyticsService.swift in Sources */,
 				0C496AA97A7A343CB905C178 /* UserProfile.swift in Sources */,
 				E3671262DF547F8B71F77E6B /* WearableEntry.swift in Sources */,
 				B62AA205828CBF1A75EA4418 /* WeeklyProgram.swift in Sources */,
