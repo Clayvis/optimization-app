@@ -89,6 +89,8 @@ targets:
         com.apple.developer.icloud-services:
           - CloudKit
         com.apple.developer.ubiquity-container-identifiers: []
+        keychain-access-groups:
+          - com.rawlins.PersonalOptimization
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization
@@ -135,6 +137,8 @@ targets:
         com.apple.developer.icloud-services:
           - CloudKit
         com.apple.developer.ubiquity-container-identifiers: []
+        keychain-access-groups:
+          - com.rawlins.PersonalOptimization
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.watchkitapp

@@ -9,9 +9,13 @@
 /* Begin PBXBuildFile section */
 		1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */; };
 		674202788BF9960ADE278F7D /* PersonalOptimizationWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7147113C2529BB7745FF6914 /* KeychainServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7838EE32258FECAA2335A612 /* KeychainServiceTests.swift */; };
+		9539BA572E007D3F4BDF9529 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E17A5E10EFA803A2312758C1 /* ErrorBanner.swift */; };
 		9D3153BAAA1A6171A07BFCD2 /* PersonalOptimizationWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB3766332CCC85C5B7A7765 /* PersonalOptimizationWatchApp.swift */; };
 		A87525E6F1E5646C4D35C3E2 /* PersonalOptimizationApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */; };
 		C992BFF071290C2800F971FD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */; };
+		E292538C81AAC70701EE44CC /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */; };
+		F41B28335A6D3E7106DE4A31 /* Logger+Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,10 +55,14 @@
 		2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderTests.swift; sourceTree = "<group>"; };
 		40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalOptimizationWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		45B10FAC14B0FE5A66B6567D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Categories.swift"; sourceTree = "<group>"; };
 		6BB3766332CCC85C5B7A7765 /* PersonalOptimizationWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalOptimizationWatchApp.swift; sourceTree = "<group>"; };
 		6CF9747FFFE5089E9B33D74F /* PersonalOptimizationWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimizationWatch.entitlements; sourceTree = "<group>"; };
+		7838EE32258FECAA2335A612 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainServiceTests.swift; sourceTree = "<group>"; };
+		9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1B2C04F97651585073980FF /* PersonalOptimization.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimization.entitlements; sourceTree = "<group>"; };
+		E17A5E10EFA803A2312758C1 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
 		EFE07D74DECEAE97388D869D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -80,15 +88,42 @@
 			path = PersonalOptimizationWatch;
 			sourceTree = "<group>";
 		};
+		3B387C0A749A64273FAACABC /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				E17A5E10EFA803A2312758C1 /* ErrorBanner.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
 		5E8DF68DB309BD5D61DC4539 /* PersonalOptimization */ = {
 			isa = PBXGroup;
 			children = (
+				3B387C0A749A64273FAACABC /* Components */,
+				AC02FBE062E9CAD640CD2583 /* Services */,
 				45B10FAC14B0FE5A66B6567D /* Info.plist */,
 				D1B2C04F97651585073980FF /* PersonalOptimization.entitlements */,
 				0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */,
 				F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */,
 			);
 			path = PersonalOptimization;
+			sourceTree = "<group>";
+		};
+		A9D5B3F6F4641C800970D7BC /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				7838EE32258FECAA2335A612 /* KeychainServiceTests.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		AC02FBE062E9CAD640CD2583 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */,
+				590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		E0A6BB99B8ACB10746F14909 = {
@@ -104,6 +139,7 @@
 		E7EB987FEDBF768594B0919B /* PersonalOptimizationTests */ = {
 			isa = PBXGroup;
 			children = (
+				A9D5B3F6F4641C800970D7BC /* Services */,
 				2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */,
 			);
 			path = PersonalOptimizationTests;
@@ -227,6 +263,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7147113C2529BB7745FF6914 /* KeychainServiceTests.swift in Sources */,
 				1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -235,6 +272,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9539BA572E007D3F4BDF9529 /* ErrorBanner.swift in Sources */,
+				E292538C81AAC70701EE44CC /* KeychainService.swift in Sources */,
+				F41B28335A6D3E7106DE4A31 /* Logger+Categories.swift in Sources */,
 				A87525E6F1E5646C4D35C3E2 /* PersonalOptimizationApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
