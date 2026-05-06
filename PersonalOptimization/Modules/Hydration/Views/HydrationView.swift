@@ -226,7 +226,7 @@ struct HydrationView: View {
 }
 
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV1.self)
+    let schema = Schema(versionedSchema: SchemaV2.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return HydrationView().modelContainer(container)

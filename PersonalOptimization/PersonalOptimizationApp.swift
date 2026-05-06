@@ -5,14 +5,18 @@ import os
 @main
 struct PersonalOptimizationApp: App {
     let container: ModelContainer = {
-        let schema = Schema(versionedSchema: SchemaV1.self)
+        let schema = Schema(versionedSchema: SchemaV2.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
             cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
         )
         do {
-            let container = try ModelContainer(for: schema, configurations: [config])
+            let container = try ModelContainer(
+                for: schema,
+                migrationPlan: AppMigrationPlan.self,
+                configurations: [config]
+            )
             Task { @MainActor in
                 do {
                     try ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)

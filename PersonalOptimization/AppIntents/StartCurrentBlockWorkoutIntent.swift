@@ -36,14 +36,18 @@ final class ModelContainerWrapper {
     let container: ModelContainer
 
     private init?() {
-        let schema = Schema(versionedSchema: SchemaV1.self)
+        let schema = Schema(versionedSchema: SchemaV2.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
             cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
         )
         do {
-            self.container = try ModelContainer(for: schema, configurations: [config])
+            self.container = try ModelContainer(
+                for: schema,
+                migrationPlan: AppMigrationPlan.self,
+                configurations: [config]
+            )
         } catch {
             return nil
         }

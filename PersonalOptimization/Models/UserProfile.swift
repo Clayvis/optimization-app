@@ -17,6 +17,8 @@ final class UserProfile {
     var notificationBundling: Bool = false
     var mascotEnabled: Bool = true
     var reducedMotion: Bool = false
+    var sickDayActiveUntil: Date?
+    var travelModeActiveUntil: Date?
 
     init(name: String = "", dob: Date = .distantPast, sex: String = "male") {
         self.name = name
