@@ -7,9 +7,15 @@ struct TodayView: View {
     @State private var now: Date = Date()
     @State private var tickTimer: Timer?
     @State private var characterService = CharacterStateService.shared
+    @State private var showingProtocolDetail = false
 
     private var service: ScheduleService {
         ScheduleService(modelContext: modelContext)
+    }
+
+    private var summaryService: DailySummaryService {
+        let targets = try? ScheduleConfigLoader.load().hydrationTargetsOz
+        return DailySummaryService(modelContext: modelContext, hydrationTargets: targets)
     }
 
     private var profile: UserProfile? { profiles.first }
@@ -28,6 +34,13 @@ struct TodayView: View {
                 }
 
                 graceBannerSection
+
+                Section {
+                    masterMetricCard
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                }
 
                 Section {
                     headerCard
@@ -97,6 +110,35 @@ struct TodayView: View {
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
         .accessibilityLabel(text)
+    }
+
+    private var masterMetricCard: some View {
+        let tally = summaryService.todayProtocol(asOf: now)
+        return Button {
+            showingProtocolDetail = true
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("TODAY'S PROTOCOL")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                Text(tally.displayText)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.primary)
+                if tally.scheduledCount > 0 {
+                    ProgressView(value: Double(tally.completedCount), total: Double(tally.scheduledCount))
+                        .tint(.green)
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(tally.displayText)
+        .sheet(isPresented: $showingProtocolDetail) {
+            ProtocolDetailView(tally: tally)
+        }
     }
 
     @ViewBuilder
