@@ -80,6 +80,11 @@ targets:
         NSHealthUpdateUsageDescription: Logs workouts and water intake to Apple Health for cross-app integration.
         NSUserNotificationUsageDescription: Sends reminders for hydration, fast transitions, and scheduled blocks.
         NSSupportsLiveActivities: true
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.rawlins.PersonalOptimization.archiveRollup
+        UIBackgroundModes:
+          - processing
+          - fetch
     entitlements:
       path: PersonalOptimization/PersonalOptimization.entitlements
       properties:

@@ -318,7 +318,7 @@ struct TodayView: View {
 }
 
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV3.self)
+    let schema = Schema(versionedSchema: SchemaV4.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)

@@ -5,7 +5,7 @@ import os
 @main
 struct PersonalOptimizationApp: App {
     let container: ModelContainer = {
-        let schema = Schema(versionedSchema: SchemaV3.self)
+        let schema = Schema(versionedSchema: SchemaV4.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
@@ -24,6 +24,8 @@ struct PersonalOptimizationApp: App {
                     Logger.schedule.error("Seed failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
+            ArchiveBackgroundScheduler.registerHandler(modelContainer: container)
+            ArchiveBackgroundScheduler.runRollupNow(modelContainer: container)
             return container
         } catch {
             Logger.persistence.fault("ModelContainer init failed: \(error.localizedDescription, privacy: .public)")

@@ -26,6 +26,14 @@ final class UserProfile {
     var onboardingCompleted: Bool = false
     var hydrationQuickPicksOzCSV: String = "4,8,12,16,20,24,32"
 
+    // M3.7 additions (Block 3 + Block 4) — additive with defaults.
+    var mascotVariant: String = "ninja_male"          // "ninja_male" | "ninja_female" | "custom"
+    var primaryGoal: String?                          // free-text user-stated goal
+    var secondaryGoalsCSV: String = ""                // comma-separated secondary goals
+    var equipmentAccess: String = "gym"               // "gym" | "home_full" | "home_minimal" | "bodyweight" | "outdoor"
+    var weeklyTrainingTargetSessions: Int = 5
+    var restrictionsCSV: String = ""                  // injuries / dietary / time, comma-separated
+
     init(name: String = "", dob: Date = .distantPast, sex: String = "male") {
         self.name = name
         self.dob = dob
