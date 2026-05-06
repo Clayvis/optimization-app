@@ -272,6 +272,76 @@ Estimated effort: 22-28 hours of agent execution.
 
 ---
 
+## M3.6: Bug Fixes + Personalization Foundation + Coach Mode
+
+Goal: unblock daily usability and wife onboarding before M4. Fix end-session bugs, ship schedule editor, add hydration/swim/lift granularity, introduce Coach Mode (one Claude call/day) and a daily quote, plus diagnostics.
+
+### Block 1: Bug fixes
+
+1. **SessionLifecycleService refactor**: SwiftData authoritative; HealthKit best-effort with bounded retry (3 attempts, exponential backoff); HK failures persist a `HealthKitWriteFailure` row but never block UI. Migrate Fasting/Basketball/Lift/Swim end paths.
+2. **Live Activity SwiftData observers**: FastingLiveActivity + WorkoutLiveActivity dismiss when SwiftData session.endTime is set; SessionLifecycleService.end() calls `Activity.end(_:dismissalPolicy:.immediate)` synchronously.
+3. **HealthKit error handling**: wrap all `HKWorkoutBuilder` calls in do/catch; never throw from session-end; expose recent failures via Diagnostics.
+4. **Regression tests**: 8-12 tests covering end-session paths with HK unavailable / in error state.
+
+### Block 2: Personalization foundation
+
+5. **Schedule editor**: in-app CRUD on ScheduleBlock; Settings -> Schedule; add/edit/delete/reorder; `ScheduleBlock.isCustom` (default false; seeded blocks false, user-added true). Re-seed skips isCustom=true.
+6. **Schedule reset**: Settings -> Advanced -> Reset Schedule with "deletes your custom blocks" confirmation.
+7. **default_schedule_blank.json**: ship empty schedule alongside default for M4 onboarding choice.
+
+### Block 3: Granularity fixes
+
+8. **Swim location**: free text + Pool/Beach/Open Water/Other picker + recent locations.
+9. **Swim distance**: stepper + free input; lap-aware vs meters by location type.
+10. **Hydration granularity**: quick-pick presets (4/8/12/16/20/24/32oz), free oz/mL input, beverage type picker, hydration coefficient. New `HydrationEntry` @Model with `beverageType` and `amountOz`. SchemaV2.1 additive.
+11. **Hydration gamification**: streak counts on hitting hydration target; surface on TodayView; mascot reacts.
+12. **Lift add-custom-exercise**: inline free-text entry; persists with `LiftExercise.isCustom = true`.
+13. **Lift volume aggregator surface**: bottom of LiftView shows today's volume / sets / reps with concentric arcs vs 7-day rolling avg; identity copy on completion.
+14. **Achilles check-in optional**: `UserProfile.achillesCheckInEnabled` default ON; when OFF basketball flow skips the prompt.
+
+### Block 4: Coach Mode
+
+15. **CoachService**: one Claude API call per day per user, cached 24 hours, manual refresh. Style picker via UserProfile.motivationStyle. Sonnet 4.6 default. Token usage logged to OSLog.
+16. **CoachInsight @Model**: generatedAt, insightText, contextSummary, tokenUsage, refreshCount.
+17. **UserProfile.motivationStyle**: default "balanced"; allowed stoic|holistic|warrior|spiritual|scientific|balanced|custom; `customStylePrompt` for custom.
+18. **Today CoachInsightCard**: below master metric, mascot face avatar, insight, refresh, expand sheet, missing-key error state.
+19. **Daily quote**: curated DB by motivationStyle (~50 quotes/style), optional Haiku AI mode in Settings; small italic under date.
+20. **Coach tests**: context gather, cache hit, manual refresh, API failure fallback, style selection, token logging. 8-10 tests.
+
+### Block 5: Polish
+
+21. **Suppress simulator-only haptic noise**: wrap CHHapticPattern in `#if !targetEnvironment(simulator)` or fallback to UIImpactFeedbackGenerator.
+22. **Diagnostics view**: Settings > Diagnostics shows HK auth status, recent HK write failures, API key status, token usage today/this month, "Test API key" button.
+
+### Definition of Done
+
+- All 22 tasks complete, tests passing.
+- End-session bugs verified fixed via simulator manual test (fast / basketball / lift / swim end without HK auth).
+- Schedule editor functional; custom blocks survive a re-seed.
+- Swim location accepts free text + pool/beach toggle.
+- Hydration accepts free amounts + beverage types.
+- Lift volume aggregator surfaces visually.
+- Hydration streak appears on TodayView and triggers mascot.
+- Achilles check-in toggle works.
+- Coach Mode card appears on TodayView; daily quote shows in user's motivationStyle.
+- Diagnostics view shows accurate state.
+- All unit tests pass.
+- Build clean, zero warnings.
+- Performance: Today view cold start <2s with Coach card + hydration streak + master metric.
+- PR merged to main, tag `m3.6-complete` pushed.
+
+### Performance Benchmarks
+
+- SessionLifecycleService.end() returns synchronously in <50ms (HK write happens async).
+- Schedule editor list with 50 blocks renders in <100ms.
+- Coach insight cache lookup <10ms.
+- Coach insight generation (cold, with API call) <5s.
+- Daily quote rendering <50ms.
+
+Estimated effort: 20-26 hours of agent execution.
+
+---
+
 ## M4: Notifications, Onboarding, Implementation Intentions, Weekly Reflection, Ship
 
 Goal: Wrap v1 with high-quality first-run experience, the implementation intentions habit-stack builder, weekly reflection, and App Store submission readiness.
