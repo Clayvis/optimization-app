@@ -307,3 +307,17 @@ v1.0 ships when:
 7. Either: TestFlight build deployed (paid Apple Developer) OR sideloaded to user's hardware via free dev cert.
 8. README updated with screenshots and final feature list.
 9. Git tag `v1.0` pushed.
+
+## Design Principles for Engagement Decisions (load-bearing from M3.5 onward)
+
+These principles override any prior copy-design or notification choice when in conflict. Source: 2024-2025 systematic reviews on habit formation app design (see PIVOT_SPEC.md for citations).
+
+1. Implementation intentions over reminders. Anchor every notification and prompt to a trigger event (after coffee, after dinner, on block start), not a clock time, when feasible.
+2. Streaks need mercy. Always honor freezes, sick day, and travel mode. Never fake completion to preserve a streak; preserve it via explicit pause.
+3. Notification minimum effective dose. One nudge per behavior per day max. Suppress if logged. Personalize timing from history after day 14.
+4. Identity framing over task framing. Confirmation copy reinforces who the user is, not what task is done.
+5. Friction reduction first. Tap-to-log beats motivational copy. Multi-step logging kills habits.
+6. One master metric. Foreground today's protocol adherence as a single number. Sub-metrics one tap away.
+7. Mascot reflects state, never theater. Sad mascot must mean a real miss. Achievement is rare and earned.
+
+Apply these principles to every UI/copy/notification decision from M3.5 forward. When in doubt, choose the option that respects the user's autonomy and reduces friction.

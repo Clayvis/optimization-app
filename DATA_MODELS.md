@@ -592,6 +592,27 @@ struct PersonalOptimizationApp: App {
 
 Replace `<YOUR-TEAM>` with Apple Developer reverse-domain identifier on first build.
 
+## SchemaV2 (M3.5)
+
+VersionedSchema migration. All changes are additive; no deletions, no field renames. Migration plan: lightweight, no custom migration logic required.
+
+New @Model entities:
+- StreakCounter
+- WorkoutEvent
+- CharacterStateLog (already spec'd; finally implemented at M3.5)
+- CompletionHistory
+
+New @Model entities (M4):
+- ImplementationIntention
+- WeeklyReflection
+
+New fields on existing models:
+- UserProfile: sickDayActiveUntil: Date?, travelModeActiveUntil: Date?, mascotEnabled: Bool, onboardingCompleted: Bool
+
+Migration test: load a SchemaV1 store, open with SchemaV2 model container, verify all M1-M3 data is intact, verify new fields default correctly.
+
+---
+
 ## Schema Versioning
 
 From M1, all schemas use `VersionedSchema`:

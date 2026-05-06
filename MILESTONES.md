@@ -160,268 +160,207 @@ Daily usable from M1 onward. No multi-milestone work in flight.
 
 ---
 
-## M4: Coursework (Pomodoro) + Admin
+## M3.5: Engagement Engine
 
-**Goal**: User runs Pomodoro sessions during study blocks. Admin module surfaces SSDI, VR&E, and micro-SaaS tasks during 1500-1600 Mon/Fri admin block.
+Goal: Layer Duolingo-style streak retention, mascot emotional signaling, identity copy, master metric, and adaptive notifications on top of M1-M3. This is the design-science core. Mascot integration moved here from former M6.5.
 
-**Tasks**:
+Pre-flight checklist (must complete before starting M3.5):
+1. M3 closed and tagged m3-complete.
+2. User has run gemini_workflow.md to generate 8 mascot PNG files.
+3. PNG files placed in PersonalOptimization/Assets.xcassets/Mascot/ as Image Sets:
+   MascotNeutral, MascotThirsty, MascotFasting, MascotUrgent, MascotProud,
+   MascotDisappointed, MascotTired, MascotAchievement.
+4. Each Image Set has 1x, 2x, 3x variants (1024x1024 base, scaled).
+5. Wife has approved the character look.
 
-1. Build `Modules/Coursework/PomodoroService.swift`:
-   - Configurable work/break (25/5 or 50/10).
-   - Course tag.
-   - Cycle counter.
-   - Session log to PomodoroSession entity.
-2. Build watch Pomodoro view: start/pause/skip with current cycle indicator and haptic transitions.
-3. Build phone Coursework view: daily and weekly minute totals, per-course breakdown via Swift Charts.
-4. Build `Modules/Admin/`:
-   - Task list (title, category, due date, completed).
-   - Pre-seed tasks: VA Form 20-10206 retrieval, VSO follow-up with Jeffery C. Hanscom, VR&E counselor follow-up, micro-SaaS launch checklist.
-5. Trigger admin module surface on watch during 1500-1600 Mon/Fri blocks (gentle haptic + glance presentation).
-6. Add App Intents for Pomodoro start/pause (Siri: "Hey Siri, start Pomodoro").
-7. Write tests: Pomodoro state machine, admin task filtering by category and completion, App Intent invocation.
+If pre-flight items not complete, agent stops and prompts user.
 
-**Performance benchmarks**:
-- App Intent invocation: <300ms cold start to action.
+Tasks:
 
-**Definition of Done**:
-- Pomodoro on watch runs through full cycles with haptic transitions.
-- Coursework minutes log to DailyLog, daily total visible on phone.
-- Admin tasks list editable from phone, glanceable from watch during admin blocks.
-- Siri Pomodoro start works.
-- All unit tests pass.
-- Performance benchmarks met.
-- PR merged to main, tag `m4-complete` pushed.
+1. SwiftData migrations (additive, non-destructive):
+   - Add StreakCounter @Model: domain (workout|fasting|hydration|learning|protocol),
+     currentStreak: Int, longestStreak: Int, lastCompletedDate: Date?,
+     freezesAvailable: Int (default 2), freezesUsedThisMonth: Int.
+   - Add WorkoutEvent @Model: date: Date, completed: Bool, source: String
+     ("lift"|"basketball"|"swim"|"manual_skip"|"sick_day"|"travel"|"freeze"),
+     sourceID: UUID? (FK to LiftSession/BasketballSession/SwimSession when applicable).
+   - Add fields to UserProfile: sickDayActiveUntil: Date?, travelModeActiveUntil: Date?,
+     mascotEnabled: Bool (default true).
+   - Bump SchemaV1 -> SchemaV2 with VersionedSchema migration plan.
+   - Implement CharacterStateLog per existing DATA_MODELS.md spec (it's already defined; just hadn't been built yet).
 
-**Estimated effort**: 8-10 hours.
+2. StreakService:
+   - recompute(domain:) -> StreakCounter for any domain.
+   - applyFreeze(domain:) -> uses one freeze, marks today as completed, decrements freezesAvailable.
+   - resetMonthlyFreezes() -> Timer at month rollover.
+   - Travel mode: when active, all domains record completed via "travel" source.
+   - Sick day: same, source "sick_day".
+   - Tests: 12 minimum, including freeze exhaustion, travel mode boundary, monthly reset.
 
----
+3. CharacterStateService (port from existing DATA_MODELS.md spec):
+   - @Observable singleton.
+   - recompute() runs every 30 seconds via Timer + on relevant SwiftData writes
+     (workout completion, hydration log, fast end, streak change).
+   - Queries data layer, produces (CharacterState, reason) candidates.
+   - Resolves precedence: urgent, achievement, proud, disappointed, tired, thirsty, fasting, neutral.
+   - Writes CharacterStateLog row on every transition.
+   - Exposes currentState and triggerReason properties.
+   - Tests: 8 scenarios, one per state, plus 3 precedence-conflict cases.
 
-## M5: Biomarkers + Lab PDF Parser
+4. CharacterView (M6.5 spec from MILESTONES.md, ported):
+   - SwiftUI view rendering current state.assetName as Image (200x200 on Today; face crop on watch complication).
+   - Cross-fade transition: .transition(.opacity).
+   - Breathing animation: .scaleEffect(breathing ? 1.02 : 1.0) with .easeInOut(duration: 3).repeatForever(autoreverses: true).
+   - Alert pulse on .urgent and .achievement entry: brief .scaleEffect(1.1).
+   - @Environment(\.accessibilityReduceMotion) disables breathing and pulse.
 
-**Goal**: User uploads lab PDF on phone, sees biomarkers extracted to structured form, saves draw, views dashboard with flagged markers, trend charts, PhenoAge.
+5. Wire mascot to TodayView header (200x200pt) and watch CircularComplication.
 
-**Tasks**:
+6. Master metric: Today's Protocol Adherence:
+   - Computed property on a new DailySummaryService.
+   - Numerator = count of completed protocol items today (workout if scheduled, fasting if active, hydration if target hit, learning streak if logged).
+   - Denominator = count of scheduled items today.
+   - Display: "{n}/{m} of today's protocol complete" prominent on TodayView.
+   - Sub-metrics (per-domain) accessible via tap.
 
-1. Port `BIOMARKERS` catalog from `References/biomarker-tracker.html` to `Resources/biomarker_catalog.json` and `Modules/Biomarkers/BiomarkerCatalog.swift`.
-2. Port `BIOMARKER_ALIASES` to `Resources/biomarker_aliases.json` and `BiomarkerAliases.swift`.
-3. Build `Modules/Biomarkers/PDFParser.swift`:
-   - PDFKit primary text extraction.
-   - Vision OCR fallback for scanned PDFs (when text yields <50 lines).
-   - DOD MTF detection via "Laboratory" sentinel count.
-   - Generic format fallback (Quest, LabCorp).
-   - Direct port of HTML `parseLines()` algorithm.
-4. Build `Modules/Biomarkers/PhenoAge.swift`: direct port of HTML `calculatePhenoAge()`.
-5. Build `Modules/Biomarkers/PatternDetection.swift`: direct port of HTML `detectPatterns()` with all 12 rules.
-6. Build `Modules/Biomarkers/AnalysisGenerator.swift` for local rule-based summary.
-7. Build `Services/ClaudeAPIClient.swift`:
-   - URLSession-based actor.
-   - System prompt for live analysis.
-   - System prompt for live PDF parsing (matches HTML version).
-   - Error handling with user-readable messages.
-8. Build phone biomarker views: Dashboard, Add Draw (with PDF upload), Trends (with wearable overlay), Analysis, Protocols.
-9. Hook HealthKit pull for wearable metrics (RHR, HRV, sleep) to power overlays.
-10. Build Settings section for Anthropic API key (Keychain) and model selection.
-11. **Regression test**: parse `References/sample_lab_dod.pdf` through code, assert 25 of 25 markers extracted matching `sample_lab_dod.json`.
-12. Update `PrivacyInfo.xcprivacy` for network usage (Anthropic API).
-13. Write tests: parser (DOD format, generic format, OCR path), PhenoAge formula (validated against known test vectors), all 12 pattern detection rules, alias resolver.
+7. Adaptive notification timing:
+   - Add CompletionHistory @Model: domain: String, timestamp: Date.
+   - On every behavior log, write a CompletionHistory row.
+   - After 14 days, NotificationService can call estimatePreferredTime(domain:)
+     -> returns median completion time (or fallback to schedule block time).
+   - Scheduled notifications fire at preferredTime - 30 minutes (configurable).
+   - Suppression rules already in NotificationService extend: do not notify if behavior already logged today.
 
-**Performance benchmarks**:
-- PDF parse end-to-end: <30s for 2-page DOD PDF.
-- PhenoAge calculation: <10ms.
-- Pattern detection: <50ms across 12 rules.
+8. Identity-framed copy refactor:
+   - Replace generic confirmation strings ("Logged", "Complete", "Saved") with identity-reinforcing variants ("You showed up.", "That's who you are now.", "Streak alive.").
+   - Centralize in IdentityCopy enum so future tone changes are one-edit wide.
 
-**Definition of Done**:
-- DOD lab PDF uploads, parses, populates form with 25/25 markers correctly.
-- Synthetic Quest-format fixture extracts ≥80% of common markers.
-- PhenoAge computes correctly when 9 required markers present.
-- All 12 pattern detection rules trigger appropriately.
-- Trend charts render with optimal/normal range overlays.
-- Wearable overlay on biomarker chart works.
-- Local analysis generator produces structured text summary.
-- Live Claude analysis works when API key in Keychain.
-- PrivacyInfo.xcprivacy updated.
-- All unit tests pass.
-- Performance benchmarks met.
-- PR merged to main, tag `m5-complete` pushed.
+9. Sick day and Travel mode UI:
+   - Settings has two toggles. Sick day = today only. Travel mode = 7 days, configurable.
+   - When active, prominent banner on TodayView confirms streak preserved.
+   - Mascot enters .neutral or .tired with reason "user marked travel/sick".
 
-**Estimated effort**: 20-28 hours. Largest milestone.
+10. Settings: Mascot enabled toggle (persists to UserProfile.mascotEnabled). When off, CharacterView hides cleanly.
 
----
+11. Tests:
+    - StreakService 12 tests minimum.
+    - CharacterStateService 11 tests (8 states + 3 precedence).
+    - DailySummaryService 6 tests (varying schedule + completion combinations).
+    - Adaptive timing 4 tests (cold start, day 14 transition, suppression, fallback).
+    - UI tests: sick day toggle, travel mode toggle, mascot disable.
 
-## M6: Analytics + Weekly Review + Widgets
-
-**Goal**: Sunday auto-generated weekly review. iOS home screen widgets for hydration, fast countdown, schedule.
-
-**Tasks**:
-
-1. Build `Modules/Analytics/WeeklyReviewService.swift`:
-   - Aggregates DailyLog, training sessions, learning streaks, biomarker draws, HealthKit metrics.
-   - Computes adherence percentages per pillar.
-   - Detects PRs and milestone hits.
-2. Build phone WeeklyReview view: pillar adherence, weight trend, sleep trend, training volume PRs, missed sessions table, week-ahead schedule.
-3. Schedule local notification every Sunday 1800 to surface review.
-4. Build PDF/markdown export for weekly review (sharable).
-5. Build `PersonalOptimizationWidgets` extension target:
-   - `HydrationWidget.swift`: progress vs daily target. Sizes: small, medium, lock screen rectangular.
-   - `FastingWidget.swift`: countdown. Sizes: small, lock screen circular and rectangular.
-   - `ScheduleWidget.swift`: today's blocks. Sizes: medium, large.
-   - `StreakWidget.swift`: current streaks. Sizes: small, lock screen circular.
-6. Implement TimelineProvider for each widget with relevance scoring for Smart Stack.
-7. Add Control Center widgets (iOS 18+) for quick actions: log water 16oz, end fast.
-8. Write tests: adherence calculator, missed-session detector, trend aggregator, widget timeline generation.
-
-**Performance benchmarks**:
-- Weekly review generation: <500ms for full week of data.
-- Widget timeline refresh: <200ms.
-
-**Definition of Done**:
-- Sunday 1800 notification fires with summary preview.
-- Weekly review view renders with all sections from real data.
-- PDF/markdown export works.
-- All 4 home screen widgets render correctly at all sizes.
-- Lock screen widgets render correctly.
-- Smart Stack ranking works (relevance scores update by time of day).
-- Control Center widgets work.
-- All unit tests pass.
-- Performance benchmarks met.
-- PR merged to main, tag `m6-complete` pushed.
-
-**Estimated effort**: 10-14 hours.
-
----
-
-## M6.5: Mascot System (PNG-based)
-
-**Goal**: A persistent character (cute Japanese ninja aesthetic) lives on the Today screen and watch. Character emotional state tied to user behavior. Static PNG assets generated via Gemini web. Subtle SwiftUI animations for breathing, transitions, alert pulse.
-
-**Pre-flight checklist (must complete before starting M6.5)**:
-
-1. User has used `References/gemini_workflow.md` to generate 8 character PNG files via Gemini web.
-2. PNG files placed in `PersonalOptimization/Assets.xcassets/Mascot/` as Image Sets:
-   - MascotNeutral.imageset
-   - MascotThirsty.imageset
-   - MascotFasting.imageset
-   - MascotUrgent.imageset
-   - MascotProud.imageset
-   - MascotDisappointed.imageset
-   - MascotTired.imageset
-   - MascotAchievement.imageset
-3. Each Image Set has 1x, 2x, 3x variants (1024x1024 base, scaled).
-4. Wife has approved the character look.
-
-If pre-flight items not complete, agent stops and prompts user to complete them.
-
-**Tasks**:
-
-1. Verify all 8 mascot PNG assets present in Asset Catalog with correct names. Fail fast if missing.
-2. Implement `CharacterStateLog` SwiftData model (already in DATA_MODELS.md).
-3. Implement `CharacterState` enum and `CharacterStateService` per DATA_MODELS.md.
-4. Wire state computation: re-evaluate every 30 seconds via Timer plus on relevant SwiftData writes (DailyLog updates, hydration log, streak change, schedule block transition).
-5. Implement state rules with proper precedence per DATA_MODELS.md.
-6. Build `Modules/Character/CharacterView.swift`:
-   - SwiftUI view rendering current `CharacterState.assetName` as `Image`.
-   - Cross-fade transition between states using `.transition(.opacity)`.
-   - Subtle breathing animation: `.scaleEffect(breathing ? 1.02 : 1.0)` with `.easeInOut(duration: 3).repeatForever(autoreverses: true)`.
-   - Alert pulse: when transitioning to .urgent or .achievement, brief `.scaleEffect(1.1)` then back to normal.
-   - Respect `@Environment(\.accessibilityReduceMotion)`: skip breathing and pulse when on.
-7. Place CharacterView at top of TodayView (200x200pt frame).
-8. Build watchOS `CharacterComplication.swift` for circular complication family (face only, no breathing).
-9. Build Settings toggle: "Show mascot" on/off (default on, persists to UserProfile.mascotEnabled).
-10. Add Settings section showing mascot acquisition date and version (for future Rive upgrade tracking).
-11. Write tests:
-    - State resolution scenarios (each of 8 states triggers correctly).
-    - Precedence resolution with overlapping conditions (urgent + tired + thirsty all true → urgent wins).
-    - State transition logging.
-    - mascotEnabled toggle hides/shows CharacterView cleanly.
-
-**Performance benchmarks**:
+Performance benchmarks:
 - CharacterStateService.recompute(): <30ms with full data.
-- CharacterView rendering: 60fps maintained with breathing animation active.
-- Memory footprint of 8 PNG assets: <8 MB total in app bundle.
-- Watch battery impact of complication: <1%/12hr.
+- CharacterView rendering: 60fps with breathing.
+- Mascot asset memory: <8MB total.
+- Watch complication battery delta: <1%/12hr.
 
-**Definition of Done**:
-- All 8 PNG assets present and load without error.
-- Today screen shows animated character at 200x200pt.
-- Watch complication shows character face on circular family.
-- Character changes state when triggering data changes (verified by 8 test scenarios, one per state).
-- State precedence rules verified by unit tests with overlapping conditions.
-- Settings toggle disables character cleanly.
-- Breathing animation runs at 60fps.
-- Reduced motion setting disables breathing and pulse.
-- Battery impact <2% additional drain over 24 hrs (measure with Energy Log on device).
+Definition of Done:
+- All 8 PNG assets present and load.
+- Today screen shows mascot at 200x200pt, master metric below name.
+- Watch circular complication shows mascot face.
+- Mascot transitions verified by 8 test scenarios.
+- Sick day and Travel mode preserve streak without faking workout completion.
+- Streak freeze exhaustion handled gracefully.
+- Adaptive timing engine activates at day 14.
+- All identity-framed copy in place.
 - All unit tests pass.
 - Performance benchmarks met.
-- PR merged to main, tag `m6.5-complete` pushed.
+- PR merged to main, tag m3.5-complete pushed.
 
-**Estimated effort**: 8-12 hours of agent execution. Plus 1-2 hours user time for Gemini PNG generation.
-
-**Future v1.5+ option**: Replace static PNGs with Rive `.riv` file containing state machine. The `CharacterState` enum and `CharacterStateService` stay identical; only `CharacterView` swaps from `Image(state.assetName)` to a Rive renderer. This keeps M6.5 cheap and fast while leaving a clean upgrade path.
+Estimated effort: 22-28 hours of agent execution.
 
 ---
 
-## M7: Notifications Hardening + Edge Cases + Onboarding
+## M4: Notifications, Onboarding, Implementation Intentions, Weekly Reflection, Ship
 
-**Goal**: All notification triggers from spec wired with smart suppression. All edge cases handled. First-launch onboarding. App is production-ready for daily use.
+Goal: Wrap v1 with high-quality first-run experience, the implementation intentions habit-stack builder, weekly reflection, and App Store submission readiness.
 
-**Tasks**:
+Tasks:
 
-1. Audit and complete every notification trigger:
-   - Block start (-5 min)
-   - Fast transitions (start, end)
-   - Hydration cadence (default 90 min, suppression rules)
-   - Pickup prep (16:30 daily)
-   - Guitar reminder (1600 weekday, 1900 weekend)
-   - Japanese reminder (per-day-specific times)
-   - Energy check-in (15:00 daily, banner with 1-10 picker)
-   - Achilles check-in (post-basketball, post-lift)
-   - Sunday weekly review (1800)
-2. Implement notification bundling preference: morning summary at 0900 vs individual alerts.
-3. Implement Sick Day Mode: pause reminders, do not break streaks.
-4. Implement Travel Mode: collapse to fast + water + 1 learning session, suppress training reminders.
-5. Implement Family Event Override: shift blocks for one day without breaking streak.
-6. Implement Achilles Flare Protection: if score >=6 logged, suggest rest day insertion next basketball day.
-7. Implement Seasonal Pool Change prompt: October 1 trigger to switch Wed swim to Hansen 0500-0700 OR replace with third lift.
-8. Implement Watch Off-Wrist graceful degradation for basketball/swim.
-9. Build first-launch onboarding flow:
-   - Welcome screen.
-   - Profile setup (name, DOB, sex, height, weight).
-   - HealthKit permission request with rationale.
-   - Notification permission request with rationale.
-   - Schedule preview (today's blocks).
-   - Optional: paste Anthropic API key.
-10. Build "What's New" sheet for major updates.
-11. Verify JSON export/import round-trips all data without loss after every prior milestone added new entities.
-12. Add MetricKit subscription for crash data (`MXMetricManager.shared.add(self)`).
-13. Implement App Intents for all major actions: log water, end fast, start lift, log Japanese minutes.
-14. **End-to-end test**: 7-day adherence run on simulator with manual time advancement. No crashes, no data loss, no missed schedule blocks.
-15. Update PrivacyInfo.xcprivacy with all final entries.
-16. Generate and add app icon (1024x1024 base, all required sizes).
-17. Write App Store Connect metadata (description, keywords, screenshots) even if not shipping publicly.
+1. SwiftData additions:
+   - ImplementationIntention @Model: id: UUID, scheduleBlockID: UUID? (optional FK),
+     trigger: String (description, e.g., "After morning coffee"),
+     triggerType: String (time|after_event|location|after_block),
+     action: String, createdAt: Date, lastCompletedAt: Date?, active: Bool.
+   - WeeklyReflection @Model: weekStartDate: Date, adherencePercent: Double,
+     bestDomain: String, weakestDomain: String, userNote: String?.
 
-**Performance benchmarks**:
-- Onboarding cold-flow completion: <60s for typical user.
-- 7-day simulator run: zero crashes, zero missed scheduled notifications.
-- Memory growth across 7-day run: <10 MB above baseline.
+2. Implementation Intentions Builder:
+   - In-app screen accessible from Settings and Schedule.
+   - User can add an if-then plan, link to existing schedule block or freestanding.
+   - Active plans reveal in TodayView under "When you... I will remind you to..." section.
 
-**Definition of Done**:
-- All notification triggers verified firing on schedule.
-- Suppression rules verified.
-- All four mode toggles work (normal, sick, travel, family event).
-- Achilles flare suggestion fires on next basketball day after flare logged.
-- October pool prompt surfaces on October 1.
-- Watch off-wrist scenario does not crash; manual log fallback works.
-- JSON export and re-import round-trips all data.
-- Onboarding flow runs cleanly on first launch.
-- App Intents work via Siri and Spotlight.
-- MetricKit reports collected.
-- 7-day simulator run completes successfully.
-- App icon present at all required sizes.
+3. Onboarding wizard (first-launch only):
+   - Screen 1: Welcome + privacy statement (no servers, no accounts).
+   - Screen 2: Notification permission ask + HealthKit permission ask.
+   - Screen 3: Capture 5-7 implementation intentions for user's domains
+     (training, fasting, hydration, language, optional). Pre-fill with smart defaults from default_schedule.json.
+   - Screen 4: Mascot reveal (assumes M3.5 done). User sees their mascot for the first time.
+   - Screen 5: Apple Watch pairing reminder + complication setup tip.
+   - State stored in UserProfile.onboardingCompleted: Bool.
+
+4. Weekly Reflection (Sunday view):
+   - On Sundays, TodayView surfaces a "Weekly Reflection" card.
+   - Card shows: this week's adherence %, best day, weakest domain.
+   - Tap opens full reflection screen: graph of 7-day adherence, mascot delivers identity-framed message ("You showed up 6 of 7 days. That's the standard."), free-text note input.
+   - Notes persist as WeeklyReflection rows for trend.
+
+5. Notification Hardening:
+   - Audit all NotificationService schedules: ensure suppression-if-logged-today is universal.
+   - Adaptive timing (from M3.5) wired into all notifications.
+   - Quiet hours: configurable (default 22:00-07:00 JST).
+   - Notification copy revised per identity framing (M3.5).
+
+6. Edge cases:
+   - Time zone change handling (Clay travels US <-> Okinawa).
+   - DST transitions.
+   - First-of-month freeze reset.
+   - Schedule block edits: existing intentions and historical data unaffected.
+
+7. App Store prep:
+   - Privacy manifest review (PrivacyInfo.xcprivacy already shipped at M1).
+   - App Store screenshots (six required: TodayView with mascot, FastingView, HydrationView, Workout streak with mascot proud, Implementation Intentions builder, Weekly Reflection).
+   - App description copy.
+   - Keywords for ASO (longevity, biomarker tracker stays out for v1).
+   - TestFlight build (requires paid Apple Developer; user upgrades here).
+
+8. Tests:
+   - Implementation intention CRUD 6 tests.
+   - Weekly Reflection generation 4 tests.
+   - Onboarding state machine 5 tests.
+   - Edge case tests for time zone change, DST, monthly reset.
+
+Performance benchmarks:
+- Onboarding cold start to first interactive: <2s.
+- Weekly Reflection generation: <100ms with 90 days of data.
+
+Definition of Done:
+- Onboarding flows top to bottom on fresh install simulator.
+- 5-7 implementation intentions captured and surface in TodayView.
+- Sunday Weekly Reflection card appears and opens correctly.
+- Time zone and DST tests pass.
+- App Store screenshots generated.
+- TestFlight build uploaded (assuming paid Apple Dev membership active).
 - All unit tests pass.
 - Performance benchmarks met.
-- PR merged to main, tag `v1.0` pushed.
+- PR merged to main, tag m4-complete pushed.
+- Tag v1.0.0-rc1 pushed.
 
-**Estimated effort**: 14-18 hours.
+Estimated effort: 16-22 hours of agent execution.
+
+---
+
+## Deferred to v1.5+
+
+The following modules from the original v4 spec are deferred to post-launch versions. Not built in v1.0.
+
+- Biomarker module (was M5): lab PDF parsing, PhenoAge, AI interpretation. Reference logic preserved in References/biomarker-tracker.html. Reintroduce as v1.5 standalone module.
+- Widgets and Dashboard (was M6): home screen widgets, Smart Stack, Control Center, dashboard view. Reintroduce as v1.5.
+- Standalone Mascot milestone (was M6.5): folded into M3.5. Already shipped.
+- Notifications hardening (was M7): folded into M4.
+
+Decision criterion for v1.5: ship v1.0 to App Store, run for 60 days, measure user retention (Clay + wife daily-active rate, week-1 to week-8). If both >70% DAU at week 8, prioritize biomarker module. If <70%, prioritize whatever the friction-reduction wins are based on actual usage patterns.
 
 ---
 
@@ -432,12 +371,11 @@ If pre-flight items not complete, agent stops and prompts user to complete them.
 | M1 | Schedule + Complication | 8-12h | yes |
 | M2 | Fasting + Hydration + Live Activities | 12-16h | yes |
 | M3 | Training + Learning | 16-20h | yes |
-| M4 | Coursework + Admin | 8-10h | yes |
-| M5 | Biomarkers + Lab Parser | 20-28h | yes |
-| M6 | Analytics + Weekly Review + Widgets | 10-14h | yes |
-| M6.5 | Mascot (PNG-based) | 8-12h | yes |
-| M7 | Notifications + Onboarding + Edge Cases | 14-18h | yes (v1.0) |
+| M3.5 | Engagement Engine (streaks, mascot, master metric, adaptive notifications) | 22-28h | yes |
+| M4 | Notifications + Onboarding + Implementation Intentions + Weekly Reflection + Ship | 16-22h | yes (v1.0) |
 
-**Total: 96-130 hours of Claude Code execution.**
+Deferred to v1.5+: Biomarkers (was M5), Widgets/Dashboard (was M6), standalone Mascot (was M6.5; folded into M3.5), Notifications hardening (was M7; folded into M4).
 
-Calendar time depends on cadence. Typical pace: 1 milestone per 1-2 weeks for a part-time builder. Full v1.0 in ~10-16 weeks at that cadence.
+**Total v1.0: ~74-98 hours of Claude Code execution.**
+
+Calendar time depends on cadence. Typical pace: 1 milestone per 1-2 weeks for a part-time builder.
