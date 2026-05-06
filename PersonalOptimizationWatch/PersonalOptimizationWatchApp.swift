@@ -12,7 +12,15 @@ struct PersonalOptimizationWatchApp: App {
             cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
         )
         do {
-            return try ModelContainer(for: schema, configurations: [config])
+            let container = try ModelContainer(for: schema, configurations: [config])
+            Task { @MainActor in
+                do {
+                    try ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)
+                } catch {
+                    Logger.schedule.error("Watch seed failed: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+            return container
         } catch {
             Logger.persistence.fault("Watch ModelContainer init failed: \(error.localizedDescription, privacy: .public)")
             fatalError("Watch ModelContainer init failed: \(error)")
@@ -21,7 +29,7 @@ struct PersonalOptimizationWatchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Text("PersonalOptimization")
+            ContentView()
         }
         .modelContainer(container)
     }

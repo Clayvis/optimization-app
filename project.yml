@@ -153,6 +153,49 @@ targets:
         ENABLE_PREVIEWS: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - target: PersonalOptimizationWatchComplications
+
+  PersonalOptimizationWatchComplications:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - path: PersonalOptimizationWatchComplications
+        excludes:
+          - "**/.DS_Store"
+      - path: PersonalOptimization/Models
+        name: SharedModels
+      - path: PersonalOptimization/Modules/Schedule
+        name: SharedSchedule
+      - path: PersonalOptimization/Services/Logger+Categories.swift
+    resources:
+      - path: PersonalOptimization/Resources
+        name: SharedResources
+    info:
+      path: PersonalOptimizationWatchComplications/Info.plist
+      properties:
+        CFBundleDisplayName: Complications
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: PersonalOptimizationWatchComplications/PersonalOptimizationWatchComplications.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.rawlins.PersonalOptimization
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.rawlins.PersonalOptimization
+        com.apple.developer.icloud-services:
+          - CloudKit
+        com.apple.developer.ubiquity-container-identifiers: []
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.watchkitapp.complications
+        TARGETED_DEVICE_FAMILY: "4"
+        INFOPLIST_KEY_CFBundlePackageType: XPC!
+        ENABLE_PREVIEWS: YES
 
   PersonalOptimizationTests:
     type: bundle.unit-test
