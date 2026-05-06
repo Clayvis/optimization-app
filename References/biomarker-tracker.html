@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biomarker Tracker</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+  .flag-normal { background-color: #064e3b; color: #a7f3d0; }
+  .flag-warning { background-color: #713f12; color: #fde68a; }
+  .flag-high { background-color: #7f1d1d; color: #fecaca; }
+  .flag-low { background-color: #1e3a8a; color: #bfdbfe; }
+  .flag-none { background-color: #374151; color: #9ca3af; }
+  input[type=number], input[type=text], input[type=date], input[type=password], select, textarea {
+    background-color: #111827; border: 1px solid #374151; color: #f3f4f6;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid #6366f1; border-color: #6366f1; }
+  .tab-active { background-color: #4f46e5; color: white; }
+  .tab-inactive { background-color: #1f2937; color: #9ca3af; }
+  .tab-inactive:hover { background-color: #374151; color: #f3f4f6; }
+  .card { background-color: #1f2937; border: 1px solid #374151; }
+  .biomarker-row:hover { background-color: #111827; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #111827; }
+  ::-webkit-scrollbar-thumb { background: #374151; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+  pre { white-space: pre-wrap; word-wrap: break-word; }
+</style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+
+<div class="max-w-7xl mx-auto p-6">
+
+  <header class="flex items-center justify-between mb-6 flex-wrap gap-3">
+    <div>
+      <h1 class="text-3xl font-bold">Biomarker Tracker</h1>
+      <p class="text-gray-400 text-sm" id="profile-summary">Set your profile in Settings to enable bio age calculation.</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="exportData()" class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Export JSON</button>
+      <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+      <button onclick="document.getElementById('import-file').click()" class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Import JSON</button>
+    </div>
+  </header>
+
+  <nav class="flex gap-2 mb-6 border-b border-gray-800 pb-0 flex-wrap">
+    <button onclick="showTab('dashboard')" id="tab-dashboard" class="px-4 py-2 rounded-t tab-active">Dashboard</button>
+    <button onclick="showTab('add')" id="tab-add" class="px-4 py-2 rounded-t tab-inactive">Add Draw</button>
+    <button onclick="showTab('wearables')" id="tab-wearables" class="px-4 py-2 rounded-t tab-inactive">Wearables</button>
+    <button onclick="showTab('trends')" id="tab-trends" class="px-4 py-2 rounded-t tab-inactive">Trends</button>
+    <button onclick="showTab('analysis')" id="tab-analysis" class="px-4 py-2 rounded-t tab-inactive">Analysis</button>
+    <button onclick="showTab('protocols')" id="tab-protocols" class="px-4 py-2 rounded-t tab-inactive">Protocols</button>
+    <button onclick="showTab('settings')" id="tab-settings" class="px-4 py-2 rounded-t tab-inactive">Settings</button>
+  </nav>
+
+  <section id="view-dashboard" class="view"><div id="dashboard-content"></div></section>
+
+  <section id="view-add" class="view hidden">
+    <div class="card rounded-lg p-6 mb-4 border-indigo-900">
+      <h2 class="text-xl font-bold mb-2">Upload Lab PDF (optional)</h2>
+      <p class="text-sm text-gray-400 mb-4">Auto-extract values from a PDF lab report. Works with DOD MTF, Quest, and LabCorp formats. Review extracted values in the form below before saving.</p>
+      <div class="flex gap-3 flex-wrap items-center">
+        <input type="file" id="pdf-upload" accept="application/pdf" class="text-sm">
+        <button onclick="parsePdfLocal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm">Parse Locally</button>
+        <button onclick="parsePdfClaude()" id="parse-claude-btn" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded text-sm">Parse with Claude (API)</button>
+      </div>
+      <div id="pdf-parse-status" class="text-xs text-gray-400 mt-3"></div>
+    </div>
+
+    <div class="card rounded-lg p-6 mb-4">
+      <h2 class="text-xl font-bold mb-4">New Lab Draw</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Date</label>
+          <input type="date" id="draw-date" class="w-full px-3 py-2 rounded">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm text-gray-400 mb-1">Notes</label>
+          <input type="text" id="draw-notes" class="w-full px-3 py-2 rounded" placeholder="e.g. Fasted 12hr, AM draw">
+        </div>
+      </div>
+    </div>
+    <div id="add-biomarker-sections"></div>
+    <div class="card rounded-lg p-6 mt-6 flex gap-3 flex-wrap">
+      <button onclick="saveDraw()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded font-semibold">Save Draw</button>
+      <button onclick="clearDrawForm()" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded">Clear Form</button>
+      <button onclick="prefillFromLatest()" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded">Prefill from Latest</button>
+    </div>
+  </section>
+
+  <section id="view-wearables" class="view hidden">
+    <div class="card rounded-lg p-6 mb-4">
+      <h2 class="text-xl font-bold mb-2">Add Wearable Entry</h2>
+      <p class="text-sm text-gray-400 mb-4">Log daily or weekly metrics from Oura, Whoop, Apple Health, Garmin, or manual entry. Enter what you have, leave the rest blank.</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Date</label>
+          <input type="date" id="wearable-date" class="w-full px-3 py-2 rounded">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Source</label>
+          <select id="wearable-source" class="w-full px-3 py-2 rounded">
+            <option value="oura">Oura</option>
+            <option value="whoop">Whoop</option>
+            <option value="apple">Apple Health</option>
+            <option value="garmin">Garmin</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Notes</label>
+          <input type="text" id="wearable-notes" class="w-full px-3 py-2 rounded" placeholder="e.g. post-workout, bad sleep">
+        </div>
+      </div>
+      <div id="wearable-metrics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4"></div>
+      <div class="flex gap-3">
+        <button onclick="saveWearable()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded font-semibold">Save Entry</button>
+        <button onclick="clearWearableForm()" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded">Clear</button>
+      </div>
+    </div>
+
+    <div class="card rounded-lg p-6 mb-4">
+      <h2 class="text-xl font-bold mb-4">Recent Entries</h2>
+      <div id="wearable-list"></div>
+    </div>
+
+    <div class="card rounded-lg p-6">
+      <h2 class="text-xl font-bold mb-4">Wearable Trend</h2>
+      <select id="wearable-trend-metric" class="px-3 py-2 rounded mb-4" onchange="renderWearableTrend()"></select>
+      <div style="height: 350px;"><canvas id="wearable-trend-chart"></canvas></div>
+      <div id="wearable-trend-summary" class="mt-4 text-sm text-gray-400"></div>
+    </div>
+  </section>
+
+  <section id="view-trends" class="view hidden">
+    <div class="card rounded-lg p-6 mb-4">
+      <h2 class="text-xl font-bold mb-4">Biomarker Trend</h2>
+      <div class="flex gap-3 flex-wrap mb-4">
+        <select id="trend-category" class="px-3 py-2 rounded" onchange="populateTrendMarkers(); renderTrend()">
+          <option value="all">All categories</option>
+        </select>
+        <select id="trend-marker" class="px-3 py-2 rounded flex-grow" onchange="renderTrend()"></select>
+        <select id="trend-overlay" class="px-3 py-2 rounded" onchange="renderTrend()">
+          <option value="">No overlay</option>
+        </select>
+      </div>
+      <div style="height: 400px;"><canvas id="trend-chart"></canvas></div>
+      <div id="trend-summary" class="mt-4 text-sm text-gray-400"></div>
+    </div>
+
+    <div class="card rounded-lg p-6">
+      <h2 class="text-xl font-bold mb-4">Biological Age Over Time</h2>
+      <div style="height: 300px;"><canvas id="bioage-chart"></canvas></div>
+      <div id="bioage-summary" class="mt-4 text-sm text-gray-400"></div>
+    </div>
+  </section>
+
+  <section id="view-analysis" class="view hidden">
+    <div class="card rounded-lg p-6 mb-4">
+      <h2 class="text-xl font-bold mb-2">Analysis</h2>
+      <p class="text-sm text-gray-400 mb-4">Generate a structured summary of your latest data. Copy into Claude for deeper interpretation, or use the live Claude button if you have an API key configured in Settings.</p>
+      <div class="flex gap-3 flex-wrap mb-4">
+        <button onclick="generateAnalysis()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded">Generate Summary</button>
+        <button onclick="copyAnalysis()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">Copy to Clipboard</button>
+        <button onclick="sendToClaude()" id="send-claude-btn" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded">Ask Claude (live)</button>
+      </div>
+      <pre id="analysis-output" class="bg-gray-900 border border-gray-700 rounded p-4 text-sm text-gray-200 font-mono" style="min-height: 200px;">Click "Generate Summary" to produce analysis.</pre>
+    </div>
+
+    <div id="claude-response-card" class="card rounded-lg p-6 hidden">
+      <h2 class="text-xl font-bold mb-4">Claude's Interpretation</h2>
+      <div id="claude-response" class="text-sm text-gray-200 whitespace-pre-wrap"></div>
+    </div>
+  </section>
+
+  <section id="view-protocols" class="view hidden">
+    <div class="card rounded-lg p-6 mb-4">
+      <h2 class="text-xl font-bold mb-4">Protocol Notes</h2>
+      <p class="text-sm text-gray-400 mb-4">Track interventions, supplements, lifestyle changes, and retesting plans.</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <input type="date" id="protocol-date" class="px-3 py-2 rounded">
+        <select id="protocol-category" class="px-3 py-2 rounded">
+          <option value="cardiovascular">Cardiovascular</option>
+          <option value="metabolic">Metabolic</option>
+          <option value="hormones">Hormones</option>
+          <option value="thyroid">Thyroid</option>
+          <option value="inflammation">Inflammation</option>
+          <option value="nutrients">Nutrients</option>
+          <option value="lifestyle">Lifestyle</option>
+          <option value="supplements">Supplements</option>
+          <option value="other">Other</option>
+        </select>
+        <input type="text" id="protocol-title" class="px-3 py-2 rounded" placeholder="Title">
+      </div>
+      <textarea id="protocol-notes" class="w-full px-3 py-2 rounded mb-3" rows="3" placeholder="Details, dose, rationale, retest date..."></textarea>
+      <button onclick="addProtocol()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded">Add Entry</button>
+    </div>
+    <div id="protocol-list"></div>
+  </section>
+
+  <section id="view-settings" class="view hidden">
+    <div class="card rounded-lg p-6 mb-4">
+      <h2 class="text-xl font-bold mb-4">Profile</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Name</label>
+          <input type="text" id="profile-name" class="w-full px-3 py-2 rounded">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Date of Birth</label>
+          <input type="date" id="profile-dob" class="w-full px-3 py-2 rounded">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Biological Sex</label>
+          <select id="profile-sex" class="w-full px-3 py-2 rounded">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="saveProfile()" class="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded">Save Profile</button>
+    </div>
+
+    <div class="card rounded-lg p-6 mb-4">
+      <h2 class="text-xl font-bold mb-2">Claude API (optional)</h2>
+      <p class="text-sm text-gray-400 mb-3">Paste your Anthropic API key to enable live analysis in the Analysis tab. Key is stored only in your browser's localStorage. Never sent anywhere except to api.anthropic.com. Get a key at console.anthropic.com.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">API Key</label>
+          <input type="password" id="api-key" class="w-full px-3 py-2 rounded" placeholder="sk-ant-...">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Model</label>
+          <select id="api-model" class="w-full px-3 py-2 rounded">
+            <option value="claude-opus-4-7">Claude Opus 4.7 (best, most expensive)</option>
+            <option value="claude-sonnet-4-6" selected>Claude Sonnet 4.6 (balanced)</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fast, cheap)</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="saveApiConfig()" class="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded">Save API Config</button>
+    </div>
+
+    <div class="card rounded-lg p-6 mb-4">
+      <h2 class="text-xl font-bold mb-4">All Draws</h2>
+      <div id="draws-list"></div>
+    </div>
+
+    <div class="card rounded-lg p-6 border-red-900">
+      <h2 class="text-xl font-bold mb-4 text-red-400">Danger Zone</h2>
+      <button onclick="clearAllData()" class="px-4 py-2 bg-red-700 hover:bg-red-600 rounded">Clear All Data</button>
+      <p class="text-xs text-gray-500 mt-2">Export first. This cannot be undone.</p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ============================================================================
+// BIOMARKER DEFINITIONS
+// ============================================================================
+const BIOMARKERS = {
+  total_cholesterol: { name: "Total Cholesterol", category: "Cardiovascular", unit: "mg/dL", optimal: [150, 199], normal: [100, 240] },
+  ldl: { name: "LDL Cholesterol", category: "Cardiovascular", unit: "mg/dL", optimal: [0, 99], normal: [0, 129] },
+  hdl_m: { name: "HDL Cholesterol", category: "Cardiovascular", unit: "mg/dL", optimal: [50, 100], normal: [40, 100], sex: "male" },
+  hdl_f: { name: "HDL Cholesterol", category: "Cardiovascular", unit: "mg/dL", optimal: [60, 120], normal: [50, 120], sex: "female" },
+  triglycerides: { name: "Triglycerides", category: "Cardiovascular", unit: "mg/dL", optimal: [0, 99], normal: [0, 149] },
+  non_hdl: { name: "Non-HDL Cholesterol", category: "Cardiovascular", unit: "mg/dL", optimal: [0, 129], normal: [0, 159] },
+  apob: { name: "ApoB", category: "Cardiovascular", unit: "mg/dL", optimal: [0, 80], normal: [0, 100] },
+  lpa: { name: "Lipoprotein(a)", category: "Cardiovascular", unit: "nmol/L", optimal: [0, 75], normal: [0, 125] },
+  ldl_p: { name: "LDL-P (Particle Number)", category: "Cardiovascular", unit: "nmol/L", optimal: [0, 1000], normal: [0, 1300] },
+  glucose: { name: "Fasting Glucose", category: "Metabolic", unit: "mg/dL", optimal: [70, 89], normal: [70, 99] },
+  hba1c: { name: "HbA1c", category: "Metabolic", unit: "%", optimal: [4.8, 5.3], normal: [4.0, 5.6] },
+  insulin: { name: "Fasting Insulin", category: "Metabolic", unit: "uIU/mL", optimal: [2, 5], normal: [2, 9] },
+  homa_ir: { name: "HOMA-IR (calculated)", category: "Metabolic", unit: "index", optimal: [0, 1.0], normal: [0, 1.9], calculated: true },
+  uric_acid: { name: "Uric Acid", category: "Metabolic", unit: "mg/dL", optimal: [3.5, 5.5], normal: [3.0, 7.0] },
+  hs_crp: { name: "hs-CRP", category: "Inflammation", unit: "mg/L", optimal: [0, 0.8], normal: [0, 3.0] },
+  homocysteine: { name: "Homocysteine", category: "Inflammation", unit: "umol/L", optimal: [5, 8], normal: [4, 11] },
+  ferritin_m: { name: "Ferritin", category: "Inflammation", unit: "ng/mL", optimal: [50, 150], normal: [30, 300], sex: "male" },
+  ferritin_f: { name: "Ferritin", category: "Inflammation", unit: "ng/mL", optimal: [40, 120], normal: [15, 200], sex: "female" },
+  esr: { name: "ESR", category: "Inflammation", unit: "mm/hr", optimal: [0, 10], normal: [0, 20] },
+  fibrinogen: { name: "Fibrinogen", category: "Inflammation", unit: "mg/dL", optimal: [200, 350], normal: [200, 450] },
+  testosterone_total_m: { name: "Total Testosterone", category: "Hormones", unit: "ng/dL", optimal: [600, 900], normal: [300, 1000], sex: "male" },
+  testosterone_free_m: { name: "Free Testosterone", category: "Hormones", unit: "pg/mL", optimal: [15, 25], normal: [9, 30], sex: "male" },
+  shbg_m: { name: "SHBG", category: "Hormones", unit: "nmol/L", optimal: [20, 45], normal: [10, 57], sex: "male" },
+  estradiol_m: { name: "Estradiol", category: "Hormones", unit: "pg/mL", optimal: [20, 40], normal: [10, 50], sex: "male" },
+  dhea_s: { name: "DHEA-S", category: "Hormones", unit: "ug/dL", optimal: [250, 450], normal: [100, 600] },
+  cortisol_am: { name: "Cortisol (AM)", category: "Hormones", unit: "ug/dL", optimal: [10, 18], normal: [6, 22] },
+  psa: { name: "PSA (Total)", category: "Hormones", unit: "ng/mL", optimal: [0, 1.0], normal: [0, 4.0], sex: "male" },
+  lh: { name: "LH", category: "Hormones", unit: "mIU/mL", optimal: [2, 8], normal: [1, 12] },
+  fsh: { name: "FSH", category: "Hormones", unit: "mIU/mL", optimal: [2, 8], normal: [1, 12] },
+  estradiol_f: { name: "Estradiol", category: "Hormones", unit: "pg/mL", optimal: [30, 200], normal: [15, 350], sex: "female" },
+  progesterone_f: { name: "Progesterone", category: "Hormones", unit: "ng/mL", optimal: [1, 20], normal: [0.2, 25], sex: "female" },
+  testosterone_total_f: { name: "Total Testosterone", category: "Hormones", unit: "ng/dL", optimal: [30, 60], normal: [15, 70], sex: "female" },
+  tsh: { name: "TSH", category: "Thyroid", unit: "uIU/mL", optimal: [1.0, 2.0], normal: [0.4, 4.0] },
+  free_t3: { name: "Free T3", category: "Thyroid", unit: "pg/mL", optimal: [3.0, 4.0], normal: [2.3, 4.2] },
+  free_t4: { name: "Free T4", category: "Thyroid", unit: "ng/dL", optimal: [1.1, 1.5], normal: [0.8, 1.8] },
+  reverse_t3: { name: "Reverse T3", category: "Thyroid", unit: "ng/dL", optimal: [10, 18], normal: [8, 25] },
+  tpo_ab: { name: "TPO Antibodies", category: "Thyroid", unit: "IU/mL", optimal: [0, 9], normal: [0, 34] },
+  wbc: { name: "WBC", category: "CBC", unit: "K/uL", optimal: [4.0, 6.5], normal: [3.4, 10.8] },
+  rbc: { name: "RBC", category: "CBC", unit: "M/uL", optimal: [4.5, 5.5], normal: [4.0, 5.9] },
+  hemoglobin: { name: "Hemoglobin", category: "CBC", unit: "g/dL", optimal: [14.0, 16.0], normal: [12.5, 17.0] },
+  hematocrit: { name: "Hematocrit", category: "CBC", unit: "%", optimal: [42, 48], normal: [38, 50] },
+  mcv: { name: "MCV", category: "CBC", unit: "fL", optimal: [85, 95], normal: [80, 100] },
+  mch: { name: "MCH", category: "CBC", unit: "pg", optimal: [28, 32], normal: [27, 33] },
+  mchc: { name: "MCHC", category: "CBC", unit: "g/dL", optimal: [33, 35], normal: [32, 36] },
+  rdw: { name: "RDW", category: "CBC", unit: "%", optimal: [11.5, 13.0], normal: [11.0, 15.0] },
+  platelets: { name: "Platelets", category: "CBC", unit: "K/uL", optimal: [200, 350], normal: [150, 450] },
+  lymphocyte_pct: { name: "Lymphocyte %", category: "CBC", unit: "%", optimal: [30, 40], normal: [20, 45] },
+  neutrophil_pct: { name: "Neutrophil %", category: "CBC", unit: "%", optimal: [45, 60], normal: [40, 70] },
+  alt: { name: "ALT", category: "Liver", unit: "U/L", optimal: [10, 25], normal: [7, 40] },
+  ast: { name: "AST", category: "Liver", unit: "U/L", optimal: [10, 25], normal: [10, 40] },
+  ggt: { name: "GGT", category: "Liver", unit: "U/L", optimal: [5, 25], normal: [5, 45] },
+  alk_phos: { name: "Alkaline Phosphatase", category: "Liver", unit: "U/L", optimal: [40, 100], normal: [35, 130] },
+  bilirubin: { name: "Total Bilirubin", category: "Liver", unit: "mg/dL", optimal: [0.3, 1.0], normal: [0.2, 1.2] },
+  albumin: { name: "Albumin", category: "Liver", unit: "g/dL", optimal: [4.3, 5.0], normal: [3.5, 5.5] },
+  creatinine: { name: "Creatinine", category: "Kidney", unit: "mg/dL", optimal: [0.7, 1.1], normal: [0.6, 1.3] },
+  egfr: { name: "eGFR", category: "Kidney", unit: "mL/min/1.73m²", optimal: [90, 130], normal: [60, 130] },
+  bun: { name: "BUN", category: "Kidney", unit: "mg/dL", optimal: [10, 18], normal: [7, 25] },
+  cystatin_c: { name: "Cystatin C", category: "Kidney", unit: "mg/L", optimal: [0.5, 0.9], normal: [0.5, 1.0] },
+  sodium: { name: "Sodium", category: "Electrolytes", unit: "mmol/L", optimal: [138, 142], normal: [135, 145] },
+  potassium: { name: "Potassium", category: "Electrolytes", unit: "mmol/L", optimal: [4.0, 4.5], normal: [3.5, 5.0] },
+  calcium: { name: "Calcium", category: "Electrolytes", unit: "mg/dL", optimal: [9.2, 10.0], normal: [8.5, 10.5] },
+  magnesium: { name: "Magnesium", category: "Electrolytes", unit: "mg/dL", optimal: [2.0, 2.4], normal: [1.7, 2.5] },
+  vit_d: { name: "Vitamin D (25-OH)", category: "Nutrients", unit: "ng/mL", optimal: [40, 60], normal: [30, 80] },
+  vit_b12: { name: "Vitamin B12", category: "Nutrients", unit: "pg/mL", optimal: [500, 900], normal: [250, 1100] },
+  folate: { name: "Folate", category: "Nutrients", unit: "ng/mL", optimal: [10, 20], normal: [5, 25] },
+  iron: { name: "Iron", category: "Nutrients", unit: "ug/dL", optimal: [85, 150], normal: [60, 170] },
+  tibc: { name: "TIBC", category: "Nutrients", unit: "ug/dL", optimal: [250, 400], normal: [240, 450] },
+  iron_sat: { name: "Iron Saturation", category: "Nutrients", unit: "%", optimal: [25, 40], normal: [15, 50] },
+  zinc: { name: "Zinc", category: "Nutrients", unit: "ug/dL", optimal: [90, 130], normal: [70, 150] },
+  selenium: { name: "Selenium", category: "Nutrients", unit: "ug/L", optimal: [120, 180], normal: [70, 200] },
+  omega_3: { name: "Omega-3 Index", category: "Nutrients", unit: "%", optimal: [8, 12], normal: [4, 12] },
+};
+
+const WEARABLES = {
+  hrv_rmssd: { name: "HRV (RMSSD)", unit: "ms", direction: "higher", context: "individual baseline" },
+  resting_hr: { name: "Resting HR", unit: "bpm", direction: "lower" },
+  sleep_score: { name: "Sleep Score", unit: "/100", direction: "higher" },
+  sleep_hours: { name: "Sleep Duration", unit: "hrs", direction: "optimal", optimal: [7, 9] },
+  deep_sleep: { name: "Deep Sleep", unit: "hrs", direction: "higher" },
+  rem_sleep: { name: "REM Sleep", unit: "hrs", direction: "higher" },
+  readiness: { name: "Readiness (Oura)", unit: "/100", direction: "higher" },
+  recovery: { name: "Recovery % (Whoop)", unit: "%", direction: "higher" },
+  strain: { name: "Strain (Whoop)", unit: "/21", direction: "individual" },
+  vo2_max: { name: "VO2 Max", unit: "mL/kg/min", direction: "higher" },
+  spo2: { name: "SpO2", unit: "%", direction: "higher", optimal: [95, 100] },
+  body_temp_dev: { name: "Body Temp Deviation", unit: "°C", direction: "near zero" },
+  steps: { name: "Steps", unit: "count", direction: "higher" },
+  weight: { name: "Weight", unit: "lbs", direction: "individual" },
+  body_fat: { name: "Body Fat", unit: "%", direction: "individual" },
+};
+
+// Alias dictionary: common lab names → our biomarker keys
+const BIOMARKER_ALIASES = {
+  // Glucose / metabolic
+  'glucose lvl': 'glucose', 'glucose level': 'glucose', 'glucose, fasting': 'glucose',
+  'fasting glucose': 'glucose', 'glucose': 'glucose', 'glu': 'glucose',
+  'hba1c': 'hba1c', 'hemoglobin a1c': 'hba1c', 'a1c': 'hba1c', 'glycated hemoglobin': 'hba1c',
+  'insulin': 'insulin', 'fasting insulin': 'insulin', 'insulin, fasting': 'insulin',
+  'uric acid': 'uric_acid',
+  // Kidney
+  'egfr ckd epi': 'egfr', 'egfr': 'egfr', 'estimated gfr': 'egfr', 'gfr': 'egfr',
+  'creatinine level': 'creatinine', 'creatinine': 'creatinine', 'creat': 'creatinine',
+  'bun': 'bun', 'blood urea nitrogen': 'bun', 'urea nitrogen': 'bun',
+  'cystatin c': 'cystatin_c',
+  // CBC
+  'wbc': 'wbc', 'white blood cell': 'wbc', 'white blood cells': 'wbc', 'leukocytes': 'wbc',
+  'rbc': 'rbc', 'red blood cell': 'rbc', 'red blood cells': 'rbc', 'erythrocytes': 'rbc',
+  'hemoglobin': 'hemoglobin', 'hgb': 'hemoglobin', 'hb': 'hemoglobin',
+  'hematocrit': 'hematocrit', 'hct': 'hematocrit',
+  'mcv': 'mcv', 'mean corpuscular volume': 'mcv',
+  'mch': 'mch', 'mean corpuscular hemoglobin': 'mch',
+  'mchc': 'mchc',
+  'rdw': 'rdw', 'red cell distribution width': 'rdw',
+  'platelets': 'platelets', 'plt': 'platelets', 'platelet count': 'platelets',
+  'lymphocyte %': 'lymphocyte_pct', 'lymphocyte % auto': 'lymphocyte_pct',
+  'lymph %': 'lymphocyte_pct', 'lymphocytes %': 'lymphocyte_pct',
+  'neutrophil %': 'neutrophil_pct', 'neutrophil % auto': 'neutrophil_pct',
+  'neut %': 'neutrophil_pct', 'neutrophils %': 'neutrophil_pct',
+  // Liver
+  'alt': 'alt', 'alt (sgpt)': 'alt', 'sgpt': 'alt', 'alanine aminotransferase': 'alt',
+  'ast': 'ast', 'ast (sgot)': 'ast', 'sgot': 'ast', 'aspartate aminotransferase': 'ast',
+  'alk phos': 'alk_phos', 'alkaline phosphatase': 'alk_phos',
+  'bilirubin total': 'bilirubin', 'bilirubin, total': 'bilirubin', 'total bilirubin': 'bilirubin',
+  'albumin': 'albumin',
+  'ggt': 'ggt', 'gamma-glutamyl transferase': 'ggt', 'gamma glutamyl': 'ggt',
+  // Lipids
+  'total cholesterol': 'total_cholesterol', 'cholesterol, total': 'total_cholesterol',
+  'cholesterol total': 'total_cholesterol', 'cholesterol': 'total_cholesterol',
+  'ldl': 'ldl', 'ldl cholesterol': 'ldl', 'ldl-c': 'ldl', 'ldl chol calc': 'ldl',
+  'hdl': 'hdl_m', 'hdl cholesterol': 'hdl_m', 'hdl-c': 'hdl_m',
+  'triglycerides': 'triglycerides', 'triglyceride': 'triglycerides', 'trig': 'triglycerides',
+  'non-hdl cholesterol': 'non_hdl', 'non hdl cholesterol': 'non_hdl', 'non-hdl': 'non_hdl',
+  'apob': 'apob', 'apolipoprotein b': 'apob', 'apo b': 'apob',
+  'lipoprotein (a)': 'lpa', 'lp(a)': 'lpa', 'lipoprotein a': 'lpa',
+  'ldl-p': 'ldl_p', 'ldl particle number': 'ldl_p',
+  // Inflammation
+  'hs-crp': 'hs_crp', 'hs crp': 'hs_crp', 'high-sensitivity crp': 'hs_crp',
+  'c-reactive protein': 'hs_crp', 'crp': 'hs_crp', 'crp, high sensitivity': 'hs_crp',
+  'homocysteine': 'homocysteine', 'hcy': 'homocysteine',
+  'ferritin': 'ferritin_m',
+  'esr': 'esr', 'sed rate': 'esr', 'erythrocyte sedimentation': 'esr',
+  'fibrinogen': 'fibrinogen',
+  // Hormones
+  'tsh': 'tsh', 'thyroid stimulating hormone': 'tsh', 'thyrotropin': 'tsh',
+  'free t3': 'free_t3', 'ft3': 'free_t3', 't3, free': 'free_t3',
+  'free t4': 'free_t4', 'ft4': 'free_t4', 't4, free': 'free_t4',
+  'reverse t3': 'reverse_t3', 'rt3': 'reverse_t3',
+  'tpo antibodies': 'tpo_ab', 'anti-tpo': 'tpo_ab', 'tpo ab': 'tpo_ab',
+  'total testosterone': 'testosterone_total_m', 'testosterone, total': 'testosterone_total_m',
+  'testosterone total': 'testosterone_total_m', 'testosterone': 'testosterone_total_m',
+  'free testosterone': 'testosterone_free_m', 'testosterone free': 'testosterone_free_m',
+  'testosterone, free': 'testosterone_free_m',
+  'shbg': 'shbg_m', 'sex hormone binding globulin': 'shbg_m',
+  'estradiol': 'estradiol_m', 'e2': 'estradiol_m',
+  'progesterone': 'progesterone_f',
+  'dhea-s': 'dhea_s', 'dhea sulfate': 'dhea_s', 'dhea-sulfate': 'dhea_s', 'dheas': 'dhea_s',
+  'cortisol': 'cortisol_am', 'cortisol am': 'cortisol_am', 'cortisol, am': 'cortisol_am',
+  'psa': 'psa', 'prostate specific antigen': 'psa', 'psa, total': 'psa',
+  'lh': 'lh', 'luteinizing hormone': 'lh',
+  'fsh': 'fsh', 'follicle stimulating hormone': 'fsh',
+  // Electrolytes
+  'sodium': 'sodium',
+  'potassium': 'potassium',
+  'calcium': 'calcium',
+  'magnesium': 'magnesium', 'magnesium lvl': 'magnesium', 'magnesium level': 'magnesium',
+  // Nutrients
+  'vitamin d': 'vit_d', 'vitamin d, 25-hydroxy': 'vit_d', '25-hydroxyvitamin d': 'vit_d',
+  '25-oh vitamin d': 'vit_d', 'vitamin d 25-oh': 'vit_d', 'vit d': 'vit_d',
+  '25(oh)d': 'vit_d', 'vitamin d3': 'vit_d',
+  'vitamin b12': 'vit_b12', 'b12': 'vit_b12', 'cobalamin': 'vit_b12', 'vit b12': 'vit_b12',
+  'folate': 'folate', 'folic acid': 'folate',
+  'iron': 'iron', 'serum iron': 'iron',
+  'tibc': 'tibc', 'total iron binding capacity': 'tibc',
+  'iron saturation': 'iron_sat', 'iron sat': 'iron_sat', '% saturation': 'iron_sat',
+  'transferrin saturation': 'iron_sat',
+  'zinc': 'zinc',
+  'selenium': 'selenium',
+  'omega-3 index': 'omega_3', 'omega 3 index': 'omega_3',
+};
+
+// ============================================================================
+// STATE
+// ============================================================================
+const STORAGE_KEY = "biomarker_tracker_v2";
+
+function defaultState() {
+  return { profile: { name: "", dob: "", sex: "male" }, labs: [], protocols: [], wearables: [], apiKey: "", apiModel: "claude-sonnet-4-6" };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      const oldV1 = localStorage.getItem("biomarker_tracker_v1");
+      if (oldV1) {
+        const migrated = { ...defaultState(), ...JSON.parse(oldV1) };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        return migrated;
+      }
+      return defaultState();
+    }
+    return { ...defaultState(), ...JSON.parse(raw) };
+  } catch (e) { return defaultState(); }
+}
+
+let state = loadState();
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function uuid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+
+// ============================================================================
+// BIOMARKER UTILITIES
+// ============================================================================
+function getRelevantMarkers(sex) {
+  return Object.entries(BIOMARKERS).filter(([, m]) => !m.sex || m.sex === sex);
+}
+function getMarkersByCategory(sex) {
+  const markers = getRelevantMarkers(sex);
+  const grouped = {};
+  markers.forEach(([key, m]) => {
+    if (!grouped[m.category]) grouped[m.category] = [];
+    grouped[m.category].push({ key, ...m });
+  });
+  return grouped;
+}
+function evaluateMarker(key, value) {
+  const m = BIOMARKERS[key];
+  if (!m || value === null || value === undefined || value === "") return "none";
+  const v = parseFloat(value);
+  if (isNaN(v)) return "none";
+  if (v < m.normal[0]) return "low";
+  if (v > m.normal[1]) return "high";
+  if (v < m.optimal[0] || v > m.optimal[1]) return "warning";
+  return "normal";
+}
+function flagLabel(flag) {
+  return { normal: "Optimal", warning: "Suboptimal", high: "High", low: "Low", none: "—" }[flag] || "";
+}
+function calculateHomaIR(g, i) { if (!g || !i) return null; return +(g * i / 405).toFixed(2); }
+
+function calculatePhenoAge(values, chronoAge) {
+  const required = ['albumin', 'creatinine', 'glucose', 'hs_crp', 'lymphocyte_pct', 'mcv', 'rdw', 'alk_phos', 'wbc'];
+  for (const r of required) if (!values[r] || isNaN(parseFloat(values[r]))) return null;
+  const albumin_gL = parseFloat(values.albumin) * 10;
+  const creatinine_umolL = parseFloat(values.creatinine) * 88.4;
+  const glucose_mmolL = parseFloat(values.glucose) / 18.018;
+  const lnCRP = Math.log(Math.max(parseFloat(values.hs_crp), 0.01));
+  const xb = -19.907
+    + (-0.0336 * albumin_gL) + (0.0095 * creatinine_umolL) + (0.1953 * glucose_mmolL)
+    + (0.0954 * lnCRP) + (-0.0120 * parseFloat(values.lymphocyte_pct)) + (0.0268 * parseFloat(values.mcv))
+    + (0.3306 * parseFloat(values.rdw)) + (0.00188 * parseFloat(values.alk_phos))
+    + (0.0554 * parseFloat(values.wbc)) + (0.0804 * chronoAge);
+  const M = 1 - Math.exp(-Math.exp(xb) * (Math.exp(120 * 0.0076927) - 1) / 0.0076927);
+  if (M >= 1 || M <= 0) return null;
+  return +(141.50225 + Math.log(-0.00553 * Math.log(1 - M)) / 0.090165).toFixed(1);
+}
+
+function getChronoAge() {
+  if (!state.profile.dob) return null;
+  return (new Date() - new Date(state.profile.dob)) / (1000 * 60 * 60 * 24 * 365.25);
+}
+
+function getTrend(key) {
+  const sorted = state.labs.slice().sort((a,b) => a.date.localeCompare(b.date))
+    .filter(l => l.values[key] !== undefined && l.values[key] !== "");
+  if (sorted.length < 2) return null;
+  const first = parseFloat(sorted[0].values[key]);
+  const last = parseFloat(sorted[sorted.length - 1].values[key]);
+  if (isNaN(first) || isNaN(last) || first === 0) return null;
+  return +((last - first) / first * 100).toFixed(1);
+}
+
+// ============================================================================
+// DASHBOARD
+// ============================================================================
+function renderDashboard() {
+  const container = document.getElementById('dashboard-content');
+  if (state.labs.length === 0) {
+    container.innerHTML = `
+      <div class="card rounded-lg p-12 text-center">
+        <h2 class="text-2xl font-bold mb-3">No data yet</h2>
+        <p class="text-gray-400 mb-6">Start by adding your first lab draw.</p>
+        <button onclick="showTab('add')" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded font-semibold">Add First Draw</button>
+      </div>`;
+    return;
+  }
+  const latest = state.labs.slice().sort((a,b) => b.date.localeCompare(a.date))[0];
+  const values = latest.values;
+  const chronoAge = getChronoAge();
+  const phenoAge = chronoAge ? calculatePhenoAge(values, chronoAge) : null;
+  const ageDelta = phenoAge && chronoAge ? +(phenoAge - chronoAge).toFixed(1) : null;
+  const allMarkers = getRelevantMarkers(state.profile.sex);
+  const entered = allMarkers.filter(([k]) => values[k] !== undefined && values[k] !== "" && values[k] !== null);
+  const flags = entered.map(([k, m]) => ({ key: k, marker: m, value: values[k], flag: evaluateMarker(k, values[k]) }));
+  const abnormal = flags.filter(f => f.flag === 'high' || f.flag === 'low');
+  const suboptimal = flags.filter(f => f.flag === 'warning');
+  const optimal = flags.filter(f => f.flag === 'normal');
+
+  let html = `
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="card rounded-lg p-5">
+        <p class="text-xs text-gray-400 uppercase">Latest Draw</p>
+        <p class="text-2xl font-bold mt-1">${new Date(latest.date).toLocaleDateString()}</p>
+        <p class="text-xs text-gray-500 mt-1">${entered.length} markers</p>
+      </div>
+      <div class="card rounded-lg p-5">
+        <p class="text-xs text-gray-400 uppercase">Biological Age</p>
+        <p class="text-2xl font-bold mt-1">${phenoAge ? phenoAge + ' yrs' : '—'}</p>
+        <p class="text-xs mt-1 ${ageDelta === null ? 'text-gray-500' : ageDelta < 0 ? 'text-green-400' : 'text-yellow-400'}">${ageDelta === null ? 'Missing required markers' : (ageDelta < 0 ? '↓' : '↑') + ' ' + Math.abs(ageDelta) + ' vs chrono (' + chronoAge.toFixed(1) + ')'}</p>
+      </div>
+      <div class="card rounded-lg p-5">
+        <p class="text-xs text-gray-400 uppercase">Out of Range</p>
+        <p class="text-2xl font-bold mt-1 text-red-400">${abnormal.length}</p>
+        <p class="text-xs text-gray-500 mt-1">${suboptimal.length} suboptimal</p>
+      </div>
+      <div class="card rounded-lg p-5">
+        <p class="text-xs text-gray-400 uppercase">Optimal</p>
+        <p class="text-2xl font-bold mt-1 text-green-400">${optimal.length}</p>
+        <p class="text-xs text-gray-500 mt-1">of ${entered.length} measured</p>
+      </div>
+    </div>`;
+
+  if (abnormal.length > 0 || suboptimal.length > 0) {
+    html += `<div class="card rounded-lg p-6 mb-6"><h3 class="text-lg font-bold mb-4">Flagged Markers</h3><div class="space-y-2">`;
+    [...abnormal, ...suboptimal].forEach(f => html += renderBiomarkerRow(f.key, f.marker, f.value, f.flag));
+    html += `</div></div>`;
+  }
+
+  const byCategory = {};
+  flags.forEach(f => {
+    if (!byCategory[f.marker.category]) byCategory[f.marker.category] = [];
+    byCategory[f.marker.category].push(f);
+  });
+
+  html += `<div class="card rounded-lg p-6"><h3 class="text-lg font-bold mb-4">Results by Category</h3>`;
+  Object.entries(byCategory).forEach(([cat, items]) => {
+    html += `<div class="mb-4"><h4 class="text-sm font-semibold text-gray-400 uppercase mb-2">${cat}</h4><div class="space-y-1">`;
+    items.forEach(f => html += renderBiomarkerRow(f.key, f.marker, f.value, f.flag));
+    html += `</div></div>`;
+  });
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function renderBiomarkerRow(key, marker, value, flag) {
+  const trend = getTrend(key);
+  const trendArrow = trend !== null ? (trend > 0 ? '↑' : trend < 0 ? '↓' : '→') : '';
+  const trendColor = trend > 0 ? 'text-yellow-400' : trend < 0 ? 'text-green-400' : 'text-gray-500';
+  return `<div class="biomarker-row flex items-center justify-between py-2 px-3 rounded">
+    <div class="flex-grow">
+      <span class="font-medium">${marker.name}</span>
+      <span class="text-xs text-gray-500 ml-2">Optimal: ${marker.optimal[0]}–${marker.optimal[1]} ${marker.unit}</span>
+    </div>
+    <div class="flex items-center gap-3">
+      ${trend !== null ? `<span class="${trendColor} text-xs">${trendArrow} ${Math.abs(trend).toFixed(1)}%</span>` : ''}
+      <span class="font-mono">${value} ${marker.unit}</span>
+      <span class="px-2 py-1 rounded text-xs font-semibold flag-${flag}">${flagLabel(flag)}</span>
+    </div>
+  </div>`;
+}
+
+// ============================================================================
+// PDF PARSING
+// ============================================================================
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+async function extractPdfText(file) {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const lines = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    content.items.forEach(item => { if (item.str && item.str.trim()) lines.push(item.str.trim()); });
+    lines.push('---PAGE-BREAK---');
+  }
+  return lines;
+}
+
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function setParseStatus(msg, isError) {
+  const el = document.getElementById('pdf-parse-status');
+  el.className = 'text-xs mt-3 ' + (isError ? 'text-red-400' : 'text-gray-400');
+  el.textContent = msg;
+}
+
+function normalizeName(s) {
+  return s.toLowerCase().replace(/[^a-z0-9%\s()-]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function aliasToKey(name, sex) {
+  const n = normalizeName(name);
+  let key = BIOMARKER_ALIASES[n];
+  if (!key) {
+    // try progressive matching: strip suffixes, try partial match
+    for (const [alias, k] of Object.entries(BIOMARKER_ALIASES)) {
+      if (n === alias || n.startsWith(alias + ' ') || n.endsWith(' ' + alias)) {
+        key = k;
+        break;
+      }
+    }
+  }
+  if (!key) return null;
+  // Sex-specific remap
+  if (sex === 'female') {
+    if (key === 'hdl_m') key = 'hdl_f';
+    if (key === 'ferritin_m') key = 'ferritin_f';
+    if (key === 'estradiol_m') key = 'estradiol_f';
+    if (key === 'testosterone_total_m') key = 'testosterone_total_f';
+  }
+  // If marker doesn't exist for this sex, drop
+  if (!BIOMARKERS[key]) return null;
+  if (BIOMARKERS[key].sex && BIOMARKERS[key].sex !== sex) return null;
+  return key;
+}
+
+// Parser tries to extract "Name → Value" pairs from PDF text.
+// Strategy: scan lines, when a line normalizes to a known alias, look in nearby lines for a numeric value.
+function parseLines(lines, sex) {
+  const extracted = {};
+  const matches = [];
+  const unmatched = [];
+
+  // Detect DOD MTF format (has "Laboratory" sentinel lines)
+  const isDod = lines.filter(l => l === 'Laboratory').length >= 3;
+
+  if (isDod) {
+    // DOD pattern: NAME \n "Laboratory" \n "VALUE UNIT [FLAG]" \n ...
+    for (let i = 0; i < lines.length - 2; i++) {
+      if (lines[i + 1] === 'Laboratory') {
+        const name = lines[i];
+        const valueLine = lines[i + 2];
+        const key = aliasToKey(name, sex);
+        if (!key) { unmatched.push(name); continue; }
+        const numMatch = valueLine.match(/([-+]?\d+\.?\d*)/);
+        if (numMatch) {
+          const val = parseFloat(numMatch[1]);
+          if (!isNaN(val)) {
+            extracted[key] = val;
+            matches.push(`${BIOMARKERS[key].name}: ${val}`);
+          }
+        }
+      }
+    }
+  } else {
+    // Generic parser: for each line, check if it contains a known alias followed by a number on same or next line
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const nline = normalizeName(line);
+      if (!nline) continue;
+
+      // Try to find alias at start of line
+      let matchedKey = null;
+      let matchedAliasLen = 0;
+      for (const [alias, k] of Object.entries(BIOMARKER_ALIASES)) {
+        if (nline.startsWith(alias) && alias.length > matchedAliasLen) {
+          matchedKey = k;
+          matchedAliasLen = alias.length;
+        }
+      }
+      if (!matchedKey) continue;
+
+      // sex remap
+      let key = matchedKey;
+      if (sex === 'female') {
+        if (key === 'hdl_m') key = 'hdl_f';
+        if (key === 'ferritin_m') key = 'ferritin_f';
+        if (key === 'estradiol_m') key = 'estradiol_f';
+        if (key === 'testosterone_total_m') key = 'testosterone_total_f';
+      }
+      if (!BIOMARKERS[key] || (BIOMARKERS[key].sex && BIOMARKERS[key].sex !== sex)) continue;
+      if (extracted[key] !== undefined) continue;
+
+      // Look for number on this line (after the name) or next 2 lines
+      const searchText = [line, lines[i+1] || '', lines[i+2] || ''].join(' ');
+      const afterName = searchText.substring(searchText.toLowerCase().indexOf(normalizeName(line).substring(0, matchedAliasLen)) + matchedAliasLen);
+      const numbers = afterName.match(/([-+]?\d+\.?\d+|\d+)/g);
+      if (numbers && numbers.length > 0) {
+        const val = parseFloat(numbers[0]);
+        if (!isNaN(val) && val !== 0) {
+          extracted[key] = val;
+          matches.push(`${BIOMARKERS[key].name}: ${val}`);
+        }
+      }
+    }
+  }
+
+  return { extracted, matches, unmatched };
+}
+
+// Try to find a date in the PDF text (for pre-populating the date field)
+function extractDate(lines) {
+  const patterns = [
+    /(\d{4}-\d{2}-\d{2})/,
+    /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
+    /(\d{1,2})\/(\d{1,2})\/(\d{4})/
+  ];
+  for (const line of lines) {
+    for (const pattern of patterns) {
+      const m = line.match(pattern);
+      if (m) {
+        try {
+          const d = new Date(m[0]);
+          if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+        } catch (e) {}
+      }
+    }
+  }
+  return null;
+}
+
+function populateFormFromExtracted(extracted, date) {
+  if (date) document.getElementById('draw-date').value = date;
+  let count = 0;
+  document.querySelectorAll('.biomarker-input').forEach(input => {
+    const key = input.dataset.marker;
+    if (extracted[key] !== undefined) {
+      input.value = extracted[key];
+      input.style.backgroundColor = '#1e3a5f';
+      count++;
+    }
+  });
+  return count;
+}
+
+async function parsePdfLocal() {
+  const fileInput = document.getElementById('pdf-upload');
+  const file = fileInput.files[0];
+  if (!file) { setParseStatus('Select a PDF file first.', true); return; }
+  setParseStatus('Extracting text from PDF...');
+  try {
+    const lines = await extractPdfText(file);
+    const date = extractDate(lines);
+    const { extracted, matches, unmatched } = parseLines(lines, state.profile.sex);
+    const count = populateFormFromExtracted(extracted, date);
+    if (count === 0) {
+      setParseStatus('No biomarkers recognized. Try "Parse with Claude" for better extraction on non-standard formats.', true);
+    } else {
+      setParseStatus(`Extracted ${count} values${date ? ' (date: ' + date + ')' : ''}. Highlighted fields in form below. Review, edit if needed, then Save Draw.`);
+    }
+  } catch (e) {
+    setParseStatus('Parse failed: ' + e.message, true);
+  }
+}
+
+async function parsePdfClaude() {
+  if (!state.apiKey) { setParseStatus('Add Anthropic API key in Settings to use this.', true); return; }
+  const fileInput = document.getElementById('pdf-upload');
+  const file = fileInput.files[0];
+  if (!file) { setParseStatus('Select a PDF file first.', true); return; }
+  const btn = document.getElementById('parse-claude-btn');
+  btn.disabled = true;
+  btn.textContent = 'Parsing...';
+  setParseStatus('Sending PDF to Claude for extraction...');
+
+  const validKeys = Object.keys(BIOMARKERS).filter(k => !BIOMARKERS[k].sex || BIOMARKERS[k].sex === state.profile.sex);
+  const systemPrompt = `Extract biomarker values from this lab PDF. Return ONLY valid JSON, no code fences, no prose, with this exact structure:
+{
+  "date": "YYYY-MM-DD",
+  "values": { "<key>": <number>, ... }
+}
+
+Use ONLY these keys (case-sensitive):
+${validKeys.join(', ')}
+
+Common lab names and their key mapping:
+- "Glucose Lvl" / "Glucose, Fasting" -> glucose
+- "eGFR CKD EPI" / "eGFR" -> egfr
+- "Creatinine Level" -> creatinine
+- "Hemoglobin A1c" / "HbA1c" / "A1c" -> hba1c
+- "LDL Cholesterol" / "LDL-C" -> ldl
+- "HDL Cholesterol" / "HDL-C" -> ${state.profile.sex === 'female' ? 'hdl_f' : 'hdl_m'}
+- "Triglycerides" -> triglycerides
+- "ApoB" -> apob
+- "Lp(a)" -> lpa
+- "hs-CRP" / "High-Sensitivity CRP" -> hs_crp
+- "Vitamin D, 25-OH" -> vit_d
+- "Vitamin B12" -> vit_b12
+- "Ferritin" -> ${state.profile.sex === 'female' ? 'ferritin_f' : 'ferritin_m'}
+- "Total Testosterone" -> ${state.profile.sex === 'female' ? 'testosterone_total_f' : 'testosterone_total_m'}
+- "Free Testosterone" -> testosterone_free_m (males only)
+- "TSH" -> tsh, "Free T3" -> free_t3, "Free T4" -> free_t4
+- "TPO Antibodies" -> tpo_ab
+- "Estradiol" / "E2" -> ${state.profile.sex === 'female' ? 'estradiol_f' : 'estradiol_m'}
+- "SHBG" -> shbg_m (males)
+- "DHEA-S" / "DHEA Sulfate" -> dhea_s
+- "Cortisol" / "Cortisol AM" -> cortisol_am
+- "PSA" -> psa
+- "Homocysteine" -> homocysteine
+- "Vitamin D" -> vit_d
+- "Magnesium" -> magnesium, "Calcium" -> calcium, "Sodium" -> sodium, "Potassium" -> potassium
+- "WBC", "RBC", "Hemoglobin", "Hematocrit", "MCV", "MCH", "MCHC", "RDW", "Platelets" -> same lowercase keys
+- "Lymphocyte %" -> lymphocyte_pct, "Neutrophil %" -> neutrophil_pct
+- "ALT" / "SGPT" -> alt, "AST" / "SGOT" -> ast, "Alk Phos" -> alk_phos
+- "Bilirubin Total" -> bilirubin, "Albumin" -> albumin, "GGT" -> ggt
+- "BUN" -> bun, "Creatinine" -> creatinine, "eGFR" -> egfr, "Cystatin C" -> cystatin_c
+
+For each value, extract only the numeric result (not reference ranges, not flags). Omit markers with missing/unclear values. Omit markers not in the valid keys list.`;
+
+  try {
+    const base64 = await fileToBase64(file);
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: state.apiModel || 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+            { type: 'text', text: 'Extract all biomarkers from this lab report. Return ONLY the JSON object, nothing else.' }
+          ]
+        }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    const cleaned = text.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
+    const result = JSON.parse(cleaned);
+    const extracted = result.values || {};
+    const count = populateFormFromExtracted(extracted, result.date);
+    if (count === 0) {
+      setParseStatus('Claude parsed the PDF but returned no recognized values.', true);
+    } else {
+      setParseStatus(`Claude extracted ${count} values${result.date ? ' (date: ' + result.date + ')' : ''}. Review and Save Draw.`);
+    }
+  } catch (e) {
+    setParseStatus('Claude parse failed: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Parse with Claude (API)';
+  }
+}
+
+// ============================================================================
+// ADD DRAW
+// ============================================================================
+function renderAddForm() {
+  const container = document.getElementById('add-biomarker-sections');
+  const grouped = getMarkersByCategory(state.profile.sex);
+  let html = '';
+  Object.entries(grouped).forEach(([cat, markers]) => {
+    html += `<div class="card rounded-lg p-6 mb-4"><h3 class="text-lg font-bold mb-4">${cat}</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
+    markers.forEach(m => {
+      if (m.calculated) return;
+      html += `<div>
+        <label class="block text-sm text-gray-400 mb-1">${m.name} <span class="text-xs text-gray-600">(${m.unit})</span></label>
+        <input type="number" step="any" data-marker="${m.key}" class="biomarker-input w-full px-3 py-2 rounded" placeholder="Opt: ${m.optimal[0]}–${m.optimal[1]}">
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  container.innerHTML = html;
+  document.getElementById('draw-date').value = new Date().toISOString().slice(0, 10);
+}
+
+function saveDraw() {
+  const date = document.getElementById('draw-date').value;
+  const notes = document.getElementById('draw-notes').value;
+  if (!date) { alert('Set a date.'); return; }
+  const values = {};
+  document.querySelectorAll('.biomarker-input').forEach(i => { if (i.value !== "") values[i.dataset.marker] = parseFloat(i.value); });
+  if (values.glucose && values.insulin) values.homa_ir = calculateHomaIR(values.glucose, values.insulin);
+  if (Object.keys(values).length === 0) { alert('Enter at least one biomarker.'); return; }
+  state.labs.push({ id: uuid(), date, notes, values });
+  saveState();
+  clearDrawForm();
+  showTab('dashboard');
+}
+
+function clearDrawForm() {
+  document.querySelectorAll('.biomarker-input').forEach(i => i.value = "");
+  document.getElementById('draw-notes').value = "";
+  document.getElementById('draw-date').value = new Date().toISOString().slice(0, 10);
+}
+
+function prefillFromLatest() {
+  if (state.labs.length === 0) { alert('No previous draws.'); return; }
+  const latest = state.labs.slice().sort((a,b) => b.date.localeCompare(a.date))[0];
+  document.querySelectorAll('.biomarker-input').forEach(i => {
+    if (latest.values[i.dataset.marker] !== undefined) i.value = latest.values[i.dataset.marker];
+  });
+}
+
+// ============================================================================
+// WEARABLES
+// ============================================================================
+function renderWearableForm() {
+  const container = document.getElementById('wearable-metrics-grid');
+  let html = '';
+  Object.entries(WEARABLES).forEach(([key, m]) => {
+    html += `<div>
+      <label class="block text-sm text-gray-400 mb-1">${m.name} <span class="text-xs text-gray-600">(${m.unit})</span></label>
+      <input type="number" step="any" data-metric="${key}" class="wearable-input w-full px-3 py-2 rounded" placeholder="${m.direction === 'higher' ? 'higher = better' : m.direction === 'lower' ? 'lower = better' : 'individual baseline'}">
+    </div>`;
+  });
+  container.innerHTML = html;
+  document.getElementById('wearable-date').value = new Date().toISOString().slice(0, 10);
+}
+
+function saveWearable() {
+  const date = document.getElementById('wearable-date').value;
+  const source = document.getElementById('wearable-source').value;
+  const notes = document.getElementById('wearable-notes').value;
+  if (!date) { alert('Set a date.'); return; }
+  const metrics = {};
+  document.querySelectorAll('.wearable-input').forEach(i => { if (i.value !== "") metrics[i.dataset.metric] = parseFloat(i.value); });
+  if (Object.keys(metrics).length === 0) { alert('Enter at least one metric.'); return; }
+  state.wearables.push({ id: uuid(), date, source, notes, metrics });
+  saveState();
+  clearWearableForm();
+  renderWearableList();
+  populateWearableTrendSelector();
+  renderWearableTrend();
+}
+
+function clearWearableForm() {
+  document.querySelectorAll('.wearable-input').forEach(i => i.value = "");
+  document.getElementById('wearable-notes').value = "";
+  document.getElementById('wearable-date').value = new Date().toISOString().slice(0, 10);
+}
+
+function deleteWearable(id) {
+  if (!confirm('Delete this entry?')) return;
+  state.wearables = state.wearables.filter(w => w.id !== id);
+  saveState();
+  renderWearableList();
+  renderWearableTrend();
+}
+
+function renderWearableList() {
+  const container = document.getElementById('wearable-list');
+  if (state.wearables.length === 0) {
+    container.innerHTML = `<p class="text-gray-400">No entries yet.</p>`;
+    return;
+  }
+  const sorted = state.wearables.slice().sort((a,b) => b.date.localeCompare(a.date)).slice(0, 20);
+  container.innerHTML = sorted.map(w => {
+    const metricsStr = Object.entries(w.metrics).map(([k,v]) => `${WEARABLES[k]?.name || k}: ${v} ${WEARABLES[k]?.unit || ''}`).join(' · ');
+    return `<div class="flex justify-between items-start py-2 border-b border-gray-800">
+      <div class="flex-grow">
+        <p class="font-medium">${new Date(w.date).toLocaleDateString()} <span class="text-xs text-indigo-400 uppercase ml-2">${w.source}</span></p>
+        <p class="text-xs text-gray-400 mt-1">${escapeHtml(metricsStr)}</p>
+        ${w.notes ? `<p class="text-xs text-gray-500 mt-1">${escapeHtml(w.notes)}</p>` : ''}
+      </div>
+      <button onclick="deleteWearable('${w.id}')" class="text-gray-500 hover:text-red-400 text-sm ml-3">Delete</button>
+    </div>`;
+  }).join('');
+}
+
+let wearableChart = null;
+function populateWearableTrendSelector() {
+  const sel = document.getElementById('wearable-trend-metric');
+  const usedMetrics = new Set();
+  state.wearables.forEach(w => Object.keys(w.metrics).forEach(m => usedMetrics.add(m)));
+  if (usedMetrics.size === 0) {
+    sel.innerHTML = '<option>No data</option>';
+    return;
+  }
+  const current = sel.value;
+  sel.innerHTML = [...usedMetrics].map(m => `<option value="${m}" ${m === current ? 'selected' : ''}>${WEARABLES[m]?.name || m}</option>`).join('');
+}
+
+function renderWearableTrend() {
+  populateWearableTrendSelector();
+  const metric = document.getElementById('wearable-trend-metric').value;
+  const ctx = document.getElementById('wearable-trend-chart').getContext('2d');
+  if (wearableChart) wearableChart.destroy();
+  if (!metric || !WEARABLES[metric]) {
+    document.getElementById('wearable-trend-summary').innerHTML = 'No wearable data yet.';
+    return;
+  }
+  const data = state.wearables.slice().sort((a,b) => a.date.localeCompare(b.date))
+    .filter(w => w.metrics[metric] !== undefined).map(w => ({ date: w.date, value: w.metrics[metric] }));
+  if (data.length === 0) return;
+  wearableChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.date),
+      datasets: [{ label: WEARABLES[metric].name, data: data.map(d => d.value), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', tension: 0.2, pointRadius: 4, fill: true }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' }, title: { display: true, text: WEARABLES[metric].unit, color: '#9ca3af' } } },
+      plugins: { legend: { labels: { color: '#d1d5db' } } }
+    }
+  });
+  const avg = (data.reduce((s,d) => s + d.value, 0) / data.length).toFixed(1);
+  const min = Math.min(...data.map(d => d.value)).toFixed(1);
+  const max = Math.max(...data.map(d => d.value)).toFixed(1);
+  document.getElementById('wearable-trend-summary').innerHTML = `${data.length} entries. Avg: ${avg}, Min: ${min}, Max: ${max} ${WEARABLES[metric].unit}.`;
+}
+
+// ============================================================================
+// TRENDS
+// ============================================================================
+let trendChart = null;
+let bioageChart = null;
+
+function populateTrendMarkers() {
+  const categorySel = document.getElementById('trend-category');
+  const markerSel = document.getElementById('trend-marker');
+  const overlaySel = document.getElementById('trend-overlay');
+  const currentCat = categorySel.value;
+  const markers = getRelevantMarkers(state.profile.sex);
+  const categories = [...new Set(markers.map(([,m]) => m.category))];
+  categorySel.innerHTML = '<option value="all">All categories</option>' + categories.map(c => `<option value="${c}" ${c === currentCat ? 'selected' : ''}>${c}</option>`).join('');
+  const filtered = markers.filter(([,m]) => currentCat === 'all' || m.category === currentCat);
+  markerSel.innerHTML = filtered.map(([k, m]) => `<option value="${k}">${m.name} (${m.category})</option>`).join('');
+
+  const usedWearables = new Set();
+  state.wearables.forEach(w => Object.keys(w.metrics).forEach(m => usedWearables.add(m)));
+  overlaySel.innerHTML = '<option value="">No overlay</option>' + [...usedWearables].map(m => `<option value="wearable:${m}">${WEARABLES[m]?.name || m} (wearable)</option>`).join('');
+}
+
+function renderTrend() {
+  const key = document.getElementById('trend-marker').value;
+  const overlay = document.getElementById('trend-overlay').value;
+  if (!key) return;
+  const marker = BIOMARKERS[key];
+  if (!marker) return;
+
+  const labData = state.labs.slice().sort((a,b) => a.date.localeCompare(b.date))
+    .filter(l => l.values[key] !== undefined && l.values[key] !== "")
+    .map(l => ({ date: l.date, value: parseFloat(l.values[key]) }));
+
+  const allDates = [...new Set(labData.map(d => d.date))];
+  const datasets = [
+    { label: marker.name, data: labData.map(d => ({ x: d.date, y: d.value })), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', tension: 0.2, pointRadius: 5, pointHoverRadius: 8, fill: true, yAxisID: 'y' },
+    { label: 'Optimal Low', data: allDates.map(d => ({ x: d, y: marker.optimal[0] })), borderColor: 'rgba(34, 197, 94, 0.5)', borderDash: [5,5], pointRadius: 0, yAxisID: 'y' },
+    { label: 'Optimal High', data: allDates.map(d => ({ x: d, y: marker.optimal[1] })), borderColor: 'rgba(34, 197, 94, 0.5)', borderDash: [5,5], pointRadius: 0, yAxisID: 'y' },
+    { label: 'Normal Low', data: allDates.map(d => ({ x: d, y: marker.normal[0] })), borderColor: 'rgba(239, 68, 68, 0.3)', borderDash: [2,4], pointRadius: 0, yAxisID: 'y' },
+    { label: 'Normal High', data: allDates.map(d => ({ x: d, y: marker.normal[1] })), borderColor: 'rgba(239, 68, 68, 0.3)', borderDash: [2,4], pointRadius: 0, yAxisID: 'y' }
+  ];
+
+  const scales = {
+    x: { type: 'category', ticks: { color: '#9ca3af' }, grid: { color: '#374151' } },
+    y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' }, title: { display: true, text: marker.unit, color: '#9ca3af' }, position: 'left' }
+  };
+
+  let overlayInfo = null;
+  if (overlay && overlay.startsWith('wearable:')) {
+    const wkey = overlay.split(':')[1];
+    const wmeta = WEARABLES[wkey];
+    const wData = state.wearables.slice().sort((a,b) => a.date.localeCompare(b.date))
+      .filter(w => w.metrics[wkey] !== undefined)
+      .map(w => ({ date: w.date, value: w.metrics[wkey] }));
+    if (wData.length > 0) {
+      datasets.push({ label: wmeta.name, data: wData.map(d => ({ x: d.date, y: d.value })), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', tension: 0.2, pointRadius: 3, fill: false, yAxisID: 'y1' });
+      scales.y1 = { ticks: { color: '#10b981' }, grid: { drawOnChartArea: false }, title: { display: true, text: wmeta.unit, color: '#10b981' }, position: 'right' };
+      overlayInfo = { wmeta, wData };
+    }
+  }
+
+  const ctx = document.getElementById('trend-chart').getContext('2d');
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, { type: 'line', data: { datasets }, options: { responsive: true, maintainAspectRatio: false, scales, plugins: { legend: { labels: { color: '#d1d5db' } } } } });
+
+  const summaryDiv = document.getElementById('trend-summary');
+  if (labData.length === 0) {
+    summaryDiv.innerHTML = `No data for ${marker.name}.`;
+  } else if (labData.length === 1) {
+    summaryDiv.innerHTML = `Only one data point for ${marker.name}. Latest: ${labData[0].value} ${marker.unit}.`;
+  } else {
+    const first = labData[0], last = labData[labData.length - 1];
+    const delta = last.value - first.value;
+    const pct = (delta / first.value * 100).toFixed(1);
+    const direction = delta > 0 ? 'increased' : delta < 0 ? 'decreased' : 'unchanged';
+    let txt = `<strong>${marker.name}</strong> ${direction} by ${Math.abs(delta).toFixed(2)} ${marker.unit} (${pct}%) from ${first.date} to ${last.date}. Latest: ${last.value} ${marker.unit}.`;
+    if (overlayInfo && overlayInfo.wData.length >= 2) {
+      const wAvg = (overlayInfo.wData.reduce((s,d) => s + d.value, 0) / overlayInfo.wData.length).toFixed(1);
+      txt += ` ${overlayInfo.wmeta.name} avg over same period: ${wAvg} ${overlayInfo.wmeta.unit}.`;
+    }
+    summaryDiv.innerHTML = txt;
+  }
+  renderBioageChart();
+}
+
+function renderBioageChart() {
+  const chronoAge = getChronoAge();
+  if (!chronoAge) {
+    document.getElementById('bioage-summary').innerHTML = 'Set DOB in Settings.';
+    return;
+  }
+  const points = state.labs.slice().sort((a,b) => a.date.localeCompare(b.date)).map(l => {
+    const age = (new Date(l.date) - new Date(state.profile.dob)) / (1000 * 60 * 60 * 24 * 365.25);
+    const pheno = calculatePhenoAge(l.values, age);
+    return pheno !== null ? { date: l.date, chrono: +age.toFixed(1), pheno } : null;
+  }).filter(Boolean);
+  const ctx = document.getElementById('bioage-chart').getContext('2d');
+  if (bioageChart) bioageChart.destroy();
+  if (points.length === 0) {
+    document.getElementById('bioage-summary').innerHTML = 'No draws contain all required markers (albumin, creatinine, glucose, hs-CRP, lymph %, MCV, RDW, alk phos, WBC).';
+    return;
+  }
+  bioageChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: points.map(p => p.date),
+      datasets: [
+        { label: 'Bio Age', data: points.map(p => p.pheno), borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.1)', tension: 0.2, pointRadius: 5, fill: true },
+        { label: 'Chrono Age', data: points.map(p => p.chrono), borderColor: '#6b7280', borderDash: [5,5], pointRadius: 3 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' }, title: { display: true, text: 'Age (years)', color: '#9ca3af' } } }, plugins: { legend: { labels: { color: '#d1d5db' } } } }
+  });
+  const latest = points[points.length - 1];
+  const delta = +(latest.pheno - latest.chrono).toFixed(1);
+  const note = delta < 0 ? `<span class="text-green-400">${Math.abs(delta)} years younger</span>` : delta > 0 ? `<span class="text-yellow-400">${delta} years older</span>` : `matching`;
+  document.getElementById('bioage-summary').innerHTML = `Latest bio age: <strong>${latest.pheno}</strong> vs chrono <strong>${latest.chrono}</strong>. ${note}.`;
+}
+
+// ============================================================================
+// ANALYSIS
+// ============================================================================
+function buildAnalysisSummary() {
+  const chronoAge = getChronoAge();
+  const name = state.profile.name || 'User';
+  const sex = state.profile.sex;
+  const lines = [];
+  lines.push(`BIOMARKER ANALYSIS`);
+  lines.push(`Subject: ${name} | Sex: ${sex} | Age: ${chronoAge ? chronoAge.toFixed(1) : 'unknown'}`);
+  lines.push(`Generated: ${new Date().toISOString().slice(0,10)}`);
+  lines.push('');
+
+  if (state.labs.length === 0) {
+    lines.push('No lab draws recorded.');
+    return lines.join('\n');
+  }
+
+  const sorted = state.labs.slice().sort((a,b) => b.date.localeCompare(a.date));
+  const latest = sorted[0];
+  const previous = sorted[1] || null;
+  lines.push(`LATEST DRAW: ${latest.date} (${Object.keys(latest.values).length} markers)`);
+  if (latest.notes) lines.push(`Notes: ${latest.notes}`);
+  lines.push('');
+
+  const allMarkers = getRelevantMarkers(sex);
+  const flags = allMarkers.map(([k, m]) => ({ key: k, marker: m, value: latest.values[k], flag: evaluateMarker(k, latest.values[k]) }))
+    .filter(f => f.value !== undefined);
+  const high = flags.filter(f => f.flag === 'high');
+  const low = flags.filter(f => f.flag === 'low');
+  const warning = flags.filter(f => f.flag === 'warning');
+  const normal = flags.filter(f => f.flag === 'normal');
+
+  if (high.length || low.length) {
+    lines.push('OUT OF RANGE:');
+    [...high, ...low].forEach(f => {
+      lines.push(`  ${f.marker.name}: ${f.value} ${f.marker.unit} [${f.flag.toUpperCase()}] (normal: ${f.marker.normal[0]}-${f.marker.normal[1]})`);
+    });
+    lines.push('');
+  }
+  if (warning.length) {
+    lines.push('SUBOPTIMAL (in normal range, outside optimal):');
+    warning.forEach(f => {
+      lines.push(`  ${f.marker.name}: ${f.value} ${f.marker.unit} (optimal: ${f.marker.optimal[0]}-${f.marker.optimal[1]})`);
+    });
+    lines.push('');
+  }
+  if (normal.length) {
+    lines.push(`OPTIMAL: ${normal.length} markers in target range (${normal.map(f => f.marker.name).join(', ')})`);
+    lines.push('');
+  }
+
+  if (previous) {
+    lines.push(`TRENDS (vs ${previous.date}):`);
+    flags.forEach(f => {
+      if (previous.values[f.key] !== undefined) {
+        const prev = parseFloat(previous.values[f.key]);
+        const curr = parseFloat(f.value);
+        if (!isNaN(prev) && !isNaN(curr) && prev !== 0) {
+          const pct = ((curr - prev) / prev * 100).toFixed(1);
+          const arrow = curr > prev ? '↑' : curr < prev ? '↓' : '→';
+          if (Math.abs(pct) >= 5) lines.push(`  ${f.marker.name}: ${prev} → ${curr} (${arrow} ${Math.abs(pct)}%)`);
+        }
+      }
+    });
+    lines.push('');
+  }
+
+  const chronoAgeNum = chronoAge;
+  const phenoAge = chronoAgeNum ? calculatePhenoAge(latest.values, chronoAgeNum) : null;
+  if (phenoAge) {
+    const delta = (phenoAge - chronoAgeNum).toFixed(1);
+    lines.push(`BIO AGE: ${phenoAge} years (chrono: ${chronoAgeNum.toFixed(1)}, delta: ${delta > 0 ? '+' : ''}${delta})`);
+  } else {
+    const required = ['albumin', 'creatinine', 'glucose', 'hs_crp', 'lymphocyte_pct', 'mcv', 'rdw', 'alk_phos', 'wbc'];
+    const missing = required.filter(r => latest.values[r] === undefined);
+    lines.push(`BIO AGE: Not computable. Missing: ${missing.join(', ')}`);
+  }
+  lines.push('');
+
+  const patterns = detectPatterns(latest.values, flags);
+  if (patterns.length) {
+    lines.push('PATTERN DETECTION:');
+    patterns.forEach(p => lines.push(`  - ${p}`));
+    lines.push('');
+  }
+
+  const allPossible = Object.keys(BIOMARKERS).filter(k => !BIOMARKERS[k].sex || BIOMARKERS[k].sex === sex);
+  const missing = allPossible.filter(k => latest.values[k] === undefined && !BIOMARKERS[k].calculated);
+  const keyMissing = missing.filter(k => ['ldl','hdl_m','hdl_f','triglycerides','apob','lpa','hba1c','insulin','hs_crp','testosterone_total_m','vit_d','vit_b12','ferritin_m','ferritin_f','free_t3','free_t4','homocysteine'].includes(k));
+  if (keyMissing.length) {
+    lines.push('KEY MISSING MARKERS (priority to request next draw):');
+    keyMissing.forEach(k => lines.push(`  - ${BIOMARKERS[k].name}`));
+    lines.push('');
+  }
+
+  if (state.wearables.length > 0) {
+    const recent = state.wearables.slice().sort((a,b) => b.date.localeCompare(a.date)).slice(0, 14);
+    const aggs = {};
+    recent.forEach(w => Object.entries(w.metrics).forEach(([k,v]) => {
+      if (!aggs[k]) aggs[k] = [];
+      aggs[k].push(v);
+    }));
+    lines.push(`WEARABLE DATA (last ${recent.length} entries):`);
+    Object.entries(aggs).forEach(([k, vals]) => {
+      const avg = (vals.reduce((s,v) => s + v, 0) / vals.length).toFixed(1);
+      lines.push(`  ${WEARABLES[k]?.name || k}: avg ${avg} ${WEARABLES[k]?.unit || ''} (n=${vals.length})`);
+    });
+    lines.push('');
+  }
+
+  if (state.protocols.length > 0) {
+    const active = state.protocols.slice().sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
+    lines.push('RECENT PROTOCOLS:');
+    active.forEach(p => lines.push(`  [${p.date}] ${p.category}: ${p.title}${p.notes ? ' — ' + p.notes.slice(0, 100) : ''}`));
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+function detectPatterns(values, flags) {
+  const patterns = [];
+  const v = values;
+  if (v.glucose >= 100 && v.hba1c === undefined) patterns.push('Glucose at/above prediabetic threshold without HbA1c context. Request HbA1c and fasting insulin.');
+  if (v.hba1c >= 5.7) patterns.push(`HbA1c ${v.hba1c}% is in prediabetic range (5.7-6.4).`);
+  if (v.glucose >= 100 && v.hba1c >= 5.4 && v.triglycerides >= 150) patterns.push('Metabolic dysfunction cluster: elevated glucose + HbA1c + triglycerides.');
+  if (v.hdl_m && v.triglycerides && v.triglycerides / v.hdl_m >= 3) patterns.push(`Trig/HDL ratio ${(v.triglycerides / v.hdl_m).toFixed(1)} suggests insulin resistance.`);
+  if (v.apob >= 90 && v.lpa >= 75) patterns.push('High ApoB + high Lp(a): elevated cardiovascular risk, consider cardiology input.');
+  if (v.ldl >= 130 && v.hs_crp >= 2) patterns.push('Elevated LDL with inflammation (hs-CRP ≥2). ApoB would clarify particle burden.');
+  if (v.tsh < 0.5 && v.free_t3 === undefined) patterns.push('Suppressed TSH without Free T3/T4. Request full thyroid panel to distinguish subclinical hyperthyroid from central hypothyroid.');
+  if (v.tsh > 2.5 && v.tsh < 4.5 && v.tpo_ab === undefined) patterns.push('TSH in upper-normal zone. Consider TPO antibodies to rule out Hashimoto tendency.');
+  if (v.testosterone_total_m && v.testosterone_total_m < 400) patterns.push(`Total testosterone ${v.testosterone_total_m} ng/dL is below longevity-optimal. Confirm with free T and SHBG.`);
+  if (v.hs_crp >= 1 && v.ferritin_m >= 200) patterns.push('Elevated hs-CRP + elevated ferritin may reflect systemic inflammation rather than iron stores.');
+  if (v.vit_d && v.vit_d < 30) patterns.push(`Vitamin D ${v.vit_d} ng/mL is deficient. 5000 IU/day for 8 weeks then retest is standard.`);
+  if (v.homocysteine >= 10) patterns.push(`Homocysteine ${v.homocysteine} elevated. Check B12, folate, methylation.`);
+  if (v.magnesium && v.magnesium < 2.0) patterns.push('Serum magnesium at/below 2.0. Serum Mg undersells total body status. Glycinate 200-400mg at night.');
+  if (v.albumin < 4.0) patterns.push('Albumin <4.0 may reflect protein intake, inflammation, or liver function.');
+  return patterns;
+}
+
+function generateAnalysis() {
+  const summary = buildAnalysisSummary();
+  document.getElementById('analysis-output').textContent = summary;
+}
+
+function copyAnalysis() {
+  const text = document.getElementById('analysis-output').textContent;
+  navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard.')).catch(() => alert('Copy failed. Select and copy manually.'));
+}
+
+async function sendToClaude() {
+  if (!state.apiKey) { alert('Add your Anthropic API key in Settings first.'); return; }
+  const summary = document.getElementById('analysis-output').textContent;
+  if (!summary || summary.startsWith('Click')) { alert('Generate summary first.'); return; }
+  const btn = document.getElementById('send-claude-btn');
+  btn.disabled = true;
+  btn.textContent = 'Claude is thinking...';
+  const responseCard = document.getElementById('claude-response-card');
+  const responseDiv = document.getElementById('claude-response');
+  responseCard.classList.remove('hidden');
+  responseDiv.textContent = 'Waiting for response...';
+
+  const systemPrompt = `You are a biomarker analysis assistant for a health-tracking app. The user has shared their structured biomarker summary. Provide:
+1. A top-line assessment (2-3 sentences on overall health picture).
+2. Priority concerns ranked by clinical importance.
+3. Pattern interpretation (what do the flagged markers suggest together).
+4. Specific actionable protocol (diet, supplements with doses, lifestyle, retest cadence).
+5. What to request on the next lab draw.
+
+Be direct, evidence-based, and use standard medical terminology. Do not use em dashes. No filler. Assume the user has high health literacy. Note when findings require clinician follow-up.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: state.apiModel || 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: summary }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) {
+      responseDiv.textContent = 'Error: ' + data.error.message;
+    } else {
+      const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n\n');
+      responseDiv.textContent = text || 'No response content received.';
+    }
+  } catch (err) {
+    responseDiv.textContent = 'Request failed: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Ask Claude (live)';
+  }
+}
+
+// ============================================================================
+// PROTOCOLS
+// ============================================================================
+function addProtocol() {
+  const date = document.getElementById('protocol-date').value || new Date().toISOString().slice(0, 10);
+  const category = document.getElementById('protocol-category').value;
+  const title = document.getElementById('protocol-title').value.trim();
+  const notes = document.getElementById('protocol-notes').value.trim();
+  if (!title) { alert('Add a title.'); return; }
+  state.protocols.push({ id: uuid(), date, category, title, notes });
+  saveState();
+  document.getElementById('protocol-title').value = "";
+  document.getElementById('protocol-notes').value = "";
+  renderProtocols();
+}
+function deleteProtocol(id) {
+  if (!confirm('Delete?')) return;
+  state.protocols = state.protocols.filter(p => p.id !== id);
+  saveState();
+  renderProtocols();
+}
+function renderProtocols() {
+  const container = document.getElementById('protocol-list');
+  if (state.protocols.length === 0) {
+    container.innerHTML = `<div class="card rounded-lg p-8 text-center text-gray-400">No protocols yet.</div>`;
+    return;
+  }
+  const sorted = state.protocols.slice().sort((a,b) => b.date.localeCompare(a.date));
+  container.innerHTML = sorted.map(p => `
+    <div class="card rounded-lg p-5 mb-3">
+      <div class="flex justify-between items-start mb-2">
+        <div>
+          <span class="text-xs uppercase text-indigo-400 font-semibold">${p.category}</span>
+          <h4 class="font-bold">${escapeHtml(p.title)}</h4>
+          <p class="text-xs text-gray-500">${new Date(p.date).toLocaleDateString()}</p>
+        </div>
+        <button onclick="deleteProtocol('${p.id}')" class="text-gray-500 hover:text-red-400 text-sm">Delete</button>
+      </div>
+      ${p.notes ? `<p class="text-sm text-gray-300 whitespace-pre-wrap">${escapeHtml(p.notes)}</p>` : ''}
+    </div>
+  `).join('');
+  document.getElementById('protocol-date').value = new Date().toISOString().slice(0, 10);
+}
+
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ============================================================================
+// SETTINGS
+// ============================================================================
+function saveProfile() {
+  state.profile.name = document.getElementById('profile-name').value;
+  state.profile.dob = document.getElementById('profile-dob').value;
+  state.profile.sex = document.getElementById('profile-sex').value;
+  saveState();
+  renderProfileSummary();
+  renderAddForm();
+  alert('Profile saved.');
+}
+function saveApiConfig() {
+  state.apiKey = document.getElementById('api-key').value.trim();
+  state.apiModel = document.getElementById('api-model').value;
+  saveState();
+  alert('API config saved.');
+}
+function renderProfileSummary() {
+  const el = document.getElementById('profile-summary');
+  const name = state.profile.name || 'You';
+  const age = getChronoAge();
+  el.textContent = age ? `${name} · ${age.toFixed(1)} years · ${state.profile.sex}` : 'Set your profile in Settings.';
+}
+function loadProfileIntoForm() {
+  document.getElementById('profile-name').value = state.profile.name || "";
+  document.getElementById('profile-dob').value = state.profile.dob || "";
+  document.getElementById('profile-sex').value = state.profile.sex || "male";
+  document.getElementById('api-key').value = state.apiKey || "";
+  document.getElementById('api-model').value = state.apiModel || "claude-sonnet-4-6";
+}
+function renderDrawsList() {
+  const container = document.getElementById('draws-list');
+  if (state.labs.length === 0) {
+    container.innerHTML = `<p class="text-gray-400">No draws yet.</p>`;
+    return;
+  }
+  const sorted = state.labs.slice().sort((a,b) => b.date.localeCompare(a.date));
+  container.innerHTML = sorted.map(l => {
+    const count = Object.keys(l.values).length;
+    return `<div class="flex items-center justify-between py-2 border-b border-gray-800">
+      <div>
+        <p class="font-medium">${new Date(l.date).toLocaleDateString()}</p>
+        <p class="text-xs text-gray-500">${count} markers · ${escapeHtml(l.notes || 'no notes')}</p>
+      </div>
+      <button onclick="deleteDraw('${l.id}')" class="text-gray-500 hover:text-red-400 text-sm">Delete</button>
+    </div>`;
+  }).join('');
+}
+function deleteDraw(id) {
+  if (!confirm('Delete this draw?')) return;
+  state.labs = state.labs.filter(l => l.id !== id);
+  saveState();
+  renderDrawsList();
+  renderDashboard();
+}
+function clearAllData() {
+  if (!confirm('Delete ALL data? Export first if you want a backup.')) return;
+  if (!confirm('Last chance. Really?')) return;
+  state = defaultState();
+  saveState();
+  location.reload();
+}
+
+// ============================================================================
+// EXPORT / IMPORT
+// ============================================================================
+function exportData() {
+  const exportState = { ...state, apiKey: '' };
+  const blob = new Blob([JSON.stringify(exportState, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `biomarker-tracker-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.labs || !Array.isArray(imported.labs)) throw new Error('Invalid file');
+      if (confirm(`Import ${imported.labs.length} draws, ${(imported.protocols||[]).length} protocols, ${(imported.wearables||[]).length} wearable entries? Replaces current data.`)) {
+        state = { ...defaultState(), ...imported };
+        saveState();
+        location.reload();
+      }
+    } catch (err) {
+      alert('Could not import: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================================
+// NAV
+// ============================================================================
+function showTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  document.getElementById(`view-${tab}`).classList.remove('hidden');
+  ['dashboard','add','wearables','trends','analysis','protocols','settings'].forEach(t => {
+    const btn = document.getElementById(`tab-${t}`);
+    btn.className = `px-4 py-2 rounded-t ${t === tab ? 'tab-active' : 'tab-inactive'}`;
+  });
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'add') renderAddForm();
+  if (tab === 'wearables') { renderWearableForm(); renderWearableList(); populateWearableTrendSelector(); renderWearableTrend(); }
+  if (tab === 'trends') { populateTrendMarkers(); renderTrend(); }
+  if (tab === 'protocols') renderProtocols();
+  if (tab === 'settings') { loadProfileIntoForm(); renderDrawsList(); }
+}
+
+// INIT
+renderProfileSummary();
+renderDashboard();
+</script>
+</body>
+</html>

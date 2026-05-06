@@ -1,0 +1,344 @@
+{
+  "version": 1,
+  "timezone": "Asia/Tokyo",
+  "description": "Weekly schedule template. Days use ISO 8601 weekday numbers: 1=Monday, 7=Sunday. All times JST in 24h HH:mm format.",
+  "blocks": [
+    {
+      "dayOfWeek": 1,
+      "startTime": "09:00",
+      "endTime": "09:30",
+      "activity": "Drop-off + drive to gym",
+      "type": "transit",
+      "module": null
+    },
+    {
+      "dayOfWeek": 1,
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "activity": "Lift A: legs, push, pull",
+      "type": "training",
+      "module": "lift_a"
+    },
+    {
+      "dayOfWeek": 1,
+      "startTime": "11:00",
+      "endTime": "12:00",
+      "activity": "Shower, drive home, lunch",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 1,
+      "startTime": "12:00",
+      "endTime": "12:30",
+      "activity": "Pimsleur Japanese",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 1,
+      "startTime": "12:30",
+      "endTime": "15:00",
+      "activity": "PMGT coursework deep work",
+      "type": "study",
+      "module": "coursework"
+    },
+    {
+      "dayOfWeek": 1,
+      "startTime": "15:00",
+      "endTime": "16:00",
+      "activity": "Admin (SSDI, VR&E, micro-SaaS)",
+      "type": "admin",
+      "module": "admin"
+    },
+    {
+      "dayOfWeek": 1,
+      "startTime": "16:00",
+      "endTime": "16:30",
+      "activity": "Guitar practice",
+      "type": "learning",
+      "module": "guitar"
+    },
+    {
+      "dayOfWeek": 1,
+      "startTime": "16:30",
+      "endTime": "17:00",
+      "activity": "Pickup prep",
+      "type": "transit",
+      "module": null
+    },
+
+    {
+      "dayOfWeek": 2,
+      "startTime": "09:00",
+      "endTime": "09:45",
+      "activity": "Drop-off + Pimsleur during commute",
+      "type": "transit",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "09:45",
+      "endTime": "10:00",
+      "activity": "Drive to court",
+      "type": "transit",
+      "module": null
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "10:00",
+      "endTime": "14:00",
+      "activity": "Basketball (DeepWater Elite)",
+      "type": "training",
+      "module": "basketball"
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "14:00",
+      "endTime": "15:00",
+      "activity": "Lunch, recovery, shower",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "15:00",
+      "endTime": "16:30",
+      "activity": "PMGT coursework",
+      "type": "study",
+      "module": "coursework"
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "16:30",
+      "endTime": "17:00",
+      "activity": "Guitar + pickup prep",
+      "type": "learning",
+      "module": "guitar"
+    },
+
+    {
+      "dayOfWeek": 3,
+      "startTime": "09:00",
+      "endTime": "09:15",
+      "activity": "Drop-off",
+      "type": "transit",
+      "module": null
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "09:15",
+      "endTime": "11:00",
+      "activity": "PMGT coursework deep work",
+      "type": "study",
+      "module": "coursework"
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "11:00",
+      "endTime": "12:00",
+      "activity": "Lunch, drive to McTureous pool",
+      "type": "transit",
+      "module": null
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "12:00",
+      "endTime": "13:00",
+      "activity": "Lap swim 30-40 min easy",
+      "type": "training",
+      "module": "swim"
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "13:00",
+      "endTime": "14:00",
+      "activity": "Shower, refuel, drive home",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "14:00",
+      "endTime": "15:00",
+      "activity": "Japanese (Pimsleur 30 + listening 30)",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "15:00",
+      "endTime": "16:30",
+      "activity": "Coursework overflow / admin",
+      "type": "study",
+      "module": "coursework"
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "16:30",
+      "endTime": "17:00",
+      "activity": "Guitar + pickup prep",
+      "type": "learning",
+      "module": "guitar"
+    },
+
+    {
+      "dayOfWeek": 4,
+      "startTime": "09:00",
+      "endTime": "09:45",
+      "activity": "Drop-off + Pimsleur during commute",
+      "type": "transit",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "09:45",
+      "endTime": "10:00",
+      "activity": "Drive to court",
+      "type": "transit",
+      "module": null
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "10:00",
+      "endTime": "14:00",
+      "activity": "Basketball (DeepWater Elite)",
+      "type": "training",
+      "module": "basketball"
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "14:00",
+      "endTime": "15:00",
+      "activity": "Lunch, recovery, shower",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "15:00",
+      "endTime": "16:30",
+      "activity": "PMGT coursework",
+      "type": "study",
+      "module": "coursework"
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "16:30",
+      "endTime": "17:00",
+      "activity": "Guitar + pickup prep",
+      "type": "learning",
+      "module": "guitar"
+    },
+
+    {
+      "dayOfWeek": 5,
+      "startTime": "09:00",
+      "endTime": "09:30",
+      "activity": "Drop-off + drive to gym",
+      "type": "transit",
+      "module": null
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "activity": "Lift B (different exercises than Mon)",
+      "type": "training",
+      "module": "lift_b"
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "11:00",
+      "endTime": "12:00",
+      "activity": "Shower, drive home, lunch",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "12:00",
+      "endTime": "12:30",
+      "activity": "Pimsleur Japanese",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "12:30",
+      "endTime": "15:00",
+      "activity": "Weekly coursework wrap, peer reviews",
+      "type": "study",
+      "module": "coursework"
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "15:00",
+      "endTime": "16:00",
+      "activity": "Admin / PMGT overflow",
+      "type": "admin",
+      "module": "admin"
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "16:00",
+      "endTime": "17:00",
+      "activity": "Guitar + pickup prep",
+      "type": "learning",
+      "module": "guitar"
+    },
+
+    {
+      "dayOfWeek": 6,
+      "startTime": "07:00",
+      "endTime": "07:30",
+      "activity": "Japanese (Pimsleur)",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 6,
+      "startTime": "19:00",
+      "endTime": "19:20",
+      "activity": "Guitar practice",
+      "type": "learning",
+      "module": "guitar"
+    },
+
+    {
+      "dayOfWeek": 7,
+      "startTime": "07:00",
+      "endTime": "07:30",
+      "activity": "Japanese (Pimsleur)",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 7,
+      "startTime": "19:00",
+      "endTime": "19:20",
+      "activity": "Guitar practice",
+      "type": "learning",
+      "module": "guitar"
+    }
+  ],
+  "fastingDefaults": {
+    "weeks_1_2": {
+      "trainingDays": { "start": "21:00", "end": "09:00" },
+      "trainingDayNumbers": [1, 2, 4, 5],
+      "otherDays": { "start": "22:00", "end": "10:00" }
+    },
+    "weeks_3_plus": {
+      "all": { "start": "22:00", "end": "10:00" }
+    }
+  },
+  "hydrationTargetsOz": {
+    "rest": { "min": 110, "max": 130, "appliesTo": [3, 7] },
+    "lift": { "min": 140, "max": 160, "appliesTo": [1, 5] },
+    "basketball": { "min": 160, "max": 190, "appliesTo": [2, 4] },
+    "swim": { "min": 120, "max": 140, "appliesTo": [3] }
+  },
+  "hydrationCutoffTime": "21:00",
+  "saturdayNote": "Family day, optional family swim at McTureous",
+  "sundayNote": "Rest, weekly review, plan PMGT week"
+}
