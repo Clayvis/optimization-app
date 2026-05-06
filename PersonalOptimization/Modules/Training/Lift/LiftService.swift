@@ -35,6 +35,25 @@ final class LiftService {
         return session
     }
 
+    /// Adds a custom exercise to the session inline. Marks `isCustom = true` so
+    /// downstream analytics and history can distinguish ad-hoc additions from template
+    /// exercises. Order index is appended after existing exercises.
+    @discardableResult
+    func addCustomExercise(in session: LiftSession, name: String) throws -> LiftExercise {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else {
+            throw LiftServiceError.invalidExerciseName
+        }
+        let nextIndex = (session.exercises ?? []).map { $0.orderIndex }.max().map { $0 + 1 } ?? 0
+        let exercise = LiftExercise(name: trimmed, orderIndex: nextIndex, isCustom: true)
+        modelContext.insert(exercise)
+        var current = session.exercises ?? []
+        current.append(exercise)
+        session.exercises = current
+        try modelContext.save()
+        return exercise
+    }
+
     /// Adds a set to the named exercise inside the session. Returns the new set.
     @discardableResult
     func logSet(in session: LiftSession, exerciseName: String, weightLbs: Double, reps: Int, restSeconds: Int? = nil) throws -> LiftSet {
@@ -108,10 +127,45 @@ final class LiftService {
 
 enum LiftServiceError: LocalizedError {
     case exerciseNotFound(String)
+    case invalidExerciseName
 
     var errorDescription: String? {
         switch self {
         case .exerciseNotFound(let name): return "Exercise '\(name)' not found in active session"
+        case .invalidExerciseName: return "Exercise name cannot be empty"
         }
+    }
+}
+
+/// Volume aggregator surface used by LiftSessionView to render concentric arcs and
+/// the identity-framed completion line. Pure value type; computed from the session.
+struct LiftVolumeSummary: Sendable {
+    var totalLbs: Double
+    var setCount: Int
+    var repCount: Int
+
+    static func from(session: LiftSession) -> LiftVolumeSummary {
+        let exercises = session.exercises ?? []
+        var totalLbs: Double = 0
+        var setCount = 0
+        var repCount = 0
+        for ex in exercises {
+            let sets = ex.sets ?? []
+            setCount += sets.count
+            for s in sets {
+                totalLbs += s.weightLbs * Double(s.reps)
+                repCount += s.reps
+            }
+        }
+        return LiftVolumeSummary(totalLbs: totalLbs, setCount: setCount, repCount: repCount)
+    }
+
+    /// Identity-framed completion line. Spec: "12,400 lb moved. That's the work."
+    var completionLine: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        let pretty = formatter.string(from: NSNumber(value: totalLbs)) ?? "\(Int(totalLbs))"
+        return "\(pretty) lb moved. That's the work."
     }
 }

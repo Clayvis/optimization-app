@@ -4,11 +4,24 @@ import Charts
 
 struct HydrationView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var profiles: [UserProfile]
     @State private var service: HydrationService?
     @State private var loadError: String?
     @State private var refreshTrigger = 0
 
-    private let bottleSizes: [Double] = [8, 16, 24, 32]
+    @State private var customAmount: Double = 0
+    @State private var customUnit: HydrationUnit = .oz
+    @State private var customBeverage: BeverageType = .water
+
+    enum HydrationUnit: String, CaseIterable, Identifiable {
+        case oz, mL
+        var id: String { rawValue }
+    }
+
+    private var quickPicks: [Double] {
+        let csv = profiles.first?.hydrationQuickPicksOzCSV ?? "4,8,12,16,20,24,32"
+        return HydrationService.parseQuickPicksCSV(csv)
+    }
 
     var body: some View {
         NavigationStack {
@@ -38,14 +51,18 @@ struct HydrationView: View {
         let electrolytes = service.electrolyteCount(for: now)
 
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
                 progressCard(intake: intake, target: target, dayType: dayType)
 
                 paceCard(intake: intake, target: target, now: now)
 
-                logCard(service: service)
+                quickLogCard(service: service)
+
+                customLogCard(service: service)
 
                 electrolyteCard(count: electrolytes, service: service)
+
+                recentEntriesCard(service: service, now: now)
             }
             .padding()
             .id(refreshTrigger)
@@ -129,15 +146,27 @@ struct HydrationView: View {
     }
 
     @ViewBuilder
-    private func logCard(service: HydrationService) -> some View {
+    private func quickLogCard(service: HydrationService) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Log a bottle")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-            HStack(spacing: 8) {
-                ForEach(bottleSizes, id: \.self) { oz in
+            HStack {
+                Text("Quick log")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Picker("Beverage", selection: $customBeverage) {
+                    ForEach(BeverageType.allCases, id: \.rawValue) { b in
+                        Text(b.displayName).tag(b)
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityLabel("Beverage type")
+            }
+
+            let columns = [GridItem(.adaptive(minimum: 64), spacing: 8)]
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(quickPicks, id: \.self) { oz in
                     Button {
-                        _ = try? service.logBottle(oz: oz)
+                        _ = try? service.logBeverage(amountOz: oz, beverageType: customBeverage)
                         refreshTrigger += 1
                     } label: {
                         VStack(spacing: 2) {
@@ -147,13 +176,49 @@ struct HydrationView: View {
                                 .font(.caption2)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 64)
+                        .frame(height: 56)
                         .background(Color(.tertiarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Log \(Int(oz)) ounces of water")
+                    .accessibilityLabel("Log \(Int(oz)) ounces of \(customBeverage.displayName)")
                 }
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func customLogCard(service: HydrationService) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Custom amount")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                TextField("Amount", value: $customAmount, format: .number)
+                    .keyboardType(.decimalPad)
+                    .padding(8)
+                    .background(Color(.tertiarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                Picker("Unit", selection: $customUnit) {
+                    Text("oz").tag(HydrationUnit.oz)
+                    Text("mL").tag(HydrationUnit.mL)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 110)
+                Button {
+                    logCustom(service: service)
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(customAmount <= 0)
+                .accessibilityLabel("Log custom amount")
             }
         }
         .padding()
@@ -187,6 +252,72 @@ struct HydrationView: View {
         .padding()
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func recentEntriesCard(service: HydrationService, now: Date) -> some View {
+        let entries = service.entriesForDay(of: now)
+        if !entries.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Today's log")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                ForEach(entries.prefix(8), id: \.persistentModelID) { entry in
+                    HStack {
+                        Image(systemName: iconFor(beverage: entry.beverageType))
+                            .foregroundStyle(colorFor(beverage: entry.beverageType))
+                        Text("\(Int(entry.amountOz)) oz · \(entry.beverageType.displayName)")
+                            .font(.subheadline)
+                        Spacer()
+                        Text(timeFormatter.string(from: entry.date))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+    }
+
+    private func logCustom(service: HydrationService) {
+        switch customUnit {
+        case .oz:
+            _ = try? service.logBeverage(amountOz: customAmount, beverageType: customBeverage)
+        case .mL:
+            _ = try? service.logBeverage(amountML: customAmount, beverageType: customBeverage)
+        }
+        customAmount = 0
+        refreshTrigger += 1
+    }
+
+    private func iconFor(beverage: BeverageType) -> String {
+        switch beverage {
+        case .water: return "drop.fill"
+        case .coffee: return "cup.and.saucer.fill"
+        case .tea: return "leaf.fill"
+        case .electrolyte: return "bolt.fill"
+        case .other: return "drop.halffull"
+        }
+    }
+
+    private func colorFor(beverage: BeverageType) -> Color {
+        switch beverage {
+        case .water: return .blue
+        case .coffee: return .brown
+        case .tea: return .green
+        case .electrolyte: return .yellow
+        case .other: return .gray
+        }
+    }
+
+    private var timeFormatter: DateFormatter {
+        let f = DateFormatter()
+        f.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        f.dateFormat = "HH:mm"
+        return f
     }
 
     private func progressTint(intake: Double, target: ClosedRange<Double>) -> Color {

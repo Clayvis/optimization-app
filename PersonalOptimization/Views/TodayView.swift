@@ -43,6 +43,13 @@ struct TodayView: View {
                 }
 
                 Section {
+                    streakStrip
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
                     headerCard
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -149,6 +156,37 @@ struct TodayView: View {
         .sheet(isPresented: $showingProtocolDetail) {
             ProtocolDetailView(tally: tally)
         }
+    }
+
+    @ViewBuilder
+    private var streakStrip: some View {
+        let counters = (try? modelContext.fetch(FetchDescriptor<StreakCounter>())) ?? []
+        let workout = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
+        let hydration = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0
+        let learning = counters.first { $0.domain == StreakDomain.learning.rawValue }?.currentStreak ?? 0
+        HStack(spacing: 10) {
+            streakChip(label: "Workout", days: workout, systemImage: "figure.strengthtraining.traditional")
+            streakChip(label: "Hydration", days: hydration, systemImage: "drop.fill")
+            streakChip(label: "Learning", days: learning, systemImage: "book.fill")
+        }
+    }
+
+    private func streakChip(label: String, days: Int, systemImage: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.caption2)
+            Text("\(days)")
+                .font(.subheadline.weight(.bold))
+                .monospacedDigit()
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color(.tertiarySystemBackground))
+        .clipShape(Capsule())
+        .accessibilityLabel("\(label) streak \(days) day\(days == 1 ? "" : "s")")
     }
 
     @ViewBuilder

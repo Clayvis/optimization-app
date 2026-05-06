@@ -14,6 +14,7 @@ struct LiftSessionView: View {
     @State private var restTimerEndsAt: Date?
     @State private var showingAddSet = false
     @State private var addSetExercise: LiftExercise?
+    @State private var customExerciseName: String = ""
 
     var body: some View {
         Group {
@@ -47,7 +48,14 @@ struct LiftSessionView: View {
             }
 
             ForEach(sortedExercises(session: session), id: \.persistentModelID) { exercise in
-                Section(exercise.name) {
+                Section(header: HStack {
+                    Text(exercise.name)
+                    if exercise.isCustom {
+                        Text("CUSTOM")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.tint)
+                    }
+                }) {
                     let sets = (exercise.sets ?? []).sorted { $0.orderIndex < $1.orderIndex }
                     ForEach(sets, id: \.persistentModelID) { set in
                         HStack {
@@ -66,6 +74,26 @@ struct LiftSessionView: View {
                         Label("Add set", systemImage: "plus.circle")
                     }
                 }
+            }
+
+            Section("Add custom exercise") {
+                HStack {
+                    TextField("Exercise name", text: $customExerciseName)
+                        .autocapitalization(.words)
+                    Button {
+                        addCustomExercise(service: service, session: session)
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(customExerciseName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityLabel("Add custom exercise")
+                }
+            }
+
+            Section {
+                volumeSummaryFooter(session: session)
             }
 
             Section {
@@ -95,6 +123,57 @@ struct LiftSessionView: View {
 
     private func sortedExercises(session: LiftSession) -> [LiftExercise] {
         (session.exercises ?? []).sorted { $0.orderIndex < $1.orderIndex }
+    }
+
+    @ViewBuilder
+    private func volumeSummaryFooter(session: LiftSession) -> some View {
+        let summary = LiftVolumeSummary.from(session: session)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Today's volume")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                volumeArc(value: summary.totalLbs, target: 12_000, label: "lb", color: .orange)
+                volumeArc(value: Double(summary.setCount), target: 32, label: "sets", color: .blue)
+                volumeArc(value: Double(summary.repCount), target: 250, label: "reps", color: .green)
+            }
+            if summary.totalLbs > 0 {
+                Text(summary.completionLine)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .accessibilityLabel(summary.completionLine)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func volumeArc(value: Double, target: Double, label: String, color: Color) -> some View {
+        let progress = target > 0 ? min(value / target, 1.0) : 0
+        return VStack(spacing: 4) {
+            ZStack {
+                Circle()
+                    .stroke(color.opacity(0.2), lineWidth: 6)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(color, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Text("\(Int(value))")
+                    .font(.caption.weight(.bold))
+                    .monospacedDigit()
+            }
+            .frame(width: 56, height: 56)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func addCustomExercise(service: LiftService, session: LiftSession) {
+        let name = customExerciseName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        _ = try? service.addCustomExercise(in: session, name: name)
+        customExerciseName = ""
     }
 
     private func formatRemaining(_ s: TimeInterval) -> String {
