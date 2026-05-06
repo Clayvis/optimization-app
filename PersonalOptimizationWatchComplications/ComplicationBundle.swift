@@ -6,5 +6,6 @@ struct ComplicationBundle: WidgetBundle {
     var body: some Widget {
         CurrentBlockComplication()
         FastCountdownComplication()
+        MascotComplication()
     }
 }

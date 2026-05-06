@@ -17,6 +17,7 @@
 		0B10F72BCCFD1DA5F75A39CC /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07EA40251321BD4591EB4760 /* AppShortcuts.swift */; };
 		0C496AA97A7A343CB905C178 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */; };
 		0DB87612ACCE386EC13E771C /* default_schedule.json in Resources */ = {isa = PBXBuildFile; fileRef = 82221D5BC1BA379932EC9A6A /* default_schedule.json */; };
+		0F1C0E2B5655FBCDECD31527 /* CharacterStateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354926C56217E04EDDF8B579 /* CharacterStateService.swift */; };
 		1010CD77E02850FD282ED7A5 /* LiftSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177EF30368767AF7EBD3F9D1 /* LiftSession.swift */; };
 		112CF695517D31A1E87892F7 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
 		13472C39166401253FC4630C /* ScheduleSeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D07E40975A5EFFC26755ECF /* ScheduleSeedTests.swift */; };
@@ -104,6 +105,7 @@
 		8B1A15455BE8C010AF127747 /* JSONExportImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8784746AB1A5E716335FC51 /* JSONExportImportTests.swift */; };
 		90C918CC411E53F1864CC318 /* StreakCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF13531E1C84E1B6271EB29 /* StreakCounter.swift */; };
 		9539BA572E007D3F4BDF9529 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E17A5E10EFA803A2312758C1 /* ErrorBanner.swift */; };
+		95682A6C8CB03F102809FB92 /* MascotComplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE3C14010480A8A180A4158 /* MascotComplication.swift */; };
 		956FDCF1B79C09CFF8407918 /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CE13FE68863483CD8470256 /* HealthKitService.swift */; };
 		9577C79B850AE654683C4F41 /* LearningModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBB5606768832CD31284D286 /* LearningModule.swift */; };
 		95A58B0B7CDEF94B64FDF7B5 /* SwimSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CFF9D4CAF217C0577FCF84 /* SwimSession.swift */; };
@@ -155,6 +157,7 @@
 		D88710D92BC1761C9AFA3ED6 /* CharacterStateLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1584E714556DEC27402B9AB6 /* CharacterStateLog.swift */; };
 		D899269E7126A1E9AAF4D4FB /* PersonalOptimizationLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DB80C72EEA7682E39EDA859B /* SchemaV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C21B1F183A1B8E72B77E9EE /* SchemaV1.swift */; };
+		DB8A74E0698D9DC1106F0CE0 /* CharacterStateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354926C56217E04EDDF8B579 /* CharacterStateService.swift */; };
 		DB8AA9B4CB309C2E9D120330 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */; };
 		DC3598DF9C384F7BBA1D00C9 /* ScheduleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F31266DF504D0F540B369D /* ScheduleBlock.swift */; };
 		DC5E2A96BEBFBEAFA8EEA2AD /* LearningService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8DE71D468B74D040F0520D0 /* LearningService.swift */; };
@@ -335,6 +338,7 @@
 		9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WearableEntry.swift; sourceTree = "<group>"; };
 		A3E9897C0A7723B5B1CDAFCC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AFE3C14010480A8A180A4158 /* MascotComplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotComplication.swift; sourceTree = "<group>"; };
 		AFF13531E1C84E1B6271EB29 /* StreakCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCounter.swift; sourceTree = "<group>"; };
 		B12078C7513677476A637F58 /* LiftServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftServiceTests.swift; sourceTree = "<group>"; };
 		B51542D012807C71EE967904 /* HydrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationView.swift; sourceTree = "<group>"; };
@@ -728,6 +732,7 @@
 				280C8DC3E36757B1E548A6F0 /* FastCountdownComplication.swift */,
 				C608CA325D483F55214ED4BE /* FastCountdownTimelineProvider.swift */,
 				107F1D4D82B6EB9F1FC2EF78 /* Info.plist */,
+				AFE3C14010480A8A180A4158 /* MascotComplication.swift */,
 				D336D7B9EFE5E76B62ADDB3F /* PersonalOptimizationWatchComplications.entitlements */,
 			);
 			path = PersonalOptimizationWatchComplications;
@@ -1068,6 +1073,7 @@
 				61AFF636A369285390DE5688 /* AdminTask.swift in Sources */,
 				04711B71F53D38C5B330FC4D /* BasketballSession.swift in Sources */,
 				7E13A0278FDC934EE1155D4A /* CharacterStateLog.swift in Sources */,
+				0F1C0E2B5655FBCDECD31527 /* CharacterStateService.swift in Sources */,
 				747E0FC60C3D5717A38808E8 /* CompletionHistory.swift in Sources */,
 				8A399C28D937DE547629836A /* ComplicationBundle.swift in Sources */,
 				4AB094B82026550D98B3B435 /* CurrentBlockComplication.swift in Sources */,
@@ -1082,6 +1088,7 @@
 				F7D93E2FA5F50C1E667701FC /* LearningStreak.swift in Sources */,
 				1010CD77E02850FD282ED7A5 /* LiftSession.swift in Sources */,
 				2011D16E82C404E75BD21390 /* Logger+Categories.swift in Sources */,
+				95682A6C8CB03F102809FB92 /* MascotComplication.swift in Sources */,
 				445E79CE78180CE5E6ABE007 /* PomodoroSession.swift in Sources */,
 				170E95E49F9B10235C37B18B /* ProfileService.swift in Sources */,
 				2732AB89C3CA4CA9A702EE98 /* ProtocolEntry.swift in Sources */,
@@ -1110,6 +1117,7 @@
 				5A8F53ECFBCDD210D40FB27C /* BasketballSession.swift in Sources */,
 				35600A750CDD9B0E6534AE9A /* BasketballWatchView.swift in Sources */,
 				00BF11AABDECB9D5FBBA77EB /* CharacterStateLog.swift in Sources */,
+				DB8A74E0698D9DC1106F0CE0 /* CharacterStateService.swift in Sources */,
 				D85B5D9F8C1637D4D91C8F2E /* CompletionHistory.swift in Sources */,
 				6F3798E21919A4DA4CF40418 /* ContentView.swift in Sources */,
 				F1F85BB2070451DF9CCBB71C /* DailyLog.swift in Sources */,

@@ -3,16 +3,32 @@ import SwiftData
 
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var profiles: [UserProfile]
     @State private var now: Date = Date()
     @State private var tickTimer: Timer?
+    @State private var characterService = CharacterStateService.shared
 
     private var service: ScheduleService {
         ScheduleService(modelContext: modelContext)
     }
 
+    private var profile: UserProfile? { profiles.first }
+
     var body: some View {
         NavigationStack {
             List {
+                if let profile, profile.mascotEnabled {
+                    Section {
+                        CharacterView(service: characterService, size: 200)
+                            .frame(maxWidth: .infinity)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
+                    }
+                }
+
+                graceBannerSection
+
                 Section {
                     headerCard
                         .listRowSeparator(.hidden)
@@ -37,9 +53,50 @@ struct TodayView: View {
             .onAppear {
                 now = Date()
                 startTicking()
+                characterService.start(modelContext: modelContext)
             }
-            .onDisappear { stopTicking() }
+            .onDisappear {
+                stopTicking()
+                characterService.stop()
+            }
         }
+    }
+
+    @ViewBuilder
+    private var graceBannerSection: some View {
+        if let profile {
+            if let until = profile.travelModeActiveUntil, until >= now {
+                Section {
+                    graceBanner(text: "Travel mode active. Streaks paused, not faked.",
+                                systemImage: "airplane",
+                                accent: .blue)
+                }
+            } else if let until = profile.sickDayActiveUntil, until >= now {
+                Section {
+                    graceBanner(text: "Sick day. Today is covered. Rest up.",
+                                systemImage: "thermometer.medium",
+                                accent: .orange)
+                }
+            }
+        }
+    }
+
+    private func graceBanner(text: String, systemImage: String, accent: Color) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .foregroundStyle(accent)
+            Text(text)
+                .font(.callout.weight(.medium))
+            Spacer()
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(accent.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+        .accessibilityLabel(text)
     }
 
     @ViewBuilder
