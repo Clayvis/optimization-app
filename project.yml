@@ -114,10 +114,14 @@ targets:
           - "**/.DS_Store"
       - path: PersonalOptimization/Models
         name: SharedModels
+      - path: PersonalOptimization/Modules/Schedule
+        name: SharedSchedule
       - path: PersonalOptimization/Services/Logger+Categories.swift
     resources:
       - path: PersonalOptimizationWatch/Assets.xcassets
         optional: true
+      - path: PersonalOptimization/Resources
+        name: SharedResources
     info:
       path: PersonalOptimizationWatch/Info.plist
       properties:

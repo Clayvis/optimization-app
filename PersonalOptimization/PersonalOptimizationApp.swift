@@ -12,7 +12,15 @@ struct PersonalOptimizationApp: App {
             cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
         )
         do {
-            return try ModelContainer(for: schema, configurations: [config])
+            let container = try ModelContainer(for: schema, configurations: [config])
+            Task { @MainActor in
+                do {
+                    try ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)
+                } catch {
+                    Logger.schedule.error("Seed failed: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+            return container
         } catch {
             Logger.persistence.fault("ModelContainer init failed: \(error.localizedDescription, privacy: .public)")
             fatalError("ModelContainer init failed: \(error)")
