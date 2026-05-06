@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+    <defs>
+        <style>
+            .outline { stroke: #1A1A1A; stroke-width: 24; stroke-linecap: round; stroke-linejoin: round; }
+            .gi { fill: #3A3F47; }
+            .skin { fill: #FFD3B6; }
+            .bandana { fill: #E53935; }
+            .dark { fill: #1A1A1A; }
+            .white { fill: #FFFFFF; }
+            .blush { fill: #FF8A80; opacity: 0.6; }
+        </style>
+    </defs>
+
+    <!-- LEFT LEG -->
+    <g id="left_leg">
+        <rect x="400" y="800" width="80" height="120" rx="40" class="gi outline"/>
+        <!-- Foot / Boot -->
+        <ellipse cx="440" cy="920" rx="55" ry="30" class="dark"/>
+    </g>
+
+    <!-- RIGHT LEG -->
+    <g id="right_leg">
+        <rect x="544" y="800" width="80" height="120" rx="40" class="gi outline"/>
+        <!-- Foot / Boot -->
+        <ellipse cx="584" cy="920" rx="55" ry="30" class="dark"/>
+    </g>
+
+    <!-- LEFT ARM -->
+    <g id="left_arm">
+        <!-- Arm Stroke (Drawn thick for outline) -->
+        <path d="M 380 620 C 210 650 250 800 250 820" fill="none" stroke="#1A1A1A" stroke-width="98" stroke-linecap="round"/>
+        <!-- Arm Inner Fill -->
+        <path d="M 380 620 C 210 650 250 800 250 820" fill="none" stroke="#3A3F47" stroke-width="50" stroke-linecap="round"/>
+        <!-- Hand -->
+        <circle cx="250" cy="820" r="40" class="skin outline"/>
+    </g>
+
+    <!-- RIGHT ARM -->
+    <g id="right_arm">
+        <!-- Arm Stroke (Drawn thick for outline) -->
+        <path d="M 644 620 C 814 650 774 800 774 820" fill="none" stroke="#1A1A1A" stroke-width="98" stroke-linecap="round"/>
+        <!-- Arm Inner Fill -->
+        <path d="M 644 620 C 814 650 774 800 774 820" fill="none" stroke="#3A3F47" stroke-width="50" stroke-linecap="round"/>
+        <!-- Hand -->
+        <circle cx="774" cy="820" r="40" class="skin outline"/>
+    </g>
+
+    <!-- TORSO (Overlaps legs and arm joints) -->
+    <g id="torso">
+        <!-- Main Gi Body -->
+        <path d="M 380 560 L 644 560 C 690 560 700 750 680 840 C 660 880 364 880 344 840 C 324 750 334 560 380 560 Z" class="gi outline"/>
+        
+        <!-- Belt -->
+        <path d="M 338 740 L 686 740 L 682 785 L 342 785 Z" class="dark"/>
+        
+        <!-- Pouch (Right Side) -->
+        <rect x="610" y="750" width="65" height="75" rx="15" class="gi outline"/>
+        <circle cx="642" cy="790" r="6" class="dark"/>
+
+        <!-- Gi Lapel / V-Neck Folds -->
+        <path d="M 644 580 L 460 740" fill="none" stroke="#1A1A1A" stroke-width="16" stroke-linecap="round"/>
+        <path d="M 380 580 L 530 740" fill="none" stroke="#1A1A1A" stroke-width="16" stroke-linecap="round"/>
+    </g>
+
+    <!-- HEAD (Overlaps the Torso) -->
+    <g id="head">
+        <!-- Ninja Hood (Charcoal background) -->
+        <ellipse cx="512" cy="380" rx="330" ry="310" class="gi outline"/>
+        
+        <!-- Face Oval -->
+        <ellipse cx="512" cy="430" rx="230" ry="170" class="skin outline"/>
+        
+        <!-- BANDANA LAYER -->
+        <g id="red_bandana">
+            <!-- Bandana Tails (Flowing right) -->
+            <path d="M 810 340 C 950 320 990 420 920 490 C 890 440 920 380 810 380 Z" class="bandana outline"/>
+            <path d="M 820 370 C 920 390 940 480 880 540 C 860 500 880 430 810 410 Z" class="bandana outline"/>
+            
+            <!-- Front Bandana Wrap -->
+            <path d="M 185 340 Q 512 250 839 340 A 30 30 0 0 1 839 400 Q 512 330 185 400 A 30 30 0 0 1 185 340 Z" class="bandana outline"/>
+            <!-- Fabric Fold Detail -->
+            <path d="M 230 360 Q 512 290 794 360" fill="none" stroke="#B71C1C" stroke-width="6" stroke-linecap="round"/>
+        </g>
+
+        <!-- EYES LAYER -->
+        <g id="eyes">
+            <!-- Left Eyebrow (Determined tilt) -->
+            <path d="M 330 380 L 410 405" fill="none" class="outline"/>
+            <!-- Left Eye -->
+            <circle cx="390" cy="440" r="42" class="dark"/>
+            <circle cx="380" cy="425" r="14" class="white"/>
+            <circle cx="410" cy="455" r="6" class="white"/>
+
+            <!-- Right Eyebrow (Determined tilt) -->
+            <path d="M 694 380 L 614 405" fill="none" class="outline"/>
+            <!-- Right Eye -->
+            <circle cx="634" cy="440" r="42" class="dark"/>
+            <circle cx="624" cy="425" r="14" class="white"/>
+            <circle cx="654" cy="455" r="6" class="white"/>
+        </g>
+
+        <!-- Cheeks / Blush -->
+        <ellipse cx="360" cy="485" rx="35" ry="18" class="blush"/>
+        <ellipse cx="664" cy="485" rx="35" ry="18" class="blush"/>
+
+        <!-- MOUTH LAYER -->
+        <g id="mouth">
+            <path d="M 472 505 Q 512 535 552 505" fill="none" stroke="#1A1A1A" stroke-width="18" stroke-linecap="round"/>
+        </g>
+    </g>
+</svg>
+
+

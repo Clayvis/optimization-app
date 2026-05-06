@@ -5,10 +5,12 @@ import os
 @MainActor
 final class SwimService {
     private let modelContext: ModelContext
+    private let healthKit: HealthKitServiceProtocol?
     private let logger = Logger.app
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, healthKit: HealthKitServiceProtocol? = nil) {
         self.modelContext = modelContext
+        self.healthKit = healthKit
     }
 
     /// Starts a session at the given pool length. Default 25 m matches McTureous pool.
@@ -27,12 +29,26 @@ final class SwimService {
         try modelContext.save()
     }
 
-    func endSession(_ session: SwimSession, durationMinutes: Int, avgHR: Int? = nil) throws {
+    func endSession(_ session: SwimSession,
+                    durationMinutes: Int,
+                    avgHR: Int? = nil,
+                    estimatedCalories: Double? = nil) async throws {
         session.durationMinutes = durationMinutes
         session.avgHR = avgHR
         session.totalMeters = Double(session.laps) * session.poolLengthMeters
         try modelContext.save()
         logger.info("Ended swim session laps=\(session.laps, privacy: .public) meters=\(session.totalMeters, privacy: .public)")
+
+        if let healthKit {
+            let end = session.date.addingTimeInterval(TimeInterval(durationMinutes * 60))
+            try await healthKit.saveWorkout(
+                activityType: .swimming,
+                start: session.date,
+                end: end,
+                totalEnergyBurnedKcal: estimatedCalories,
+                totalDistanceMeters: session.totalMeters
+            )
+        }
     }
 
     /// Active session = durationMinutes == 0 (placeholder until end).

@@ -6,11 +6,15 @@ import os
 final class LiftService {
     private let modelContext: ModelContext
     private let templatesFile: LiftTemplatesFile
+    private let healthKit: HealthKitServiceProtocol?
     private let logger = Logger.app
 
-    init(modelContext: ModelContext, templatesFile: LiftTemplatesFile) {
+    init(modelContext: ModelContext,
+         templatesFile: LiftTemplatesFile,
+         healthKit: HealthKitServiceProtocol? = nil) {
         self.modelContext = modelContext
         self.templatesFile = templatesFile
+        self.healthKit = healthKit
     }
 
     /// Starts a new LiftSession from the template and pre-populates exercises (no sets yet).
@@ -49,12 +53,27 @@ final class LiftService {
     }
 
     /// Closes the session, recomputing totalVolumeLbs and writing duration/avgHR.
-    func endSession(_ session: LiftSession, durationMinutes: Int, avgHR: Int? = nil) throws {
+    /// Persists a corresponding HKWorkout to HealthKit when a service is wired.
+    func endSession(_ session: LiftSession,
+                    durationMinutes: Int,
+                    avgHR: Int? = nil,
+                    estimatedCalories: Double? = nil) async throws {
         session.totalVolumeLbs = LiftService.totalVolume(session: session)
         session.durationMinutes = durationMinutes
         session.avgHR = avgHR
         try modelContext.save()
         logger.info("Ended \(session.template, privacy: .public) volume=\(session.totalVolumeLbs, privacy: .public) lbs duration=\(durationMinutes, privacy: .public) min")
+
+        if let healthKit {
+            let end = session.date.addingTimeInterval(TimeInterval(durationMinutes * 60))
+            try await healthKit.saveWorkout(
+                activityType: .functionalStrengthTraining,
+                start: session.date,
+                end: end,
+                totalEnergyBurnedKcal: estimatedCalories,
+                totalDistanceMeters: nil
+            )
+        }
     }
 
     /// Pure volume aggregator: sum of (weightLbs * reps) across all sets in all exercises.

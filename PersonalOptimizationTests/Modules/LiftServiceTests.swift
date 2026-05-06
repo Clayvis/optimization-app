@@ -127,14 +127,26 @@ final class LiftServiceTests: XCTestCase {
 
     // MARK: - endSession
 
-    func test_endSession_recordsVolumeAndDuration() throws {
+    func test_endSession_recordsVolumeAndDuration() async throws {
         let session = try service.startSession(templateName: "Lift A")
         try service.logSet(in: session, exerciseName: "Back Squat", weightLbs: 225, reps: 5)
-        try service.endSession(session, durationMinutes: 75, avgHR: 130)
+        try await service.endSession(session, durationMinutes: 75, avgHR: 130)
 
         XCTAssertEqual(session.totalVolumeLbs, 1125)
         XCTAssertEqual(session.durationMinutes, 75)
         XCTAssertEqual(session.avgHR, 130)
+    }
+
+    func test_endSession_persistsToHealthKit_whenWired() async throws {
+        let fake = FakeHealthKitService()
+        let serviceWithHK = LiftService(modelContext: context, templatesFile: Self.fixtureTemplates, healthKit: fake)
+        let session = try serviceWithHK.startSession(templateName: "Lift A")
+        try serviceWithHK.logSet(in: session, exerciseName: "Back Squat", weightLbs: 225, reps: 5)
+        try await serviceWithHK.endSession(session, durationMinutes: 75, estimatedCalories: 350)
+
+        XCTAssertEqual(fake.savedWorkouts.count, 1)
+        XCTAssertEqual(fake.savedWorkouts[0].0, .functionalStrengthTraining)
+        XCTAssertEqual(fake.savedWorkouts[0].3, 350)
     }
 
     // MARK: - currentSession
@@ -145,9 +157,9 @@ final class LiftServiceTests: XCTestCase {
         XCTAssertEqual(active?.template, "Lift A")
     }
 
-    func test_currentSession_returnsNilAfterEnd() throws {
+    func test_currentSession_returnsNilAfterEnd() async throws {
         let s = try service.startSession(templateName: "Lift A")
-        try service.endSession(s, durationMinutes: 60)
+        try await service.endSession(s, durationMinutes: 60)
         XCTAssertNil(service.currentSession(at: Date()))
     }
 

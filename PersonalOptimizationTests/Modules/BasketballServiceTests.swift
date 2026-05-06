@@ -83,10 +83,10 @@ final class BasketballServiceTests: XCTestCase {
 
     // MARK: - endSession
 
-    func test_endSession_writesCheckInAndDailyLog() throws {
+    func test_endSession_writesCheckInAndDailyLog() async throws {
         let start = Date()
         let session = try service.startSession(at: start)
-        try service.endSession(session,
+        try await service.endSession(session,
                               endTime: start.addingTimeInterval(4 * 3600),
                               achillesPostScore: 5,
                               hydrationOz: 120)
@@ -95,10 +95,21 @@ final class BasketballServiceTests: XCTestCase {
         XCTAssertEqual(session.hydrationOz, 120)
         XCTAssertNotEqual(session.startTime, session.endTime)
 
-        // DailyLog should have achillesPain stamped.
         let logs = try context.fetch(FetchDescriptor<DailyLog>())
         XCTAssertEqual(logs.count, 1)
         XCTAssertEqual(logs.first?.achillesPain, 5)
+    }
+
+    func test_endSession_persistsToHealthKit_whenWired() async throws {
+        let fake = FakeHealthKitService()
+        let bsk = BasketballService(modelContext: context, healthKit: fake)
+        let start = Date()
+        let session = try bsk.startSession(at: start)
+        try await bsk.endSession(session, endTime: start.addingTimeInterval(4 * 3600), achillesPostScore: 4, hydrationOz: 150, estimatedCalories: 800)
+
+        XCTAssertEqual(fake.savedWorkouts.count, 1)
+        XCTAssertEqual(fake.savedWorkouts[0].0, .basketball)
+        XCTAssertEqual(fake.savedWorkouts[0].3, 800)
     }
 
     // MARK: - currentSession
@@ -108,9 +119,9 @@ final class BasketballServiceTests: XCTestCase {
         XCTAssertNotNil(service.currentSession(at: Date()))
     }
 
-    func test_currentSession_returnsNilAfterEnd() throws {
+    func test_currentSession_returnsNilAfterEnd() async throws {
         let s = try service.startSession(at: Date())
-        try service.endSession(s, endTime: Date().addingTimeInterval(3600), achillesPostScore: 4, hydrationOz: 100)
+        try await service.endSession(s, endTime: Date().addingTimeInterval(3600), achillesPostScore: 4, hydrationOz: 100)
         XCTAssertNil(service.currentSession(at: Date()))
     }
 }

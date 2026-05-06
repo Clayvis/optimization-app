@@ -73,6 +73,7 @@
 		8FA687D0AC01607FF380F03C /* LiftTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BA6F668C01597460F7925A /* LiftTemplates.swift */; };
 		916B6BCD3CA5EB48CF2C547F /* LearningStreakCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6DEDCD050D3DF5C08964A32 /* LearningStreakCalculator.swift */; };
 		9539BA572E007D3F4BDF9529 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E17A5E10EFA803A2312758C1 /* ErrorBanner.swift */; };
+		956FDCF1B79C09CFF8407918 /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CE13FE68863483CD8470256 /* HealthKitService.swift */; };
 		95A58B0B7CDEF94B64FDF7B5 /* SwimSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CFF9D4CAF217C0577FCF84 /* SwimSession.swift */; };
 		9917F8765CFAF3D69DB3FC23 /* FastingActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5AFA108A9EEF4E2CE42A2C /* FastingActivityAttributes.swift */; };
 		9D1E68AD1664E20E23A2A895 /* FastingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C70A73F43D115EF06D2B6348 /* FastingLiveActivity.swift */; };
@@ -84,10 +85,12 @@
 		A569E79C88ABCA43E83A42EE /* WearableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */; };
 		A783A187296DEA19FFF137B6 /* InMemoryContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 242FCE6D86BAB838E4FD1826 /* InMemoryContainer.swift */; };
 		A87525E6F1E5646C4D35C3E2 /* PersonalOptimizationApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */; };
+		AA84CC8D1BDF4EB9E10BCE89 /* PimsleurDeepLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B6CBBB02D87C77CA3EF209 /* PimsleurDeepLinkTests.swift */; };
 		AC0FB05691E5808FE04BA857 /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81284154F15F132A77F952B8 /* NotificationServiceTests.swift */; };
 		AC61B37DA22A6624EFCAAC91 /* HydrationWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476F48D9D87CCC605C712ABE /* HydrationWatchView.swift */; };
 		AD88BE9E2BDDECB2D60AE0F1 /* LiftSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177EF30368767AF7EBD3F9D1 /* LiftSession.swift */; };
 		B2590EA43AA467BA42CD498F /* FastingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A4006DD6BF17DAE6915811 /* FastingView.swift */; };
+		B43806562D0556DFBC94FF88 /* HealthKitServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739A739617F5FA401FAD616A /* HealthKitServiceTests.swift */; };
 		B69FCAFA025B5EEFE8944E50 /* LearningModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20943F8743F3EB30BAAF2FA /* LearningModule.swift */; };
 		BA5053AEB1922732900343B8 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
 		BD328769908C6B6473E58C8E /* PomodoroSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */; };
@@ -109,6 +112,7 @@
 		E292538C81AAC70701EE44CC /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */; };
 		E3671262DF547F8B71F77E6B /* WearableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */; };
 		E39C4A5B0DD8E67C1ABFB4DF /* lift_templates.json in Resources */ = {isa = PBXBuildFile; fileRef = 4A4485BD775F87B682EA483E /* lift_templates.json */; };
+		E840C7CCE4F2A6BF344689C0 /* PimsleurDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6525CE67420D114CA73E2A4F /* PimsleurDeepLink.swift */; };
 		EB5D2340592A65A22C1F8E36 /* BasketballSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B79B0DE348C5B10A3C13DA /* BasketballSession.swift */; };
 		EFDEF63634B285422CE5A97C /* SchemaV1Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A3D16A17AD710D3E2A6CDF2 /* SchemaV1Tests.swift */; };
 		F195EACEE94183E353FC871F /* ScheduleConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 360D242A8530DF3073145608 /* ScheduleConfig.swift */; };
@@ -197,6 +201,7 @@
 		044790DF6858E05D889E8DA3 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		09C53223ECB35D3ECFA24D96 /* SwimServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwimServiceTests.swift; sourceTree = "<group>"; };
 		0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalOptimizationApp.swift; sourceTree = "<group>"; };
+		0CE13FE68863483CD8470256 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
 		107F1D4D82B6EB9F1FC2EF78 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		12CFF9D4CAF217C0577FCF84 /* SwimSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwimSession.swift; sourceTree = "<group>"; };
 		1584E714556DEC27402B9AB6 /* CharacterStateLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterStateLog.swift; sourceTree = "<group>"; };
@@ -232,13 +237,16 @@
 		5B4A1D03EFC9DE01812670DF /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		62C8F58A99782B66ECCDFCB5 /* PerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceTests.swift; sourceTree = "<group>"; };
 		64C01CAA4C1C9882EA8BCA48 /* CurrentBlockComplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentBlockComplication.swift; sourceTree = "<group>"; };
+		6525CE67420D114CA73E2A4F /* PimsleurDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PimsleurDeepLink.swift; sourceTree = "<group>"; };
 		66D72CD6CEDF8A930891B3CF /* LearningServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningServiceTests.swift; sourceTree = "<group>"; };
 		6961232791C8824387CFFBCE /* AdminTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminTask.swift; sourceTree = "<group>"; };
 		6BB3766332CCC85C5B7A7765 /* PersonalOptimizationWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalOptimizationWatchApp.swift; sourceTree = "<group>"; };
 		6CF9747FFFE5089E9B33D74F /* PersonalOptimizationWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimizationWatch.entitlements; sourceTree = "<group>"; };
 		6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroSession.swift; sourceTree = "<group>"; };
 		7089E4ECC4F61306ED1464CC /* FastingLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingLiveActivityController.swift; sourceTree = "<group>"; };
+		739A739617F5FA401FAD616A /* HealthKitServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitServiceTests.swift; sourceTree = "<group>"; };
 		7838EE32258FECAA2335A612 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainServiceTests.swift; sourceTree = "<group>"; };
+		78B6CBBB02D87C77CA3EF209 /* PimsleurDeepLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PimsleurDeepLinkTests.swift; sourceTree = "<group>"; };
 		7A52017AF0403E7BFD35E053 /* PersonalOptimizationLiveActivity.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimizationLiveActivity.entitlements; sourceTree = "<group>"; };
 		81284154F15F132A77F952B8 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		82221D5BC1BA379932EC9A6A /* default_schedule.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_schedule.json; sourceTree = "<group>"; };
@@ -326,6 +334,7 @@
 				21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */,
 				66D72CD6CEDF8A930891B3CF /* LearningServiceTests.swift */,
 				B12078C7513677476A637F58 /* LiftServiceTests.swift */,
+				78B6CBBB02D87C77CA3EF209 /* PimsleurDeepLinkTests.swift */,
 				1D07E40975A5EFFC26755ECF /* ScheduleSeedTests.swift */,
 				4802E896C8352210A8A52524 /* ScheduleServiceTests.swift */,
 				09C53223ECB35D3ECFA24D96 /* SwimServiceTests.swift */,
@@ -430,6 +439,7 @@
 				E20943F8743F3EB30BAAF2FA /* LearningModule.swift */,
 				E8000E019116EF08734A949A /* LearningService.swift */,
 				A6DEDCD050D3DF5C08964A32 /* LearningStreakCalculator.swift */,
+				6525CE67420D114CA73E2A4F /* PimsleurDeepLink.swift */,
 			);
 			path = Learning;
 			sourceTree = "<group>";
@@ -466,6 +476,7 @@
 		A9D5B3F6F4641C800970D7BC /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				739A739617F5FA401FAD616A /* HealthKitServiceTests.swift */,
 				F8784746AB1A5E716335FC51 /* JSONExportImportTests.swift */,
 				7838EE32258FECAA2335A612 /* KeychainServiceTests.swift */,
 				81284154F15F132A77F952B8 /* NotificationServiceTests.swift */,
@@ -476,6 +487,7 @@
 		AC02FBE062E9CAD640CD2583 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				0CE13FE68863483CD8470256 /* HealthKitService.swift */,
 				90525181D5415FCDC1A8AD83 /* JSONExportService.swift */,
 				29B2ED03B44C2BC7563DECA8 /* JSONImportService.swift */,
 				9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */,
@@ -766,6 +778,7 @@
 			files = (
 				653CB3C33C6B2560D1F63C6A /* BasketballServiceTests.swift in Sources */,
 				A311E18C454729D3983D3EFA /* FastingServiceTests.swift in Sources */,
+				B43806562D0556DFBC94FF88 /* HealthKitServiceTests.swift in Sources */,
 				681FF9C78398598E657BB6E1 /* HydrationServiceTests.swift in Sources */,
 				A783A187296DEA19FFF137B6 /* InMemoryContainer.swift in Sources */,
 				8B1A15455BE8C010AF127747 /* JSONExportImportTests.swift in Sources */,
@@ -774,6 +787,7 @@
 				3B175626FD2742A84887AE78 /* LiftServiceTests.swift in Sources */,
 				AC0FB05691E5808FE04BA857 /* NotificationServiceTests.swift in Sources */,
 				39803EA851C039EFCE0CAED6 /* PerformanceTests.swift in Sources */,
+				AA84CC8D1BDF4EB9E10BCE89 /* PimsleurDeepLinkTests.swift in Sources */,
 				1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */,
 				13472C39166401253FC4630C /* ScheduleSeedTests.swift in Sources */,
 				D7454F6A195563E1DF6DCBDC /* ScheduleServiceTests.swift in Sources */,
@@ -796,6 +810,7 @@
 				255D8374E9BA90839391CC13 /* FastingLiveActivityController.swift in Sources */,
 				51DAFCAA807FAD8A286570E4 /* FastingService.swift in Sources */,
 				B2590EA43AA467BA42CD498F /* FastingView.swift in Sources */,
+				956FDCF1B79C09CFF8407918 /* HealthKitService.swift in Sources */,
 				2960497AAA345C8DCE2559C9 /* HydrationService.swift in Sources */,
 				3B34A7A64B8E0F8E59666842 /* HydrationView.swift in Sources */,
 				4B992282A2FFFCD8C4CBF0FA /* JSONExportService.swift in Sources */,
@@ -812,6 +827,7 @@
 				F41B28335A6D3E7106DE4A31 /* Logger+Categories.swift in Sources */,
 				6B73F0CDF2A914042F1F0EC1 /* NotificationService.swift in Sources */,
 				A87525E6F1E5646C4D35C3E2 /* PersonalOptimizationApp.swift in Sources */,
+				E840C7CCE4F2A6BF344689C0 /* PimsleurDeepLink.swift in Sources */,
 				FFF0502D54A687E6A77D4865 /* PomodoroSession.swift in Sources */,
 				5DEB691CFAFCEB6719E4B821 /* ProfileService.swift in Sources */,
 				D029431C4F2B4048CAC2FD28 /* ProtocolEntry.swift in Sources */,

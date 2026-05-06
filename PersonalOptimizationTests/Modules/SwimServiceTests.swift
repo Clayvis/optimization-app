@@ -57,13 +57,25 @@ final class SwimServiceTests: XCTestCase {
         XCTAssertEqual(s.totalMeters, 400)
     }
 
-    func test_endSession_writesDurationAndAvgHR() throws {
+    func test_endSession_writesDurationAndAvgHR() async throws {
         let s = try service.startSession(at: Date())
         try service.logLap(in: s, count: 20)
-        try service.endSession(s, durationMinutes: 35, avgHR: 145)
+        try await service.endSession(s, durationMinutes: 35, avgHR: 145)
         XCTAssertEqual(s.durationMinutes, 35)
         XCTAssertEqual(s.avgHR, 145)
         XCTAssertEqual(s.totalMeters, 500)
+    }
+
+    func test_endSession_persistsToHealthKit_whenWired() async throws {
+        let fake = FakeHealthKitService()
+        let sw = SwimService(modelContext: context, healthKit: fake)
+        let s = try sw.startSession(at: Date(), poolLengthMeters: 25)
+        try sw.logLap(in: s, count: 32)  // 800 m
+        try await sw.endSession(s, durationMinutes: 30, avgHR: 140, estimatedCalories: 320)
+
+        XCTAssertEqual(fake.savedWorkouts.count, 1)
+        XCTAssertEqual(fake.savedWorkouts[0].0, .swimming)
+        XCTAssertEqual(fake.savedWorkouts[0].4, 800)  // distance meters
     }
 
     func test_currentSession_returnsActiveSession() throws {
@@ -71,9 +83,9 @@ final class SwimServiceTests: XCTestCase {
         XCTAssertNotNil(service.currentSession(at: Date()))
     }
 
-    func test_currentSession_returnsNilAfterEnd() throws {
+    func test_currentSession_returnsNilAfterEnd() async throws {
         let s = try service.startSession(at: Date())
-        try service.endSession(s, durationMinutes: 30)
+        try await service.endSession(s, durationMinutes: 30)
         XCTAssertNil(service.currentSession(at: Date()))
     }
 }

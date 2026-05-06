@@ -92,6 +92,8 @@ targets:
         com.apple.developer.ubiquity-container-identifiers: []
         keychain-access-groups:
           - com.rawlins.PersonalOptimization
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization
@@ -157,6 +159,8 @@ targets:
         com.apple.developer.ubiquity-container-identifiers: []
         keychain-access-groups:
           - com.rawlins.PersonalOptimization
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.watchkitapp

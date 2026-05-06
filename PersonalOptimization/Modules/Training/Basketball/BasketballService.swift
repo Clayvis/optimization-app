@@ -5,10 +5,12 @@ import os
 @MainActor
 final class BasketballService {
     private let modelContext: ModelContext
+    private let healthKit: HealthKitServiceProtocol?
     private let logger = Logger.app
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, healthKit: HealthKitServiceProtocol? = nil) {
         self.modelContext = modelContext
+        self.healthKit = healthKit
     }
 
     /// Starts a session at `start`, with a placeholder endTime equal to start.
@@ -30,10 +32,12 @@ final class BasketballService {
 
     /// Closes the session and writes check-in fields. Also stamps the DailyLog with
     /// today's Achilles score so the cross-pillar dashboard surfaces it.
+    /// Persists an HKWorkout when a HealthKit service is wired.
     func endSession(_ session: BasketballSession,
                     endTime: Date,
                     achillesPostScore: Int,
-                    hydrationOz: Double) throws {
+                    hydrationOz: Double,
+                    estimatedCalories: Double? = nil) async throws {
         session.endTime = endTime
         session.achillesPostScore = achillesPostScore
         session.hydrationOz = hydrationOz
@@ -52,6 +56,16 @@ final class BasketballService {
         dailyLog.achillesPain = achillesPostScore
         try modelContext.save()
         logger.info("Ended basketball session, achilles=\(achillesPostScore, privacy: .public)")
+
+        if let healthKit {
+            try await healthKit.saveWorkout(
+                activityType: .basketball,
+                start: session.startTime,
+                end: endTime,
+                totalEnergyBurnedKcal: estimatedCalories,
+                totalDistanceMeters: nil
+            )
+        }
     }
 
     /// Active session = endTime equals startTime (placeholder set by startSession).
