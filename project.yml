@@ -118,8 +118,12 @@ targets:
         name: SharedSchedule
       - path: PersonalOptimization/Modules/Fasting
         name: SharedFasting
+        excludes:
+          - "Views/**"
       - path: PersonalOptimization/Modules/Hydration
         name: SharedHydration
+        excludes:
+          - "Views/**"
       - path: PersonalOptimization/Services/Logger+Categories.swift
     resources:
       - path: PersonalOptimizationWatch/Assets.xcassets
@@ -174,8 +178,12 @@ targets:
         name: SharedSchedule
       - path: PersonalOptimization/Modules/Fasting
         name: SharedFasting
+        excludes:
+          - "Views/**"
       - path: PersonalOptimization/Modules/Hydration
         name: SharedHydration
+        excludes:
+          - "Views/**"
       - path: PersonalOptimization/Services/Logger+Categories.swift
     resources:
       - path: PersonalOptimization/Resources

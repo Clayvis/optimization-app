@@ -8,27 +8,14 @@ struct RootView: View {
                 .tabItem {
                     Label("Today", systemImage: "sun.max.fill")
                 }
-            HistoryStubView()
+            FastingView()
                 .tabItem {
-                    Label("History", systemImage: "clock.arrow.circlepath")
+                    Label("Fast", systemImage: "timer")
                 }
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
                 }
-        }
-    }
-}
-
-private struct HistoryStubView: View {
-    var body: some View {
-        NavigationStack {
-            ContentUnavailableView(
-                "History",
-                systemImage: "clock.arrow.circlepath",
-                description: Text("Daily logs, training, and biomarker trends arrive in later milestones.")
-            )
-            .navigationTitle("History")
         }
     }
 }
