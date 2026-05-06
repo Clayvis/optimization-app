@@ -8,6 +8,8 @@ struct ContentView: View {
                 .tag(0)
             HydrationWatchView()
                 .tag(1)
+            TrainingWatchView()
+                .tag(2)
         }
         .tabViewStyle(.verticalPage)
     }

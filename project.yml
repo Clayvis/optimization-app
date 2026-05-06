@@ -129,7 +129,17 @@ targets:
         name: SharedHydration
         excludes:
           - "Views/**"
+      - path: PersonalOptimization/Modules/Training
+        name: SharedTraining
+        excludes:
+          - "Views/**"
+          - "**/Views/**"
+      - path: PersonalOptimization/Modules/Learning
+        name: SharedLearning
+        excludes:
+          - "Views/**"
       - path: PersonalOptimization/Services/Logger+Categories.swift
+      - path: PersonalOptimization/Services/HealthKitService.swift
     resources:
       - path: PersonalOptimizationWatch/Assets.xcassets
         optional: true
