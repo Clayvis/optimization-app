@@ -20,11 +20,13 @@
 		1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */; };
 		2011D16E82C404E75BD21390 /* Logger+Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */; };
 		2732AB89C3CA4CA9A702EE98 /* ProtocolEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F30C85E85590C6112D02188 /* ProtocolEntry.swift */; };
+		2960497AAA345C8DCE2559C9 /* HydrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF87431FBC0828ACD063558 /* HydrationService.swift */; };
 		2B950ADB27E765EFDD1276C8 /* ScheduleSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */; };
 		36D95A9B354F48B865EFA9F0 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4A1D03EFC9DE01812670DF /* TodayView.swift */; };
 		3910CFFAEF639E97C5F2F8B4 /* LabDraw.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4985E865B7FE2268CC0631 /* LabDraw.swift */; };
 		39803EA851C039EFCE0CAED6 /* PerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62C8F58A99782B66ECCDFCB5 /* PerformanceTests.swift */; };
 		3D1E11A0B19547AE3605B9ED /* AdminTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961232791C8824387CFFBCE /* AdminTask.swift */; };
+		3F21BEE1D079F92B36B6886F /* HydrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF87431FBC0828ACD063558 /* HydrationService.swift */; };
 		445E79CE78180CE5E6ABE007 /* PomodoroSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */; };
 		46B1D4A79F4C21DBD433FC63 /* ScheduleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F31266DF504D0F540B369D /* ScheduleBlock.swift */; };
 		497B2D2C8A6376B1BA12FDFE /* ScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 823154A880207FCF1C483BA8 /* ScheduleService.swift */; };
@@ -42,6 +44,7 @@
 		5DEB691CFAFCEB6719E4B821 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC713F81155648C69F8395C /* ProfileService.swift */; };
 		61AFF636A369285390DE5688 /* AdminTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961232791C8824387CFFBCE /* AdminTask.swift */; };
 		674202788BF9960ADE278F7D /* PersonalOptimizationWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		681FF9C78398598E657BB6E1 /* HydrationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */; };
 		68D05DA3A8F8FCD94B355F39 /* CurrentBlockTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A14D7CDDD90CC1F2E608509 /* CurrentBlockTimelineProvider.swift */; };
 		6F3798E21919A4DA4CF40418 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2980B95DAC2C5D2BF8D46211 /* ContentView.swift */; };
 		7147113C2529BB7745FF6914 /* KeychainServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7838EE32258FECAA2335A612 /* KeychainServiceTests.swift */; };
@@ -78,6 +81,7 @@
 		DB80C72EEA7682E39EDA859B /* SchemaV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C21B1F183A1B8E72B77E9EE /* SchemaV1.swift */; };
 		DB8AA9B4CB309C2E9D120330 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */; };
 		DC3598DF9C384F7BBA1D00C9 /* ScheduleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F31266DF504D0F540B369D /* ScheduleBlock.swift */; };
+		DEC8BF1621478B2E38ED591E /* HydrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF87431FBC0828ACD063558 /* HydrationService.swift */; };
 		E292538C81AAC70701EE44CC /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */; };
 		E3671262DF547F8B71F77E6B /* WearableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */; };
 		EB5D2340592A65A22C1F8E36 /* BasketballSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B79B0DE348C5B10A3C13DA /* BasketballSession.swift */; };
@@ -153,6 +157,7 @@
 		1C76FC65651FC3C15C1D8DB0 /* LearningStreak.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningStreak.swift; sourceTree = "<group>"; };
 		1D07E40975A5EFFC26755ECF /* ScheduleSeedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSeedTests.swift; sourceTree = "<group>"; };
 		206905E3BDC577894B8FAD18 /* PersonalOptimizationTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PersonalOptimizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationServiceTests.swift; sourceTree = "<group>"; };
 		242FCE6D86BAB838E4FD1826 /* InMemoryContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryContainer.swift; sourceTree = "<group>"; };
 		2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderTests.swift; sourceTree = "<group>"; };
 		2980B95DAC2C5D2BF8D46211 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -183,6 +188,7 @@
 		90525181D5415FCDC1A8AD83 /* JSONExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONExportService.swift; sourceTree = "<group>"; };
 		92DC0582F729F67ECB583C5E /* DailyLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLog.swift; sourceTree = "<group>"; };
 		9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		9EF87431FBC0828ACD063558 /* HydrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationService.swift; sourceTree = "<group>"; };
 		9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WearableEntry.swift; sourceTree = "<group>"; };
 		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -234,6 +240,7 @@
 			isa = PBXGroup;
 			children = (
 				026062AB166F1C6F733696D7 /* FastingServiceTests.swift */,
+				21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */,
 				1D07E40975A5EFFC26755ECF /* ScheduleSeedTests.swift */,
 				4802E896C8352210A8A52524 /* ScheduleServiceTests.swift */,
 			);
@@ -259,8 +266,8 @@
 		588244BE00D5970A043209B4 /* Modules */ = {
 			isa = PBXGroup;
 			children = (
-				DB94C9C6260DDBE5E02FA7A3 /* Hydration */,
 				83490179F5D1A1B2CA5412E0 /* SharedFasting */,
+				9E1668E11E5753E6600B2D4A /* SharedHydration */,
 				C527C200760387C835A618A1 /* SharedSchedule */,
 			);
 			path = Modules;
@@ -298,6 +305,15 @@
 				1A3D16A17AD710D3E2A6CDF2 /* SchemaV1Tests.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		9E1668E11E5753E6600B2D4A /* SharedHydration */ = {
+			isa = PBXGroup;
+			children = (
+				9EF87431FBC0828ACD063558 /* HydrationService.swift */,
+			);
+			name = SharedHydration;
+			path = Hydration;
 			sourceTree = "<group>";
 		};
 		A9D5B3F6F4641C800970D7BC /* Services */ = {
@@ -340,13 +356,6 @@
 				5B4A1D03EFC9DE01812670DF /* TodayView.swift */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		DB94C9C6260DDBE5E02FA7A3 /* Hydration */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Hydration;
 			sourceTree = "<group>";
 		};
 		DBE21104D9EED0341A8114AA /* Helpers */ = {
@@ -559,6 +568,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A311E18C454729D3983D3EFA /* FastingServiceTests.swift in Sources */,
+				681FF9C78398598E657BB6E1 /* HydrationServiceTests.swift in Sources */,
 				A783A187296DEA19FFF137B6 /* InMemoryContainer.swift in Sources */,
 				8B1A15455BE8C010AF127747 /* JSONExportImportTests.swift in Sources */,
 				7147113C2529BB7745FF6914 /* KeychainServiceTests.swift in Sources */,
@@ -580,6 +590,7 @@
 				A512C5031B5B03CBBFE4C1CC /* DailyLog.swift in Sources */,
 				9539BA572E007D3F4BDF9529 /* ErrorBanner.swift in Sources */,
 				51DAFCAA807FAD8A286570E4 /* FastingService.swift in Sources */,
+				2960497AAA345C8DCE2559C9 /* HydrationService.swift in Sources */,
 				4B992282A2FFFCD8C4CBF0FA /* JSONExportService.swift in Sources */,
 				71C272FE38F471D7180CEACC /* JSONImportService.swift in Sources */,
 				E292538C81AAC70701EE44CC /* KeychainService.swift in Sources */,
@@ -617,6 +628,7 @@
 				68D05DA3A8F8FCD94B355F39 /* CurrentBlockTimelineProvider.swift in Sources */,
 				4A2600F097C24352AED6AF0E /* DailyLog.swift in Sources */,
 				59D4EA48757862313BF7C60F /* FastingService.swift in Sources */,
+				DEC8BF1621478B2E38ED591E /* HydrationService.swift in Sources */,
 				7EFA452F1BDAFA36EC715DFE /* LabDraw.swift in Sources */,
 				F7D93E2FA5F50C1E667701FC /* LearningStreak.swift in Sources */,
 				1010CD77E02850FD282ED7A5 /* LiftSession.swift in Sources */,
@@ -644,6 +656,7 @@
 				6F3798E21919A4DA4CF40418 /* ContentView.swift in Sources */,
 				F1F85BB2070451DF9CCBB71C /* DailyLog.swift in Sources */,
 				FC164E4A639AE36B6499265D /* FastingService.swift in Sources */,
+				3F21BEE1D079F92B36B6886F /* HydrationService.swift in Sources */,
 				C590DB305D5D2A02A51D7B71 /* LabDraw.swift in Sources */,
 				51AD6F928C5FE60EE87736F7 /* LearningStreak.swift in Sources */,
 				819FF06C908089F663E029A5 /* LiftSession.swift in Sources */,
