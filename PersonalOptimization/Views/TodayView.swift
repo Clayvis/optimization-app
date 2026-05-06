@@ -80,13 +80,13 @@ struct TodayView: View {
         if let profile {
             if let until = profile.travelModeActiveUntil, until >= now {
                 Section {
-                    graceBanner(text: "Travel mode active. Streaks paused, not faked.",
+                    graceBanner(text: IdentityCopy.travelBanner,
                                 systemImage: "airplane",
                                 accent: .blue)
                 }
             } else if let until = profile.sickDayActiveUntil, until >= now {
                 Section {
-                    graceBanner(text: "Sick day. Today is covered. Rest up.",
+                    graceBanner(text: IdentityCopy.sickBanner,
                                 systemImage: "thermometer.medium",
                                 accent: .orange)
                 }

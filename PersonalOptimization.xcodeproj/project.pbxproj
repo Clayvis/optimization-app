@@ -79,6 +79,7 @@
 		674202788BF9960ADE278F7D /* PersonalOptimizationWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		681FF9C78398598E657BB6E1 /* HydrationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */; };
 		68D05DA3A8F8FCD94B355F39 /* CurrentBlockTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A14D7CDDD90CC1F2E608509 /* CurrentBlockTimelineProvider.swift */; };
+		6A38102552172AE1DAC72035 /* IdentityCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */; };
 		6B73F0CDF2A914042F1F0EC1 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044790DF6858E05D889E8DA3 /* NotificationService.swift */; };
 		6C76728BFC40EC9BAF5ED504 /* StreakDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B56E873F82EA629BB4C40F /* StreakDomain.swift */; };
 		6F3798E21919A4DA4CF40418 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2980B95DAC2C5D2BF8D46211 /* ContentView.swift */; };
@@ -292,6 +293,7 @@
 		29B2ED03B44C2BC7563DECA8 /* JSONImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONImportService.swift; sourceTree = "<group>"; };
 		29B56E873F82EA629BB4C40F /* StreakDomain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakDomain.swift; sourceTree = "<group>"; };
 		2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PersonalOptimizationLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityCopy.swift; sourceTree = "<group>"; };
 		2CADA8B9C2AAA96402E53588 /* WorkoutEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEvent.swift; sourceTree = "<group>"; };
 		2F30C85E85590C6112D02188 /* ProtocolEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolEntry.swift; sourceTree = "<group>"; };
 		354926C56217E04EDDF8B579 /* CharacterStateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterStateService.swift; sourceTree = "<group>"; };
@@ -623,6 +625,7 @@
 			children = (
 				0A0F4DD826875BB4569DF6A3 /* AdaptiveNotificationTiming.swift */,
 				4AD938A95999E64B4E2A26F2 /* DailySummaryService.swift */,
+				2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */,
 				FFE9E9465BD252E3D3BE2D98 /* StreakService.swift */,
 			);
 			path = Engagement;
@@ -1039,6 +1042,7 @@
 				956FDCF1B79C09CFF8407918 /* HealthKitService.swift in Sources */,
 				2960497AAA345C8DCE2559C9 /* HydrationService.swift in Sources */,
 				3B34A7A64B8E0F8E59666842 /* HydrationView.swift in Sources */,
+				6A38102552172AE1DAC72035 /* IdentityCopy.swift in Sources */,
 				4B992282A2FFFCD8C4CBF0FA /* JSONExportService.swift in Sources */,
 				71C272FE38F471D7180CEACC /* JSONImportService.swift in Sources */,
 				E292538C81AAC70701EE44CC /* KeychainService.swift in Sources */,

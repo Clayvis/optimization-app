@@ -89,7 +89,7 @@ final class DailySummaryService {
             label: "Workout",
             scheduled: workoutScheduled,
             completed: workoutCompleted || graceCovered,
-            detail: workoutCompleted ? "Logged" : (workoutScheduled ? "Scheduled" : "Rest day")
+            detail: workoutCompleted ? IdentityCopy.workoutLogged : (workoutScheduled ? "Scheduled" : "Rest day")
         ))
 
         domains.append(ProtocolDomainResult(
