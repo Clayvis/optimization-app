@@ -3,6 +3,13 @@ import SwiftData
 import WatchKit
 
 struct TrainingWatchView: View {
+    @Query(sort: [SortDescriptor(\CustomActivityTemplate.createdAt, order: .forward)])
+    private var customTemplates: [CustomActivityTemplate]
+
+    private var visibleCustom: [CustomActivityTemplate] {
+        customTemplates.filter { !$0.archived }
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -25,6 +32,17 @@ struct TrainingWatchView: View {
                     SwimWatchView()
                 } label: {
                     rowLabel(icon: "figure.pool.swim", title: "Swim")
+                }
+                if !visibleCustom.isEmpty {
+                    Section("Activities") {
+                        ForEach(visibleCustom, id: \.persistentModelID) { template in
+                            NavigationLink {
+                                CustomActivityWatchView(template: template)
+                            } label: {
+                                rowLabel(icon: template.systemImageName, title: template.name)
+                            }
+                        }
+                    }
                 }
             }
             .navigationTitle("Train")

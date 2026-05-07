@@ -260,6 +260,7 @@
 		F5F43E839A3F184B483A9744 /* AdaptiveNotificationTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F4DD826875BB4569DF6A3 /* AdaptiveNotificationTiming.swift */; };
 		F79BC8736EDF531CB07B23F9 /* LearningModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBB5606768832CD31284D286 /* LearningModule.swift */; };
 		F7D93E2FA5F50C1E667701FC /* LearningStreak.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C76FC65651FC3C15C1D8DB0 /* LearningStreak.swift */; };
+		F958B87DA598AFBF856C3D52 /* CustomActivityWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4D3A0E54100E756D6D53B1 /* CustomActivityWatchView.swift */; };
 		F966AA2BDCEC732D2A9ABC0C /* SwimService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C827967650D59F6287511D8 /* SwimService.swift */; };
 		FA6131BA0F2481056FD0AB61 /* SchemaV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF4652FE69EA281396290FC /* SchemaV5.swift */; };
 		FB5CFE3EBCB20739974FAC5A /* ScheduleConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 360D242A8530DF3073145608 /* ScheduleConfig.swift */; };
@@ -442,6 +443,7 @@
 		823154A880207FCF1C483BA8 /* ScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleService.swift; sourceTree = "<group>"; };
 		873E62A777CAB922DCCD5038 /* LearningReminderSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningReminderSchedulerTests.swift; sourceTree = "<group>"; };
 		898DC874ED5F88B3E0C36FE0 /* TrainingHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingHubView.swift; sourceTree = "<group>"; };
+		8A4D3A0E54100E756D6D53B1 /* CustomActivityWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomActivityWatchView.swift; sourceTree = "<group>"; };
 		8AC713F81155648C69F8395C /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
 		8B3E915831CE1150D182D8E4 /* MascotVariantTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotVariantTests.swift; sourceTree = "<group>"; };
 		8F1B2DD2C194F0D71DB98CF8 /* LiftTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftTemplates.swift; sourceTree = "<group>"; };
@@ -581,6 +583,7 @@
 			children = (
 				B5F86301E221611C7691EFE2 /* BasketballWatchView.swift */,
 				2980B95DAC2C5D2BF8D46211 /* ContentView.swift */,
+				8A4D3A0E54100E756D6D53B1 /* CustomActivityWatchView.swift */,
 				476F48D9D87CCC605C712ABE /* HydrationWatchView.swift */,
 				5FB639E6D56C06448613F60C /* IdleHomeWatchView.swift */,
 				4A978B10DB6D2FDF4FDEE48D /* LearningWatchView.swift */,
@@ -1424,6 +1427,7 @@
 				6F3798E21919A4DA4CF40418 /* ContentView.swift in Sources */,
 				B635A8BF09B66DA548E06317 /* CustomActivityService.swift in Sources */,
 				CB71A84938642342BA0EEB8F /* CustomActivityTemplate.swift in Sources */,
+				F958B87DA598AFBF856C3D52 /* CustomActivityWatchView.swift in Sources */,
 				F1F85BB2070451DF9CCBB71C /* DailyLog.swift in Sources */,
 				BD9EDFC84956AA9CB67AEBE7 /* DetectedPattern.swift in Sources */,
 				FC164E4A639AE36B6499265D /* FastingService.swift in Sources */,
