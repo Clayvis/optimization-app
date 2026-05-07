@@ -27,6 +27,10 @@ struct PersonalOptimizationApp: App {
             DevSecretsBootstrap.bootstrapIfNeeded()
             ArchiveBackgroundScheduler.registerHandler(modelContainer: container)
             ArchiveBackgroundScheduler.runRollupNow(modelContainer: container)
+            // Activate phone↔watch bridge so the watch can push session events
+            // back in real time. Cheap: the WC session activates async and is
+            // a no-op on devices without a paired Watch.
+            WatchConnectivityService.shared.activateIfPossible()
             return container
         } catch {
             Logger.persistence.fault("ModelContainer init failed: \(error.localizedDescription, privacy: .public)")

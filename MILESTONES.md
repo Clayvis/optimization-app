@@ -409,6 +409,65 @@ Estimated effort: 25-36 hours of agent execution.
 
 ---
 
+## M3.8: Apple Watch Parity
+
+Goal: bring the watchOS app to parity with the phone — live workout tracking, real-time phone↔watch sync, glance-and-go quick logs from the wrist, mascot-as-companion on the watch face. Battery life is a hard constraint: no continuous polling, no chatty WatchConnectivity, complications update on event not on a timer.
+
+The wrist replaces the phone for in-session use (start a lift, see live HR and elapsed, log water mid-court, end the fast walking out the door). The phone remains the brain (Coach prompts, planning, history).
+
+Tasks:
+
+Block 1 — Diagnostics + foundations (~2h):
+
+1. Verify the watch app installs alongside the phone build. Pair the iPhone and Watch simulators; confirm `xcodebuild -scheme PersonalOptimizationWatch` deploys.
+2. Watch RootView (`ContentView`) restructure into idle home + training + schedule pages. Idle home shows mascot, today's master metric, and one-tap quick-log buttons (water, learning).
+3. Variant-aware mascot rendering on the watch (read `UserProfile.mascotVariant`) plus complication.
+
+Block 2 — Live workout tracking (~6-8h):
+
+4. `LiveWorkoutSessionService` wrapping `HKWorkoutSession` + `HKLiveWorkoutBuilder`. Drives Lift / Basketball / Swim / Custom on the watch with live HR, elapsed time, active calories.
+5. Watch session views (Lift / Basketball / Swim / Custom) show live HR, kcal, duration. End-session writes the same SwiftData rows the phone does so streaks and master metric pick up the wrist-logged work.
+6. Anchored HK queries (no polling). HK observation is event-driven.
+
+Block 3 — WCSession bridge (~3-4h):
+
+7. `WatchConnectivityService` two-way: phone sends profile + active prescription on demand, watch sends session events back the moment they happen. Queue messages when peer not reachable; CloudKit remains the source of truth for catch-up.
+8. Phone TrainingHub shows "Training on watch" when a wrist session is live.
+
+Block 4 — Quick logs + complications (~3-4h):
+
+9. Watch quick-log glances: water (preset oz buttons), learning (start/stop a 25 min Pomodoro tile), end fast (one tap; opens reason picker).
+10. Mascot complication uses `assetName(for: variant)`. Updates only on character-state transitions; no timer.
+11. Hydration progress complication (Move-style ring fill on circular complications).
+12. Fast countdown complication updates on schedule (timeline provider, not polling).
+13. Custom activities exposed on the watch (the iOS-side templates surface as session entry points).
+
+Block 5 — Battery balance + tests (~2-3h):
+
+14. Audit: no Timer.scheduledTimer on watch; use TimelineView for clock-driven UI. HK queries use anchored observers, not 1Hz polling.
+15. Complication timelines: 1h granularity for schedule/fast, event-driven for mascot, on-demand reload for hydration after a log.
+16. WCSession only when reachable; otherwise SwiftData + CloudKit handle eventual consistency.
+17. Unit tests for LiveWorkoutSessionService state machine + WatchConnectivityService payload encoding (15+).
+
+Definition of Done:
+- Watch app installs on the paired simulator and launches.
+- Idle watch home shows mascot + today's master metric + quick-log row.
+- Lift / Basketball / Swim / Custom each have a live workout flow on the watch with HR + kcal + elapsed.
+- Starting a session on the watch surfaces on the phone within 5 seconds; ending propagates back the same window.
+- Mascot complication renders the user's variant.
+- Battery audit notes (no continuous polling, no >1Hz updates) committed.
+- Build clean: phone, watch, complication extension, live activity extension. Tests pass.
+
+Performance targets:
+- Watch app cold start < 2s on Apple Watch Ultra 3 simulator.
+- Live workout view live-updates HR + duration at 1Hz without dropping frames.
+- WCSession message round-trip < 5s when both apps reachable.
+- Complication timeline reload < 200ms.
+
+Estimated effort: 16-20 hours of agent execution.
+
+---
+
 ## M4: Notifications, Onboarding, Implementation Intentions, Weekly Reflection, Ship
 
 Goal: Wrap v1 with high-quality first-run experience, the implementation intentions habit-stack builder, weekly reflection, and App Store submission readiness.

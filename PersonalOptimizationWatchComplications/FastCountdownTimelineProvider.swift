@@ -110,7 +110,7 @@ struct FastCountdownTimelineProvider: TimelineProvider {
 
     @MainActor
     private static func sharedContainer() -> ModelContainer? {
-        let schema = Schema(versionedSchema: SchemaV3.self)
+        let schema = Schema(versionedSchema: SchemaV5.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,

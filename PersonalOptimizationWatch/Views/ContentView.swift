@@ -1,15 +1,22 @@
 import SwiftUI
 import SwiftData
 
+/// Watch root. Vertical-page TabView so the user thumbs from idle home down
+/// through hydration, training, learning, schedule. Idle home is page 0 — the
+/// glance most opens land on.
 struct ContentView: View {
     var body: some View {
         TabView {
-            ScheduleWatchView()
+            IdleHomeWatchView()
                 .tag(0)
             HydrationWatchView()
                 .tag(1)
             TrainingWatchView()
                 .tag(2)
+            LearningWatchView()
+                .tag(3)
+            ScheduleWatchView()
+                .tag(4)
         }
         .tabViewStyle(.verticalPage)
     }
