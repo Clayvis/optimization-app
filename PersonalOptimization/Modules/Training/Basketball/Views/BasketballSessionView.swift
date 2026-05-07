@@ -27,6 +27,7 @@ struct BasketballSessionView: View {
         }
         .navigationTitle("Basketball")
         .task { await start() }
+        .sensoryFeedback(.success, trigger: ended)
     }
 
     @ViewBuilder

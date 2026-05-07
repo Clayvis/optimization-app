@@ -13,6 +13,7 @@ struct CoachInsightCard: View {
     @State private var errorMessage: String?
     @State private var apiKeyMissing = false
     @State private var showingDetail = false
+    @State private var refreshCount = 0
 
     private var profile: UserProfile? { profiles.first }
     private var latest: CoachInsight? { insights.first }
@@ -44,6 +45,7 @@ struct CoachInsightCard: View {
                 CoachInsightDetailSheet(insight: latest)
             }
         }
+        .sensoryFeedback(.impact(weight: .light), trigger: refreshCount)
     }
 
     private func keychainHasApiKey() -> Bool {
@@ -132,6 +134,7 @@ struct CoachInsightCard: View {
 
     private func refresh() async {
         await loadIfNeeded(force: true)
+        refreshCount &+= 1
     }
 
     private func timeAgo(_ date: Date) -> String {

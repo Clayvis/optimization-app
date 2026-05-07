@@ -33,6 +33,7 @@ struct DiagnosticsView: View {
         .navigationTitle("Diagnostics")
         .onAppear {
             refresh()
+            try? AchievementService(modelContext: modelContext).unlockImperative("diagnostics_clean")
         }
     }
 

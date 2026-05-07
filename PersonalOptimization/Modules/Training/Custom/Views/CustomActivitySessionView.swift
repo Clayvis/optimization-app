@@ -17,6 +17,7 @@ struct CustomActivitySessionView: View {
     @State private var distanceMeters: Double = 0
     @State private var intensity: String = "moderate"
     @State private var notes: String = ""
+    @State private var completionCount: Int = 0
 
     private let intensities = ["easy", "moderate", "hard"]
 
@@ -30,6 +31,7 @@ struct CustomActivitySessionView: View {
         }
         .navigationTitle(template.name)
         .task { await startOrResume() }
+        .sensoryFeedback(.success, trigger: completionCount)
     }
 
     @ViewBuilder
@@ -134,6 +136,7 @@ struct CustomActivitySessionView: View {
                 intensity: intensity,
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes
             )
+            completionCount &+= 1
             dismiss()
         } catch {
             // Logged in service.

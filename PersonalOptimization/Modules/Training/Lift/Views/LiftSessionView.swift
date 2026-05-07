@@ -15,6 +15,7 @@ struct LiftSessionView: View {
     @State private var showingAddSet = false
     @State private var addSetExercise: LiftExercise?
     @State private var customExerciseName: String = ""
+    @State private var completionCount: Int = 0
 
     var body: some View {
         Group {
@@ -28,6 +29,7 @@ struct LiftSessionView: View {
         }
         .navigationTitle(templateName)
         .task { await loadAndStart() }
+        .sensoryFeedback(.success, trigger: completionCount)
     }
 
     @ViewBuilder
@@ -230,6 +232,7 @@ struct LiftSessionView: View {
         do {
             try service.endSession(session, durationMinutes: durationMinutes)
             await WorkoutLiveActivityController.endAll()
+            completionCount &+= 1
             dismiss()
         } catch {
             loadError = error.localizedDescription

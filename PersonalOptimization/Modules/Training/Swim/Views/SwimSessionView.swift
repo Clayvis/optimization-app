@@ -15,6 +15,7 @@ struct SwimSessionView: View {
 
     @State private var lapsExact: Int = 0
     @State private var metersExact: Double = 0
+    @State private var completionCount: Int = 0
 
     var body: some View {
         Group {
@@ -26,6 +27,7 @@ struct SwimSessionView: View {
         }
         .navigationTitle("Swim")
         .task { resumeIfNeeded() }
+        .sensoryFeedback(.success, trigger: completionCount)
     }
 
     /// Resume an in-progress swim session that the user navigated away from.
@@ -234,6 +236,7 @@ struct SwimSessionView: View {
         do {
             try service.endSession(session, durationMinutes: mins)
             await WorkoutLiveActivityController.endAll()
+            completionCount &+= 1
             dismiss()
         } catch {
             // logged inside service

@@ -11,6 +11,7 @@ struct MilestoneCelebrationSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var profiles: [UserProfile]
     let unlock: MilestoneUnlock
+    @State private var showingShareSheet = false
 
     private var milestone: Milestone? {
         MilestoneRegistry.milestone(forID: unlock.identifier)
@@ -44,6 +45,18 @@ struct MilestoneCelebrationSheet: View {
                     .font(.title2.weight(.bold))
             }
             Spacer()
+            #if os(iOS)
+            if milestone != nil {
+                Button {
+                    showingShareSheet = true
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .padding(.horizontal, 24)
+            }
+            #endif
             Button("Continue") {
                 MilestoneService(modelContext: modelContext).markCelebrationShown(unlock)
                 dismiss()
@@ -55,5 +68,12 @@ struct MilestoneCelebrationSheet: View {
         .background(Color(.systemBackground))
         .interactiveDismissDisabled()
         .sensoryFeedback(.success, trigger: unlock.persistentModelID)
+        #if os(iOS)
+        .sheet(isPresented: $showingShareSheet) {
+            if let m = milestone {
+                MilestoneShareSheet(milestone: m, mascotVariant: variant)
+            }
+        }
+        #endif
     }
 }

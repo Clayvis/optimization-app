@@ -179,6 +179,14 @@ struct SettingsView: View {
                 }
             }
 
+            Section {
+                NavigationLink {
+                    AchievementsView()
+                } label: {
+                    Label("Achievements", systemImage: "trophy.fill")
+                }
+            }
+
             Section("Mascot") {
                 Toggle("Show mascot", isOn: $profile.mascotEnabled)
                 Toggle("Reduced motion", isOn: $profile.reducedMotion)
@@ -264,6 +272,7 @@ struct SettingsView: View {
                     }
                 }
             ))
+            .sensoryFeedback(.selection, trigger: sickActive)
 
             HStack {
                 Text("Travel mode")
@@ -285,6 +294,7 @@ struct SettingsView: View {
                 } label: {
                     Label("Activate travel mode", systemImage: "airplane.departure")
                 }
+                .sensoryFeedback(.success, trigger: travelActive)
             }
 
             if let feedback = graceFeedback {
@@ -299,7 +309,7 @@ struct SettingsView: View {
 }
 
 #Preview("Settings") {
-    let schema = Schema(versionedSchema: SchemaV7.self)
+    let schema = Schema(versionedSchema: SchemaV8.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return SettingsView().modelContainer(container)

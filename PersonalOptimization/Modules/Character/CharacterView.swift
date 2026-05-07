@@ -52,6 +52,14 @@ struct CharacterView: View {
         .onChange(of: service.currentState) { _, newValue in
             triggerAlertPulseIfNeeded(for: newValue)
         }
+        .sensoryFeedback(trigger: service.currentState) { _, newValue in
+            switch newValue {
+            case .achievement: return .success
+            case .urgent:      return .warning
+            case .proud:       return .increase
+            default:           return nil
+            }
+        }
     }
 
     /// Filters internal placeholder reasons that shouldn't be shown to the user.
