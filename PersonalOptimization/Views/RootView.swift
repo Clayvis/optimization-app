@@ -39,7 +39,7 @@ struct RootView: View {
 
 @MainActor
 private let previewContainer: ModelContainer = {
-    let schema = Schema(versionedSchema: SchemaV4.self)
+    let schema = Schema(versionedSchema: SchemaV5.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)

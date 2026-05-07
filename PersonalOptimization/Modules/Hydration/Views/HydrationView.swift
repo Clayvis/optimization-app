@@ -13,6 +13,7 @@ struct HydrationView: View {
     @State private var customUnit: HydrationUnit = .oz
     @State private var customBeverage: BeverageType = .water
     @State private var editingEntry: HydrationEntry?
+    @State private var celebrationTrigger = 0
 
     enum HydrationUnit: String, CaseIterable, Identifiable {
         case oz, mL
@@ -30,6 +31,7 @@ struct HydrationView: View {
                 .navigationTitle("Hydration")
         }
         .task { await loadService() }
+        .sensoryFeedback(.increase, trigger: celebrationTrigger)
         .sheet(item: $editingEntry) { entry in
             if let service {
                 HydrationEntryEditSheet(entry: entry, service: service) {
@@ -176,6 +178,7 @@ struct HydrationView: View {
                     Button {
                         _ = try? service.logBeverage(amountOz: oz, beverageType: customBeverage)
                         refreshTrigger += 1
+                        celebrationTrigger += 1
                     } label: {
                         VStack(spacing: 2) {
                             Text("\(Int(oz))")
@@ -249,6 +252,7 @@ struct HydrationView: View {
             Button {
                 _ = try? service.logElectrolyte()
                 refreshTrigger += 1
+                celebrationTrigger += 1
             } label: {
                 Label("Log", systemImage: "plus.circle.fill")
                     .padding(.horizontal, 12)
@@ -472,7 +476,7 @@ private struct HydrationEntryEditSheet: View {
 }
 
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV4.self)
+    let schema = Schema(versionedSchema: SchemaV5.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return HydrationView().modelContainer(container)

@@ -65,6 +65,13 @@ struct TodayView: View {
                 }
 
                 Section {
+                    DailyProgressBars()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
                     PrescribedWorkoutCard()
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -104,8 +111,9 @@ struct TodayView: View {
                 Section("Today's blocks") {
                     let blocks = service.todayBlocks(for: now)
                     if blocks.isEmpty {
-                        Text("No blocks scheduled today.")
+                        Text("Open day. You write the plan.")
                             .foregroundStyle(.secondary)
+                            .accessibilityLabel("No blocks scheduled today")
                     } else {
                         ForEach(blocks) { block in
                             blockRow(block: block, isCurrent: isCurrent(block))
@@ -204,35 +212,65 @@ struct TodayView: View {
         }
     }
 
+    /// Labeled streak card. Identity-framed. Day-count framing makes the chips
+    /// read clearly as streaks rather than ambiguous counters. Flame glyph on
+    /// chips with active streaks; muted otherwise so non-streaks don't shout.
     @ViewBuilder
     private var streakStrip: some View {
         let counters = (try? modelContext.fetch(FetchDescriptor<StreakCounter>())) ?? []
         let workout = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
         let hydration = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0
         let learning = counters.first { $0.domain == StreakDomain.learning.rawValue }?.currentStreak ?? 0
-        HStack(spacing: 10) {
-            streakChip(label: "Workout", days: workout, systemImage: "figure.strengthtraining.traditional")
-            streakChip(label: "Hydration", days: hydration, systemImage: "drop.fill")
-            streakChip(label: "Learning", days: learning, systemImage: "book.fill")
+
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.orange)
+                Text("STREAKS")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 8) {
+                streakChip(label: "Workout", days: workout, systemImage: "figure.strengthtraining.traditional")
+                streakChip(label: "Hydration", days: hydration, systemImage: "drop.fill")
+                streakChip(label: "Learning", days: learning, systemImage: "book.fill")
+            }
         }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private func streakChip(label: String, days: Int, systemImage: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: systemImage)
-                .font(.caption2)
-            Text("\(days)")
-                .font(.subheadline.weight(.bold))
-                .monospacedDigit()
-            Text(label)
-                .font(.caption2)
+        let dayLabel = days == 1 ? "day streak" : "day streak"
+        return VStack(spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(.caption2)
+                if days > 0 {
+                    Image(systemName: "flame.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("\(days)")
+                    .font(.title3.weight(.bold))
+                    .monospacedDigit()
+                Text("d")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            Text(label.uppercased())
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
         .background(Color(.tertiarySystemBackground))
-        .clipShape(Capsule())
-        .accessibilityLabel("\(label) streak \(days) day\(days == 1 ? "" : "s")")
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityLabel("\(label) \(days) \(dayLabel)")
     }
 
     @ViewBuilder
@@ -349,7 +387,7 @@ struct TodayView: View {
 }
 
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV4.self)
+    let schema = Schema(versionedSchema: SchemaV5.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)

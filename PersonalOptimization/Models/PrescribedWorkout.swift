@@ -12,6 +12,7 @@ final class PrescribedWorkout {
     var workoutTypeRaw: String = PrescribedWorkoutType.rest.rawValue
     var template: String = "{}"                       // JSON-encoded sets/reps/exercises (lifts) or zones (basketball/swim)
     var rationale: String = ""                        // why this workout today, in user's voice
+    var creativeTitle: String = ""                    // 2-4 word evocative name (e.g. "Quadzilla", "Sanity Session"). Empty for legacy rows; UI falls back to workoutType.displayName.
     var statusRaw: String = PrescribedWorkoutStatus.suggested.rawValue
     var sessionUUIDString: String?                    // FK to actual session if accepted (UUID encoded as string)
     var tokenUsage: Int = 0

@@ -29,6 +29,7 @@ struct TrainingHubView: View {
                     NavigationLink(destination: SwimSessionView()) {
                         startRow(icon: "figure.pool.swim", title: "Swim", subtitle: "McTureous, 25m")
                     }
+                    CustomActivitiesQuickList()
                 }
 
                 Section("Today") {
@@ -52,6 +53,65 @@ struct TrainingHubView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+/// User-defined activities surfaced inline under the typed sessions. Empty
+/// state nudges the user to define their own.
+private struct CustomActivitiesQuickList: View {
+    @Query(sort: [SortDescriptor(\CustomActivityTemplate.createdAt, order: .forward)])
+    private var templates: [CustomActivityTemplate]
+
+    private var visible: [CustomActivityTemplate] {
+        templates.filter { !$0.archived }
+    }
+
+    var body: some View {
+        if visible.isEmpty {
+            NavigationLink(destination: CustomActivitiesSettingsView()) {
+                HStack(spacing: 12) {
+                    Image(systemName: "plus.app")
+                        .font(.title2)
+                        .foregroundStyle(.tint)
+                        .frame(width: 32)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Add your own activity").font(.body.weight(.semibold))
+                        Text("Running, walking, HIIT, yoga, anything.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        } else {
+            ForEach(visible, id: \.persistentModelID) { template in
+                NavigationLink(destination: CustomActivitySessionView(template: template)) {
+                    HStack(spacing: 12) {
+                        Image(systemName: template.systemImageName)
+                            .font(.title2)
+                            .foregroundStyle(.tint)
+                            .frame(width: 32)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(template.name).font(.body.weight(.semibold))
+                            Text("\(template.defaultDurationMinutes) min default")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            NavigationLink(destination: CustomActivitiesSettingsView()) {
+                HStack(spacing: 12) {
+                    Image(systemName: "plus.app")
+                        .font(.title2)
+                        .foregroundStyle(.tertiary)
+                        .frame(width: 32)
+                    Text("Manage activities")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
+        }
     }
 }
 

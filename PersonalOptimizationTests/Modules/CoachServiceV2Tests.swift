@@ -22,10 +22,13 @@ final class CoachServiceV2Tests: XCTestCase {
 
     // MARK: - CoachPrompts
 
-    func test_coachPrompts_dailyInsight_includesStyle() {
+    func test_coachPrompts_dailyInsight_includesStyleAndStructure() {
         let prompt = CoachPrompts.system(for: .dailyInsight, style: "stoic")
         XCTAssertTrue(prompt.contains("Style: stoic."))
-        XCTAssertTrue(prompt.contains("max 80 words"))
+        // M3.7 polish pass restructured the daily-insight prompt as three beats
+        // (motivating / educate / optimize) with a 90-word cap.
+        XCTAssertTrue(prompt.contains("THREE SHORT BEATS"))
+        XCTAssertTrue(prompt.contains("Max 90 words"))
     }
 
     func test_coachPrompts_prescribeWorkout_outputsJSONFormat() {
@@ -91,7 +94,7 @@ final class CoachServiceV2Tests: XCTestCase {
 
     func test_prescribeTodaysWorkout_createsRowFromValidJSON() async throws {
         let api = PrescribeStubAPI(text: """
-        {"workoutType":"lift_a","rationale":"You hit a fresh PR last week. Push.","template":{"exercises":[{"name":"Squat","sets":5,"reps":5,"weightLbs":225}]}}
+        {"creativeTitle":"Quadzilla","workoutType":"lift_a","rationale":"You hit a fresh PR last week. Push.","template":{"exercises":[{"name":"Squat","sets":5,"reps":5,"weightLbs":225}]}}
         """)
         let service = CoachService(modelContext: context, api: api)
         let p = try await service.prescribeTodaysWorkout()
@@ -99,6 +102,16 @@ final class CoachServiceV2Tests: XCTestCase {
         XCTAssertEqual(p.status, .suggested)
         XCTAssertTrue(p.rationale.contains("PR"))
         XCTAssertTrue(p.template.contains("Squat"))
+        XCTAssertEqual(p.creativeTitle, "Quadzilla")
+    }
+
+    func test_prescribeTodaysWorkout_missingCreativeTitle_defaultsEmpty() async throws {
+        let api = PrescribeStubAPI(text: """
+        {"workoutType":"rest","rationale":"Recover.","template":{"reason":"low sleep"}}
+        """)
+        let service = CoachService(modelContext: context, api: api)
+        let p = try await service.prescribeTodaysWorkout()
+        XCTAssertEqual(p.creativeTitle, "")
     }
 
     func test_prescribeTodaysWorkout_idempotentOnSameDay() async throws {

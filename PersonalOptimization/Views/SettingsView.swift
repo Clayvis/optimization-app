@@ -213,6 +213,11 @@ struct SettingsView: View {
 
             Section("Training") {
                 Toggle("Achilles check-in after basketball", isOn: $profile.achillesCheckInEnabled)
+                NavigationLink {
+                    CustomActivitiesSettingsView()
+                } label: {
+                    Label("Activities (running, HIIT, yoga…)", systemImage: "figure.run")
+                }
             }
 
             graceModeSection(profile: profile)
@@ -281,7 +286,7 @@ struct SettingsView: View {
 }
 
 #Preview("Settings") {
-    let schema = Schema(versionedSchema: SchemaV4.self)
+    let schema = Schema(versionedSchema: SchemaV5.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return SettingsView().modelContainer(container)

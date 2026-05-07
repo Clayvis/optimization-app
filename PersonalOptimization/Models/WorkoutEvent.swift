@@ -5,6 +5,7 @@ enum WorkoutEventSource: String, Codable, CaseIterable, Sendable {
     case lift
     case basketball
     case swim
+    case custom            // M3.7+: user-defined activity (running, HIIT, walk, yoga, ...)
     case manualSkip = "manual_skip"
     case sickDay = "sick_day"
     case travel

@@ -82,8 +82,14 @@ struct PrescribedWorkoutCard: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else if let p = todays {
-                Text(p.workoutType.displayName)
+                let title = p.creativeTitle.trimmingCharacters(in: .whitespaces)
+                Text(title.isEmpty ? p.workoutType.displayName : title)
                     .font(.title2.weight(.semibold))
+                if !title.isEmpty {
+                    Text(p.workoutType.displayName.uppercased())
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
                 if !p.rationale.isEmpty {
                     Text(p.rationale)
                         .font(.subheadline)

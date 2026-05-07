@@ -166,6 +166,7 @@ final class CoachService {
         prescription.workoutTypeRaw = parsed.workoutType.rawValue
         prescription.template = parsed.templateJSON
         prescription.rationale = parsed.rationale
+        prescription.creativeTitle = parsed.creativeTitle
         prescription.statusRaw = PrescribedWorkoutStatus.suggested.rawValue
         prescription.tokenUsage = response.totalTokens
         prescription.modelUsed = resolvedProfile.anthropicModel
@@ -372,6 +373,7 @@ final class CoachService {
         var workoutType: PrescribedWorkoutType
         var templateJSON: String
         var rationale: String
+        var creativeTitle: String
     }
 
     private struct ParsedSuggestion {
@@ -393,12 +395,15 @@ final class CoachService {
             return ParsedPrescription(
                 workoutType: .rest,
                 templateJSON: "{}",
-                rationale: jsonText.trimmingCharacters(in: .whitespacesAndNewlines)
+                rationale: jsonText.trimmingCharacters(in: .whitespacesAndNewlines),
+                creativeTitle: ""
             )
         }
         let typeRaw = (obj["workoutType"] as? String) ?? "rest"
         let workoutType = PrescribedWorkoutType(rawValue: typeRaw) ?? .rest
         let rationale = (obj["rationale"] as? String) ?? ""
+        let title = (obj["creativeTitle"] as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         var templateJSON = "{}"
         if let template = obj["template"], let templateData = try? JSONSerialization.data(withJSONObject: template),
            let templateString = String(data: templateData, encoding: .utf8) {
@@ -407,7 +412,8 @@ final class CoachService {
         return ParsedPrescription(
             workoutType: workoutType,
             templateJSON: templateJSON,
-            rationale: rationale
+            rationale: rationale,
+            creativeTitle: title
         )
     }
 
