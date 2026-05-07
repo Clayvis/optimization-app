@@ -36,7 +36,7 @@ final class ModelContainerWrapper {
     let container: ModelContainer
 
     private init?() {
-        let schema = Schema(versionedSchema: SchemaV5.self)
+        let schema = Schema(versionedSchema: SchemaV6.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,

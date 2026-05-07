@@ -111,6 +111,11 @@ struct SettingsView: View {
                 } label: {
                     Label("Start fresh from template", systemImage: "doc.badge.gearshape")
                 }
+                NavigationLink {
+                    ImplementationIntentionsView()
+                } label: {
+                    Label("Implementation intentions", systemImage: "arrow.right.circle.fill")
+                }
             }
 
             Section("Goals & equipment") {
@@ -286,7 +291,7 @@ struct SettingsView: View {
 }
 
 #Preview("Settings") {
-    let schema = Schema(versionedSchema: SchemaV5.self)
+    let schema = Schema(versionedSchema: SchemaV6.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return SettingsView().modelContainer(container)

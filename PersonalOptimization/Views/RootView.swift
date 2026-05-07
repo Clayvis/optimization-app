@@ -2,7 +2,20 @@ import SwiftUI
 import SwiftData
 
 struct RootView: View {
+    @Query private var profiles: [UserProfile]
+
     var body: some View {
+        Group {
+            if let profile = profiles.first, profile.onboardingCompleted {
+                tabRoot
+            } else {
+                OnboardingView()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var tabRoot: some View {
         TabView {
             TodayView()
                 .tabItem {
@@ -39,7 +52,7 @@ struct RootView: View {
 
 @MainActor
 private let previewContainer: ModelContainer = {
-    let schema = Schema(versionedSchema: SchemaV5.self)
+    let schema = Schema(versionedSchema: SchemaV6.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)
