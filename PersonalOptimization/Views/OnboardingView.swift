@@ -16,6 +16,7 @@ struct OnboardingView: View {
     @State private var primaryGoal: String = ""
     @State private var equipmentAccess: String = "gym"
     @State private var pickedVariant: MascotVariant = .ninjaMale
+    @State private var scheduleTemplate: ScheduleTemplate = .balanced
     @State private var hkRequested = false
     @State private var notifRequested = false
     @State private var seedingDone = false
@@ -24,7 +25,7 @@ struct OnboardingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ProgressView(value: Double(step + 1), total: 5)
+            ProgressView(value: Double(step + 1), total: 6)
                 .tint(.accentColor)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -33,8 +34,9 @@ struct OnboardingView: View {
                 welcomeScreen.tag(0)
                 permissionsScreen.tag(1)
                 goalsScreen.tag(2)
-                mascotScreen.tag(3)
-                wrapUpScreen.tag(4)
+                scheduleScreen.tag(3)
+                mascotScreen.tag(4)
+                wrapUpScreen.tag(5)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut, value: step)
@@ -129,19 +131,134 @@ struct OnboardingView: View {
                     Text("Equipment you have today")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
-                    Picker("Equipment", selection: $equipmentAccess) {
-                        Text("Full gym").tag("gym")
-                        Text("Home (full)").tag("home_full")
-                        Text("Home (minimal)").tag("home_minimal")
-                        Text("Bodyweight only").tag("bodyweight")
-                        Text("Outdoor").tag("outdoor")
-                    }
-                    .pickerStyle(.segmented)
+                    equipmentCardList
                 }
                 .padding(.horizontal, 24)
             }
             .padding(.top, 32)
         }
+    }
+
+    /// Five equipment options don't fit on iPhone width as a segmented control
+    /// (truncate to "Bodywei...", "Home (..." etc.). Stacked card list with full
+    /// labels + a selected accent reads cleanly and avoids the truncation bug.
+    @ViewBuilder
+    private var equipmentCardList: some View {
+        let options: [(value: String, label: String, glyph: String)] = [
+            ("gym", "Full gym", "dumbbell.fill"),
+            ("home_full", "Home (full kit)", "house.fill"),
+            ("home_minimal", "Home (minimal kit)", "house"),
+            ("bodyweight", "Bodyweight only", "figure.cooldown"),
+            ("outdoor", "Outdoor", "leaf.fill")
+        ]
+        VStack(spacing: 8) {
+            ForEach(options, id: \.value) { option in
+                equipmentRow(option: option)
+            }
+        }
+    }
+
+    /// One row of the equipment picker. Pulled out of the `ForEach` because
+    /// the inline conditional `foregroundStyle` and `background` expressions
+    /// blew SwiftUI's type-checker complexity budget when stacked together.
+    @ViewBuilder
+    private func equipmentRow(option: (value: String, label: String, glyph: String)) -> some View {
+        let selected = equipmentAccess == option.value
+        Button {
+            equipmentAccess = option.value
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: option.glyph)
+                    .frame(width: 24)
+                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                Text(option.label)
+                    .font(.body.weight(selected ? .semibold : .regular))
+                    .foregroundStyle(.primary)
+                Spacer()
+                if selected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.tint)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(selected
+                        ? Color.accentColor.opacity(0.12)
+                        : Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Onboarding screen 3 — schedule template. Lets the wife (or any new
+    /// user) avoid landing on Clay's seeded blocks. The template picker
+    /// applies the chosen template via ScheduleTemplateApplier; user can
+    /// always edit individual blocks later in Settings → Schedule.
+    @ViewBuilder
+    private var scheduleScreen: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "calendar")
+                .font(.system(size: 56))
+                .foregroundStyle(.tint)
+                .padding(.top, 32)
+            Text("Pick a starting schedule.")
+                .font(.title2.weight(.bold))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+            Text("You can edit any block later. Pick the template that fits your shape of week — we'll seed it now.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            ScrollView {
+                VStack(spacing: 8) {
+                    ForEach(ScheduleTemplate.allCases) { template in
+                        scheduleTemplateRow(template)
+                    }
+                }
+                .padding(.horizontal, 24)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func scheduleTemplateRow(_ template: ScheduleTemplate) -> some View {
+        let selected = scheduleTemplate == template
+        Button {
+            applyScheduleTemplate(template)
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: template.systemImage)
+                    .font(.title3)
+                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(template.displayName)
+                        .font(.subheadline.weight(.semibold))
+                    Text(template.summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if selected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.tint)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(selected
+                        ? Color.accentColor.opacity(0.12)
+                        : Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func applyScheduleTemplate(_ template: ScheduleTemplate) {
+        scheduleTemplate = template
+        _ = try? ScheduleTemplateApplier.apply(template, modelContext: modelContext)
     }
 
     @ViewBuilder
@@ -221,7 +338,7 @@ struct OnboardingView: View {
                     .buttonStyle(.bordered)
             }
             Spacer()
-            if step < 4 {
+            if step < 5 {
                 Button("Continue") { step += 1 }
                     .buttonStyle(.borderedProminent)
                     .disabled(canAdvance == false)

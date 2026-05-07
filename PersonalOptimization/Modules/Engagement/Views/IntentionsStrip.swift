@@ -1,9 +1,12 @@
 import SwiftUI
 import SwiftData
 
-/// Today-tab visual surface for active implementation intentions. Per M4 spec:
-/// "Active plans reveal in TodayView under 'When you... I will remind you to...'
-/// section." Identity-framed copy. Tap on a plan logs completion (lastCompletedAt).
+/// Today-tab surface for active implementation intentions. The grammar reads
+/// naturally: section header "Routines" frames the list, each row is a
+/// readable two-liner — the action up top in user-language, the cue
+/// underneath. Tap toggles "done today" and writes lastCompletedAt; a tap on
+/// a completed row clears it (lets the user fix mis-taps without leaving the
+/// screen).
 @MainActor
 struct IntentionsStrip: View {
     @Environment(\.modelContext) private var modelContext
@@ -16,39 +19,23 @@ struct IntentionsStrip: View {
 
     var body: some View {
         if !visible.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.right.circle.fill")
                         .foregroundStyle(.tint)
-                    Text("WHEN YOU…")
+                    Text("ROUTINES")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("Tap to mark done")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
                 ForEach(visible, id: \.persistentModelID) { intention in
                     Button {
-                        recordCompletion(intention)
+                        toggleCompletion(intention)
                     } label: {
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: intention.triggerType.systemImage)
-                                .foregroundStyle(.tint)
-                                .font(.subheadline)
-                                .frame(width: 20)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("When \(intention.trigger.lowercased())")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                Text("I will \(intention.action.lowercased())")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if let last = intention.lastCompletedAt,
-                               Calendar.current.isDateInToday(last) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                            }
-                        }
-                        .contentShape(Rectangle())
+                        intentionRow(intention)
                     }
                     .buttonStyle(.plain)
                 }
@@ -60,8 +47,61 @@ struct IntentionsStrip: View {
         }
     }
 
-    private func recordCompletion(_ intention: ImplementationIntention) {
-        _ = try? ImplementationIntentionService(modelContext: modelContext)
-            .recordCompletion(intention)
+    @ViewBuilder
+    private func intentionRow(_ intention: ImplementationIntention) -> some View {
+        let done = isCompletedToday(intention)
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: done ? "checkmark.circle.fill" : "circle")
+                .font(.title3)
+                .foregroundStyle(done ? .green : .secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(intention.action.firstLetterUppercased())
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(done ? .secondary : .primary)
+                    .strikethrough(done, color: .secondary)
+                HStack(spacing: 4) {
+                    Image(systemName: intention.triggerType.systemImage)
+                        .font(.caption2)
+                    Text(intention.trigger)
+                        .font(.caption2)
+                }
+                .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+    }
+
+    private func isCompletedToday(_ intention: ImplementationIntention) -> Bool {
+        guard let last = intention.lastCompletedAt else { return false }
+        return Calendar.current.isDateInToday(last)
+    }
+
+    /// Tap toggles. Mark done if not done today; clear last-completed if it
+    /// was done today. Lets the user undo a mis-tap without going to Settings.
+    private func toggleCompletion(_ intention: ImplementationIntention) {
+        let service = ImplementationIntentionService(modelContext: modelContext)
+        if isCompletedToday(intention) {
+            // Clear today's completion. We don't have a dedicated "clear" API
+            // to keep the service narrow; nudge lastCompletedAt to nil
+            // directly through the model. The day-rollup ledger isn't
+            // affected — implementation intentions don't write
+            // CompletionHistory, only the streak engine does, and intentions
+            // are independent of that loop.
+            intention.lastCompletedAt = nil
+            try? modelContext.save()
+        } else {
+            _ = try? service.recordCompletion(intention)
+        }
+    }
+}
+
+private extension String {
+    /// Capitalizes only the first letter without touching the rest, so user
+    /// trigger/action strings keep their original casing inside the sentence.
+    func firstLetterUppercased() -> String {
+        guard let first = self.first else { return self }
+        return String(first).uppercased() + self.dropFirst()
     }
 }
