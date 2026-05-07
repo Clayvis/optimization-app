@@ -16,6 +16,21 @@ struct CoachContextV2: Sendable {
     var minutesAvailableToday: Int          // open schedule slots, derived
     var temperatureF: Double?               // optional ambient weather (stub)
 
+    // V1 opportunities pass — Coach memory + continuity (Opp 6).
+    /// User-supplied context the Coach should carry across days. Filled by
+    /// `CoachMemoryService.summaryForCoach`. Empty when the user hasn't
+    /// written any context yet.
+    var userMemoryBlock: String = ""
+    /// 3-5 most recent CoachInsight rows compressed into bullets so the
+    /// Coach can build a thread instead of producing isolated daily notes.
+    var recentInsightsBlock: String = ""
+    /// Detected lapse state for today, if any. Drives the prompt to tone
+    /// the message warmly when the user is returning from a slump.
+    var lapseStateNote: String = ""
+    /// RecoveryGate verdict for today, if downgraded or rest. Empty when
+    /// recovery is normal.
+    var recoveryNote: String = ""
+
     var summaryForPrompt: String {
         var lines: [String] = []
         lines.append("=== Today snapshot ===")
@@ -39,6 +54,26 @@ struct CoachContextV2: Sendable {
         lines.append("Time available today: \(minutesAvailableToday) min.")
         if let temp = temperatureF {
             lines.append("Ambient: \(Int(temp))F.")
+        }
+        if !userMemoryBlock.isEmpty {
+            lines.append("")
+            lines.append("=== User-supplied memory ===")
+            lines.append(userMemoryBlock)
+        }
+        if !recentInsightsBlock.isEmpty {
+            lines.append("")
+            lines.append("=== Recent insights you wrote (build a thread, don't repeat) ===")
+            lines.append(recentInsightsBlock)
+        }
+        if !recoveryNote.isEmpty {
+            lines.append("")
+            lines.append("=== Recovery state ===")
+            lines.append(recoveryNote)
+        }
+        if !lapseStateNote.isEmpty {
+            lines.append("")
+            lines.append("=== Lapse state ===")
+            lines.append(lapseStateNote)
         }
         return lines.joined(separator: "\n")
     }

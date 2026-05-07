@@ -114,6 +114,12 @@ final class CoachService {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
 
+        let memoryService = CoachMemoryService(modelContext: modelContext)
+        let userMemoryBlock = memoryService.summaryForCoach()
+        let recentInsightsBlock = recentInsightsSummary()
+        let lapseNote = lapseStateNote()
+        let recoveryNote = recoveryStateNote(profile: profile)
+
         return CoachContextV2(
             today: today,
             historical: historical,
@@ -123,8 +129,66 @@ final class CoachService {
             weeklyTrainingTargetSessions: profile.weeklyTrainingTargetSessions,
             restrictions: restrictions,
             minutesAvailableToday: minutesAvailableToday(),
-            temperatureF: nil
+            temperatureF: nil,
+            userMemoryBlock: userMemoryBlock,
+            recentInsightsBlock: recentInsightsBlock,
+            lapseStateNote: lapseNote,
+            recoveryNote: recoveryNote
         )
+    }
+
+    /// Pulls the 3 most recent persisted CoachInsight rows and compresses
+    /// each into a one-line bullet so the Coach prompt can reference them.
+    /// Empty when there's no history yet.
+    private func recentInsightsSummary() -> String {
+        var descriptor = FetchDescriptor<CoachInsight>(
+            sortBy: [SortDescriptor(\.generatedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 3
+        let rows = (try? modelContext.fetch(descriptor)) ?? []
+        guard !rows.isEmpty else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return rows.reversed().map { insight in
+            let date = formatter.string(from: insight.generatedAt)
+            // Keep each bullet under ~140 chars to avoid blowing the prompt.
+            let trimmed = String(insight.insightText.prefix(140))
+            return "- (\(date)) \(trimmed)"
+        }.joined(separator: "\n")
+    }
+
+    /// Composes a short note about today's lapse status, if any, so the
+    /// Coach can warm the message rather than scolding a returning user.
+    private func lapseStateNote() -> String {
+        let descriptor = FetchDescriptor<LapseEvent>(
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        let recent = (try? modelContext.fetch(descriptor)) ?? []
+        guard let active = recent.first(where: { $0.resolvedAt == nil }) else { return "" }
+        switch active.severity {
+        case .soft:
+            return "User just had a soft slip (2 days low). Welcome warmly; suggest one small win."
+        case .hard:
+            return "User is returning from a 5+ day lapse. Soften the message; celebrate showing up. No volume pressure."
+        case .crisis:
+            return "User has been low-engagement 14+ days. Ask, don't prescribe. Offer to simplify the schedule."
+        }
+    }
+
+    /// Composes a recovery note when the RecoveryGate flagged a downgrade or
+    /// rest day. Lets the prescribe/dailyInsight prompts honor recovery
+    /// without each prompt re-deriving the rules.
+    private func recoveryStateNote(profile: UserProfile) -> String {
+        let gate = RecoveryGate(modelContext: modelContext)
+        let status = gate.evaluate(profile: profile, asOf: now())
+        switch status.recommendation {
+        case .normal:
+            return ""
+        case .downgrade:
+            return "Recovery flag: downgrade today. Reason: \(status.reason). Prescribe deload variant."
+        case .rest:
+            return "Recovery flag: rest day mandatory. Reason: \(status.reason). Honor the rest; prescribe rest as the work."
+        }
     }
 
     /// Generates and persists today's PrescribedWorkout. Idempotent: a second call

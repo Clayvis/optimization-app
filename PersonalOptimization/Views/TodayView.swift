@@ -10,6 +10,8 @@ struct TodayView: View {
     @State private var showingProtocolDetail = false
     @State private var quoteService = DailyQuoteService()
     @State private var dailyQuote: DailyQuote?
+    @State private var pendingCelebration: MilestoneUnlock?
+    @State private var showingMemorySheet = false
 
     private var service: ScheduleService {
         ScheduleService(modelContext: modelContext)
@@ -36,6 +38,13 @@ struct TodayView: View {
                 }
 
                 graceBannerSection
+
+                Section {
+                    WelcomeBackCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
 
                 if let quote = dailyQuote {
                     Section {
@@ -111,7 +120,32 @@ struct TodayView: View {
                     CoachInsightCard()
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+                }
+
+                Section {
+                    Button {
+                        showingMemorySheet = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "text.bubble.fill")
+                            Text("Tell the Coach what's going on")
+                                .font(.caption.weight(.semibold))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color(.tertiarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
                 }
 
                 Section {
@@ -151,11 +185,30 @@ struct TodayView: View {
                 startTicking()
                 characterService.start(modelContext: modelContext)
                 Task { await loadDailyQuote() }
+                refreshLapseAndMilestones()
             }
             .onDisappear {
                 stopTicking()
                 characterService.stop()
             }
+            .sheet(item: $pendingCelebration) { unlock in
+                MilestoneCelebrationSheet(unlock: unlock)
+            }
+            .sheet(isPresented: $showingMemorySheet) {
+                CoachMemoryEntrySheet()
+            }
+        }
+    }
+
+    /// Walk lapse + milestone services on Today appearance. Cheap (mostly
+    /// SwiftData reads) and gives the user immediate feedback when they
+    /// cross a threshold or come back from a slump.
+    private func refreshLapseAndMilestones() {
+        _ = try? LapseDetectionService(modelContext: modelContext).recompute()
+        let milestones = MilestoneService(modelContext: modelContext)
+        _ = try? milestones.evaluate()
+        if let next = milestones.nextPendingCelebration() {
+            pendingCelebration = next
         }
     }
 
@@ -400,7 +453,7 @@ struct TodayView: View {
 }
 
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV6.self)
+    let schema = Schema(versionedSchema: SchemaV7.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)

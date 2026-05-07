@@ -37,6 +37,10 @@ struct RootView: View {
                 .tabItem {
                     Label("Learn", systemImage: "book.fill")
                 }
+            JourneyView()
+                .tabItem {
+                    Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
+                }
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
@@ -52,7 +56,7 @@ struct RootView: View {
 
 @MainActor
 private let previewContainer: ModelContainer = {
-    let schema = Schema(versionedSchema: SchemaV6.self)
+    let schema = Schema(versionedSchema: SchemaV7.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)

@@ -225,6 +225,14 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Partnership") {
+                NavigationLink {
+                    PartnerSettingsView()
+                } label: {
+                    Label("Partner mode", systemImage: "person.2.fill")
+                }
+            }
+
             graceModeSection(profile: profile)
 
             Section("Rollout") {
@@ -291,7 +299,7 @@ struct SettingsView: View {
 }
 
 #Preview("Settings") {
-    let schema = Schema(versionedSchema: SchemaV6.self)
+    let schema = Schema(versionedSchema: SchemaV7.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return SettingsView().modelContainer(container)
