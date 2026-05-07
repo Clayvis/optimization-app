@@ -148,6 +148,54 @@ final class HydrationServiceTests: XCTestCase {
         XCTAssertEqual(service.electrolyteCount(for: date), 2)
     }
 
+    // MARK: - Edit / delete (M3.7+ pass)
+
+    func test_updateEntry_adjustsDailyLogWaterOz() throws {
+        let date = jstDate(2026, 5, 8, 9, 0)
+        let log1 = try service.logBeverage(amountOz: 16, beverageType: .water, at: date)
+        XCTAssertEqual(log1.waterOz, 16)
+
+        let entries = service.entriesForDay(of: date)
+        let entry = try XCTUnwrap(entries.first)
+
+        try service.updateEntry(entry, newAmountOz: 20, newBeverageType: .water)
+        let log2 = try XCTUnwrap(service.entriesForDay(of: date).first)
+        XCTAssertEqual(log2.amountOz, 20)
+        XCTAssertEqual(service.intakeForDay(of: date), 20)
+    }
+
+    func test_updateEntry_changingBeverageRecomputesEffectiveOz() throws {
+        let date = jstDate(2026, 5, 8, 9, 0)
+        _ = try service.logBeverage(amountOz: 10, beverageType: .water, at: date)
+        let entry = try XCTUnwrap(service.entriesForDay(of: date).first)
+
+        try service.updateEntry(entry, newAmountOz: 10, newBeverageType: .coffee)
+        // Coffee coefficient 0.8 → 8 effective oz.
+        XCTAssertEqual(service.intakeForDay(of: date), 8, accuracy: 0.001)
+    }
+
+    func test_deleteEntry_rollsBackWaterOz() throws {
+        let date = jstDate(2026, 5, 8, 9, 0)
+        _ = try service.logBeverage(amountOz: 16, beverageType: .water, at: date)
+        _ = try service.logBeverage(amountOz: 8, beverageType: .water, at: date)
+        XCTAssertEqual(service.intakeForDay(of: date), 24)
+
+        let entries = service.entriesForDay(of: date)
+        let toDelete = try XCTUnwrap(entries.first { $0.amountOz == 16 })
+        try service.deleteEntry(toDelete)
+        XCTAssertEqual(service.intakeForDay(of: date), 8)
+    }
+
+    func test_deleteEntry_electrolyte_decrementsSessionCount() throws {
+        let date = jstDate(2026, 5, 8, 9, 0)
+        _ = try service.logElectrolyte(at: date, servingOz: 16)
+        XCTAssertEqual(service.electrolyteCount(for: date), 1)
+
+        let entry = try XCTUnwrap(service.entriesForDay(of: date).first)
+        try service.deleteEntry(entry)
+        XCTAssertEqual(service.electrolyteCount(for: date), 0)
+    }
+
     // MARK: - Helpers
 
     private func jstDate(_ y: Int, _ mo: Int, _ d: Int, _ h: Int, _ mi: Int) -> Date {

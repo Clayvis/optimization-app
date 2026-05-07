@@ -14,6 +14,8 @@ struct TrainingHubView: View {
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 }
 
+                InProgressSessionsSection()
+
                 Section("Start a session") {
                     NavigationLink(destination: LiftSessionView(templateName: "Lift A")) {
                         startRow(icon: "figure.strengthtraining.traditional", title: "Lift A", subtitle: "legs, push, pull")
@@ -50,6 +52,80 @@ struct TrainingHubView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+/// Banner above the start-a-session list showing any active session the user
+/// can resume. Without this, leaving the screen mid-session leaves orphaned
+/// rows (now resumable from the inner views, but invisible to the user from
+/// the hub).
+private struct InProgressSessionsSection: View {
+    @Query private var lifts: [LiftSession]
+    @Query private var bball: [BasketballSession]
+    @Query private var swims: [SwimSession]
+
+    private var activeLifts: [LiftSession] { lifts.filter { $0.durationMinutes == 0 } }
+    private var activeBasketball: [BasketballSession] { bball.filter { $0.startTime == $0.endTime } }
+    private var activeSwims: [SwimSession] { swims.filter { $0.durationMinutes == 0 } }
+
+    private var hasAny: Bool { !activeLifts.isEmpty || !activeBasketball.isEmpty || !activeSwims.isEmpty }
+
+    var body: some View {
+        if hasAny {
+            Section("In progress — tap to resume") {
+                ForEach(activeLifts, id: \.persistentModelID) { session in
+                    NavigationLink(destination: LiftSessionView(templateName: session.template)) {
+                        resumeRow(icon: "figure.strengthtraining.traditional",
+                                  title: session.template,
+                                  detail: detail(for: session))
+                    }
+                }
+                ForEach(activeBasketball, id: \.persistentModelID) { session in
+                    NavigationLink(destination: BasketballSessionView()) {
+                        resumeRow(icon: "basketball.fill",
+                                  title: "Basketball",
+                                  detail: "started \(formatTime(session.startTime))")
+                    }
+                }
+                ForEach(activeSwims, id: \.persistentModelID) { session in
+                    NavigationLink(destination: SwimSessionView()) {
+                        resumeRow(icon: "figure.pool.swim",
+                                  title: "Swim",
+                                  detail: "started \(formatTime(session.date))")
+                    }
+                }
+            }
+        }
+    }
+
+    private func detail(for session: LiftSession) -> String {
+        let exercises = session.exercises ?? []
+        let sets = exercises.reduce(0) { $0 + ($1.sets ?? []).count }
+        return "\(sets) set\(sets == 1 ? "" : "s") logged · started \(formatTime(session.date))"
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        f.dateFormat = "HH:mm"
+        return f.string(from: date)
+    }
+
+    @ViewBuilder
+    private func resumeRow(icon: String, title: String, detail: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(.orange)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.body.weight(.semibold))
+                Text(detail).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Image(systemName: "play.circle.fill")
+                .foregroundStyle(.orange)
+        }
     }
 }
 

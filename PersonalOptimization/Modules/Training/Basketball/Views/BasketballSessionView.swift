@@ -81,6 +81,17 @@ struct BasketballSessionView: View {
 
     private func start() async {
         let svc = BasketballService(modelContext: modelContext, healthKit: LiveHealthKitService.shared)
+
+        // Resume an in-progress basketball session if one exists. Without this,
+        // navigating away mid-session and returning would orphan the row and
+        // start fresh.
+        if let active = svc.currentSession(at: Date()) {
+            session = active
+            service = svc
+            startedAt = active.startTime
+            return
+        }
+
         do {
             let s = try svc.startSession(at: Date())
             startedAt = Date()

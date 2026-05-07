@@ -37,7 +37,7 @@ struct CharacterView: View {
             .frame(width: size, height: size)
             .animation(.easeInOut(duration: 0.5), value: service.currentState)
 
-            if showsReason {
+            if showsReason, !isInternalReason(service.triggerReason) {
                 Text(service.triggerReason)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -52,6 +52,14 @@ struct CharacterView: View {
         .onChange(of: service.currentState) { _, newValue in
             triggerAlertPulseIfNeeded(for: newValue)
         }
+    }
+
+    /// Filters internal placeholder reasons that shouldn't be shown to the user.
+    /// "default" and similar diagnostics ride in service.triggerReason for logging
+    /// purposes; the UI should stay quiet when there's nothing meaningful to say.
+    private func isInternalReason(_ reason: String) -> Bool {
+        let trimmed = reason.trimmingCharacters(in: .whitespaces).lowercased()
+        return trimmed.isEmpty || trimmed == "default"
     }
 
     private func startBreathing() {

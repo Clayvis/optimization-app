@@ -15,10 +15,12 @@ struct FastWindow: Sendable, Equatable {
 
 enum FastingError: LocalizedError {
     case noActiveFast
+    case alreadyFasting
 
     var errorDescription: String? {
         switch self {
-        case .noActiveFast: return "No active fast window to break"
+        case .noActiveFast: return "No active fast to end"
+        case .alreadyFasting: return "A fast is already in progress"
         }
     }
 }
@@ -97,18 +99,22 @@ final class FastingService {
         return windowStartingOnDay(of: tomorrow, profile: profile)
     }
 
+    /// Honors both scheduled windows and manual fasts. The user's explicit
+    /// start/stop takes precedence over the scheduled state.
     func state(at date: Date, profile: UserProfile) -> FastingState {
-        currentWindow(at: date, profile: profile) == nil ? .eating : .fasting
+        activeFastWindow(at: date, profile: profile) == nil ? .eating : .fasting
     }
 
     /// Time elapsed since the active fast started. Zero when not fasting.
     func elapsedFasting(at date: Date, profile: UserProfile) -> TimeInterval {
-        guard let window = currentWindow(at: date, profile: profile) else { return 0 }
+        guard let window = activeFastWindow(at: date, profile: profile) else { return 0 }
         return max(0, date.timeIntervalSince(window.start))
     }
 
-    /// Time remaining in the active fast. Nil when not fasting.
+    /// Time remaining in the active fast. Nil when not fasting. Manual fasts
+    /// return nil because they have no scheduled end.
     func remainingInFast(at date: Date, profile: UserProfile) -> TimeInterval? {
+        if openFastLog(asOf: date) != nil { return nil } // manual fast: no fixed end
         guard let window = currentWindow(at: date, profile: profile) else { return nil }
         return max(0, window.end.timeIntervalSince(date))
     }
@@ -131,6 +137,100 @@ final class FastingService {
         #endif
     }
 
+    /// True when an in-progress fast (scheduled or manual) is recorded on a
+    /// recent DailyLog (`fastStart` set, `fastEnd` nil). Looks at today and
+    /// yesterday so a fast started before midnight stays endable in the
+    /// morning.
+    func hasManualFastInProgress(asOf date: Date = Date()) -> Bool {
+        return openFastLog(asOf: date) != nil
+    }
+
+    /// Most-recent DailyLog with an open fast (fastStart set, fastEnd nil).
+    /// Looks at today + yesterday so a JST-evening start is endable in the AM.
+    private func openFastLog(asOf date: Date) -> DailyLog? {
+        if let today = currentDailyLog(for: date),
+           today.fastStart != nil, today.fastEnd == nil {
+            return today
+        }
+        let prior = date.addingTimeInterval(-86400)
+        if let yesterday = currentDailyLog(for: prior),
+           yesterday.fastStart != nil, yesterday.fastEnd == nil {
+            return yesterday
+        }
+        return nil
+    }
+
+    /// Returns the active fast considering both the scheduled window and any
+    /// in-progress manual entry. Manual fasts override the scheduled state so
+    /// the user's explicit action is authoritative. Spans midnight by checking
+    /// the previous day's log too.
+    ///
+    /// Also honors explicit "I'm done" intent: if the relevant day's DailyLog
+    /// has `fastEnd` set, no fast is active even if the scheduled window
+    /// boundary hasn't arrived yet. Without this, manually ending a fast
+    /// during the scheduled window would silently re-mark you as fasting.
+    func activeFastWindow(at date: Date, profile: UserProfile) -> FastWindow? {
+        if let log = openFastLog(asOf: date), let start = log.fastStart {
+            return FastWindow(start: start, end: date.addingTimeInterval(3600), label: "manual")
+        }
+        if let scheduled = currentWindow(at: date, profile: profile) {
+            // The day this scheduled window started; that's where the
+            // corresponding DailyLog row lives.
+            let day = currentDailyLog(for: scheduled.start)
+            if let day, day.fastEnd != nil {
+                return nil
+            }
+            return scheduled
+        }
+        return nil
+    }
+
+    /// Manually starts a fast right now. Idempotent: throws `alreadyFasting`
+    /// when one is already open.
+    @discardableResult
+    func startManualFast(at date: Date = Date(), profile: UserProfile) throws -> DailyLog {
+        if hasManualFastInProgress(asOf: date) {
+            throw FastingError.alreadyFasting
+        }
+        // Also block when the user is inside a scheduled window that has not
+        // been closed; the existing scheduled path covers that case.
+        if let scheduled = currentWindow(at: date, profile: profile),
+           let log = upsertDailyLog(for: scheduled.start) as DailyLog?,
+           log.fastStart != nil, log.fastEnd == nil {
+            throw FastingError.alreadyFasting
+        }
+        let log = upsertDailyLog(for: date)
+        log.fastStart = date
+        log.fastEnd = nil
+        log.fastBrokeEarly = false
+        log.fastBreakReason = nil
+        try modelContext.save()
+        logger.info("Manual fast started at \(date, privacy: .public)")
+        return log
+    }
+
+    /// Manually ends the open fast right now. Records reason when supplied.
+    /// Throws `noActiveFast` when nothing is open. Looks at today and
+    /// yesterday so an evening-start fast is endable in the morning.
+    @discardableResult
+    func endManualFast(at date: Date = Date(), reason: String? = nil) throws -> DailyLog {
+        guard let log = openFastLog(asOf: date) else {
+            throw FastingError.noActiveFast
+        }
+        log.fastEnd = date
+        if let reason, !reason.isEmpty {
+            log.fastBrokeEarly = true
+            log.fastBreakReason = reason
+        }
+        try modelContext.save()
+        CompletionHistoryWriter.record(domain: .fasting, at: date, modelContext: modelContext)
+        logger.info("Manual fast ended at \(date, privacy: .public) reason=\(reason ?? "nil", privacy: .public)")
+        #if os(iOS)
+        FastingLiveActivityController.dismissAllSync()
+        #endif
+        return log
+    }
+
     /// Records a successful fast end at the scheduled boundary.
     func logScheduledFastEnd(at date: Date, profile: UserProfile) throws {
         guard let window = currentWindow(at: date, profile: profile) else {
@@ -148,6 +248,16 @@ final class FastingService {
     }
 
     // MARK: - Helpers
+
+    private func currentDailyLog(for date: Date) -> DailyLog? {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = timezone
+        let day = cal.startOfDay(for: date)
+        let descriptor = FetchDescriptor<DailyLog>(
+            predicate: #Predicate<DailyLog> { $0.date == day }
+        )
+        return (try? modelContext.fetch(descriptor))?.first
+    }
 
     private func upsertDailyLog(for date: Date) -> DailyLog {
         var cal = Calendar(identifier: .gregorian)

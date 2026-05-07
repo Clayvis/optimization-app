@@ -175,6 +175,7 @@
 		AD88BE9E2BDDECB2D60AE0F1 /* LiftSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177EF30368767AF7EBD3F9D1 /* LiftSession.swift */; };
 		AE2F534AABB0B37895EE60E3 /* StreakCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF13531E1C84E1B6271EB29 /* StreakCounter.swift */; };
 		AED04D2DB0528ED047D50834 /* ActivityArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2AF00868B5A4EEB46CEE823 /* ActivityArchive.swift */; };
+		AF5CB4194A6298B8884DB7D9 /* DevSecretsBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8F222D2CE0A22931521B4A6 /* DevSecretsBootstrap.swift */; };
 		B1FC39684F22F34CBC9C57C9 /* DiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3417029E301F6F5A5E07DCB /* DiagnosticsView.swift */; };
 		B237009D4E56AD93103B79D8 /* SchemaV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = F536B591CFCD0EBD000953DE /* SchemaV3.swift */; };
 		B2590EA43AA467BA42CD498F /* FastingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A4006DD6BF17DAE6915811 /* FastingView.swift */; };
@@ -450,6 +451,7 @@
 		C608CA325D483F55214ED4BE /* FastCountdownTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastCountdownTimelineProvider.swift; sourceTree = "<group>"; };
 		C70A73F43D115EF06D2B6348 /* FastingLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingLiveActivity.swift; sourceTree = "<group>"; };
 		C7A58FDE761FD415973D33B2 /* HydrationEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationEntry.swift; sourceTree = "<group>"; };
+		C8F222D2CE0A22931521B4A6 /* DevSecretsBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevSecretsBootstrap.swift; sourceTree = "<group>"; };
 		CA2773372A4E5001F3A6F618 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
 		CEE759FC5B3BDC3B6248856B /* LiftWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftWatchView.swift; sourceTree = "<group>"; };
 		CEF05F9C5ED65B9EDF34C363 /* LiftService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftService.swift; sourceTree = "<group>"; };
@@ -786,6 +788,7 @@
 			children = (
 				256B1B8FB28C96B3F972B502 /* ArchiveBackgroundScheduler.swift */,
 				DD5231D3360B7F4C3F3E005C /* ClaudeAPIClient.swift */,
+				C8F222D2CE0A22931521B4A6 /* DevSecretsBootstrap.swift */,
 				0CE13FE68863483CD8470256 /* HealthKitService.swift */,
 				90525181D5415FCDC1A8AD83 /* JSONExportService.swift */,
 				29B2ED03B44C2BC7563DECA8 /* JSONImportService.swift */,
@@ -1198,6 +1201,7 @@
 				893261C32866D3A46BF02D4C /* DailyQuoteService.swift in Sources */,
 				80F190EC809095AAF10F7623 /* DailySummaryService.swift in Sources */,
 				8C95C0DE8B769619B77B0182 /* DetectedPattern.swift in Sources */,
+				AF5CB4194A6298B8884DB7D9 /* DevSecretsBootstrap.swift in Sources */,
 				B1FC39684F22F34CBC9C57C9 /* DiagnosticsView.swift in Sources */,
 				9539BA572E007D3F4BDF9529 /* ErrorBanner.swift in Sources */,
 				FCB84214E09EB0BB0AE4D3FE /* FastingActivityAttributes.swift in Sources */,

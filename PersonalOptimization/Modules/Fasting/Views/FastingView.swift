@@ -6,7 +6,9 @@ struct FastingView: View {
     @Query private var profiles: [UserProfile]
     @State private var service: FastingService?
     @State private var showingBreakSheet = false
+    @State private var showingManualEndSheet = false
     @State private var loadError: String?
+    @State private var actionFeedback: String?
 
     var body: some View {
         NavigationStack {
@@ -39,7 +41,7 @@ struct FastingView: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let now = context.date
             let state = service.state(at: now, profile: profile)
-            let window = service.currentWindow(at: now, profile: profile)
+            let window = service.activeFastWindow(at: now, profile: profile)
             let elapsed = service.elapsedFasting(at: now, profile: profile)
             let remaining = service.remainingInFast(at: now, profile: profile)
 
@@ -52,7 +54,9 @@ struct FastingView: View {
                         if let window {
                             labelRow("Window", value: window.label.capitalized)
                             labelRow("Started", value: format(date: window.start))
-                            labelRow("Ends", value: format(date: window.end))
+                            if window.label != "manual" {
+                                labelRow("Ends", value: format(date: window.end))
+                            }
                         } else {
                             let next = service.nextWindow(after: now, profile: profile)
                             labelRow("Next fast", value: "\(next.label.capitalized) at \(format(date: next.start))")
@@ -62,6 +66,15 @@ struct FastingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color(.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                    manualControls(service: service, profile: profile, state: state, window: window)
+
+                    if let actionFeedback {
+                        Text(actionFeedback)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
 
                     if state == .fasting, let window {
                         Button {
@@ -73,15 +86,6 @@ struct FastingView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
-
-                        Button(role: .destructive) {
-                            showingBreakSheet = true
-                        } label: {
-                            Label("End fast early", systemImage: "stop.circle")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.orange)
                     }
                 }
                 .padding()
@@ -90,11 +94,67 @@ struct FastingView: View {
         .sheet(isPresented: $showingBreakSheet) {
             EarlyBreakSheet(service: service, profile: profile)
         }
+        .sheet(isPresented: $showingManualEndSheet) {
+            ManualEndSheet(service: service) { reason in
+                actionFeedback = "Fast ended \(reason == nil ? "" : "(\(reason!))")"
+            }
+        }
+    }
+
+    /// Manual start/stop controls. Always visible. Identity-framed copy.
+    @ViewBuilder
+    private func manualControls(service: FastingService,
+                                profile: UserProfile,
+                                state: FastingState,
+                                window: FastWindow?) -> some View {
+        let manualOpen = service.hasManualFastInProgress(asOf: Date())
+        let canStart = state == .eating && !manualOpen
+        let canEnd = manualOpen || state == .fasting
+
+        HStack(spacing: 12) {
+            Button {
+                Task {
+                    do {
+                        _ = try service.startManualFast(profile: profile)
+                        actionFeedback = "Fast started."
+                    } catch FastingError.alreadyFasting {
+                        actionFeedback = "A fast is already in progress."
+                    } catch {
+                        actionFeedback = "Could not start fast: \(error.localizedDescription)"
+                    }
+                }
+            } label: {
+                Label("Start fast now", systemImage: "play.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!canStart)
+
+            Button(role: .destructive) {
+                if window != nil && !manualOpen {
+                    showingBreakSheet = true
+                } else {
+                    showingManualEndSheet = true
+                }
+            } label: {
+                Label("End fast now", systemImage: "stop.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(.orange)
+            .disabled(!canEnd)
+        }
     }
 
     @ViewBuilder
     private func fastingRing(state: FastingState, elapsed: TimeInterval, remaining: TimeInterval?, window: FastWindow?) -> some View {
         let progress: Double = {
+            // Manual fasts have no scheduled end; show a 16h reference ring so
+            // the user gets a meaningful visual without divide-by-near-zero.
+            if window?.label == "manual" {
+                let referenceTotal: TimeInterval = 16 * 3600
+                return min(1.0, max(0.0, elapsed / referenceTotal))
+            }
             guard let window else { return 0 }
             let total = window.end.timeIntervalSince(window.start)
             return total > 0 ? min(1.0, max(0.0, elapsed / total)) : 0
@@ -164,6 +224,44 @@ struct FastingView: View {
         let m = (Int(seconds) % 3600) / 60
         let s = Int(seconds) % 60
         return String(format: "%d:%02d:%02d", h, m, s)
+    }
+}
+
+private struct ManualEndSheet: View {
+    let service: FastingService
+    let onConfirm: (String?) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var note: String = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Optional note") {
+                    TextField("Why end now? (optional)", text: $note, axis: .vertical)
+                        .lineLimit(2...4)
+                }
+                Section {
+                    Text("Manual end logs your fast right now without judgement. Honest data > inflated streaks.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("End fast")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("End now") {
+                        let reason = note.trimmingCharacters(in: .whitespacesAndNewlines)
+                        _ = try? service.endManualFast(reason: reason.isEmpty ? nil : reason)
+                        Task { await FastingLiveActivityController.endAll() }
+                        onConfirm(reason.isEmpty ? nil : reason)
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -192,6 +192,68 @@ final class FastingServiceTests: XCTestCase {
         return cal.date(from: c)!
     }
 
+    // MARK: - Manual fast (M3.7+ pass)
+
+    func test_startManualFast_outsideScheduledWindow_marksLogStarted() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = jst
+        // Friday 14:00 — well outside any 21:00/22:00 fast window.
+        let now = cal.date(from: DateComponents(year: 2026, month: 5, day: 8, hour: 14))!
+        let log = try service.startManualFast(at: now, profile: profile)
+        XCTAssertEqual(log.fastStart, now)
+        XCTAssertNil(log.fastEnd)
+        XCTAssertEqual(service.state(at: now, profile: profile), .fasting)
+    }
+
+    func test_endManualFast_setsFastEnd_andTransitionsToEating() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = jst
+        let start = cal.date(from: DateComponents(year: 2026, month: 5, day: 8, hour: 14))!
+        let end = cal.date(from: DateComponents(year: 2026, month: 5, day: 8, hour: 18))!
+        _ = try service.startManualFast(at: start, profile: profile)
+        let log = try service.endManualFast(at: end, reason: "Hungry")
+        XCTAssertEqual(log.fastEnd, end)
+        XCTAssertEqual(log.fastBreakReason, "Hungry")
+        XCTAssertTrue(log.fastBrokeEarly)
+        XCTAssertEqual(service.state(at: end, profile: profile), .eating)
+    }
+
+    func test_startManualFast_whenAlreadyFasting_throws() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = jst
+        let start = cal.date(from: DateComponents(year: 2026, month: 5, day: 8, hour: 14))!
+        _ = try service.startManualFast(at: start, profile: profile)
+        XCTAssertThrowsError(try service.startManualFast(at: start.addingTimeInterval(60), profile: profile)) { err in
+            XCTAssertTrue(err is FastingError)
+        }
+    }
+
+    func test_endManualFast_acrossMidnight_findsYesterdaysOpenFast() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = jst
+        // Started Thursday 22:30 JST.
+        let start = cal.date(from: DateComponents(year: 2026, month: 5, day: 7, hour: 22, minute: 30))!
+        // Ending Friday 06:30 JST — different day.
+        let end = cal.date(from: DateComponents(year: 2026, month: 5, day: 8, hour: 6, minute: 30))!
+        _ = try service.startManualFast(at: start, profile: profile)
+        XCTAssertNoThrow(try service.endManualFast(at: end))
+        let log = service.activeFastWindow(at: end, profile: profile)
+        XCTAssertNil(log, "Fast should be ended after explicit endManualFast")
+    }
+
+    func test_endManualFast_whenNoneOpen_throwsNoActiveFast() {
+        XCTAssertThrowsError(try service.endManualFast()) { err in
+            guard let fastErr = err as? FastingError else {
+                XCTFail("Expected FastingError, got \(err)")
+                return
+            }
+            switch fastErr {
+            case .noActiveFast: break
+            default: XCTFail("Expected .noActiveFast, got \(fastErr)")
+            }
+        }
+    }
+
     private struct HM: Equatable { let h: Int; let m: Int }
 
     private func jstHourMinute(_ date: Date) -> HM {

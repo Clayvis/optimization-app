@@ -136,3 +136,6 @@ htmlcov/
 *.log
 *.tmp
 tmp/
+
+# Dev secrets (Anthropic API key for local DEBUG runs)
+.dev-secrets/

@@ -100,6 +100,57 @@ final class HydrationService {
         return existingLog(for: date)?.electrolyteSessions ?? 0
     }
 
+    /// Updates an existing entry's amount and beverage type. Recomputes the
+    /// day's `DailyLog.waterOz` by deducting the previous effectiveOz and
+    /// adding the new one. Recomputes the hydration streak so a corrected
+    /// entry that drops the day below target rolls the streak back honestly.
+    func updateEntry(_ entry: HydrationEntry,
+                     newAmountOz: Double,
+                     newBeverageType: BeverageType) throws {
+        guard newAmountOz > 0 else { return }
+        let log = upsertDailyLog(for: entry.date)
+        let previousEffective = entry.effectiveOz
+        entry.amountOz = newAmountOz
+        entry.beverageTypeRaw = newBeverageType.rawValue
+        let newEffective = entry.effectiveOz
+        log.waterOz = max(0, log.waterOz - previousEffective + newEffective)
+        try modelContext.save()
+        recomputeHydrationStreak(asOf: entry.date)
+    }
+
+    /// Deletes an entry and rolls back its contribution to today's
+    /// `DailyLog.waterOz`. Electrolyte session count adjusts when the deleted
+    /// entry was an electrolyte log. Recomputes the hydration streak so a
+    /// removed entry that drops the day below target rolls the streak back
+    /// honestly (no silent inflation).
+    func deleteEntry(_ entry: HydrationEntry) throws {
+        let day = entry.date
+        let log = upsertDailyLog(for: day)
+        log.waterOz = max(0, log.waterOz - entry.effectiveOz)
+        if entry.beverageType == .electrolyte {
+            log.electrolyteSessions = max(0, log.electrolyteSessions - 1)
+        }
+        modelContext.delete(entry)
+        try modelContext.save()
+        recomputeHydrationStreak(asOf: day)
+    }
+
+    /// Best-effort streak recompute after a destructive hydration edit.
+    /// Failures here just leave the streak slightly stale until the next
+    /// natural recompute; we never want a delete to throw on the user.
+    /// StreakService lives in the iOS-only Engagement module, so the Watch
+    /// build skips this entirely.
+    private func recomputeHydrationStreak(asOf date: Date) {
+        #if !os(watchOS)
+        let streakService = StreakService(
+            modelContext: modelContext,
+            timezone: timezone,
+            hydrationTargets: targets
+        )
+        _ = try? streakService.recompute(domain: .hydration, asOf: date)
+        #endif
+    }
+
     /// All HydrationEntry rows logged within the day containing `date`, newest first.
     func entriesForDay(of date: Date) -> [HydrationEntry] {
         var cal = Calendar(identifier: .gregorian)

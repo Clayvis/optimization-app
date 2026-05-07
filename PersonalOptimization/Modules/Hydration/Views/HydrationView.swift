@@ -12,6 +12,7 @@ struct HydrationView: View {
     @State private var customAmount: Double = 0
     @State private var customUnit: HydrationUnit = .oz
     @State private var customBeverage: BeverageType = .water
+    @State private var editingEntry: HydrationEntry?
 
     enum HydrationUnit: String, CaseIterable, Identifiable {
         case oz, mL
@@ -29,6 +30,13 @@ struct HydrationView: View {
                 .navigationTitle("Hydration")
         }
         .task { await loadService() }
+        .sheet(item: $editingEntry) { entry in
+            if let service {
+                HydrationEntryEditSheet(entry: entry, service: service) {
+                    refreshTrigger += 1
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -259,19 +267,43 @@ struct HydrationView: View {
         let entries = service.entriesForDay(of: now)
         if !entries.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Today's log")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
+                HStack {
+                    Text("Today's log")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("Tap to edit · swipe to delete")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
                 ForEach(entries.prefix(8), id: \.persistentModelID) { entry in
-                    HStack {
-                        Image(systemName: iconFor(beverage: entry.beverageType))
-                            .foregroundStyle(colorFor(beverage: entry.beverageType))
-                        Text("\(Int(entry.amountOz)) oz · \(entry.beverageType.displayName)")
-                            .font(.subheadline)
-                        Spacer()
-                        Text(timeFormatter.string(from: entry.date))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    Button {
+                        editingEntry = entry
+                    } label: {
+                        HStack {
+                            Image(systemName: iconFor(beverage: entry.beverageType))
+                                .foregroundStyle(colorFor(beverage: entry.beverageType))
+                            Text("\(Int(entry.amountOz)) oz · \(entry.beverageType.displayName)")
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Text(timeFormatter.string(from: entry.date))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            _ = try? service.deleteEntry(entry)
+                            refreshTrigger += 1
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
             }
@@ -352,6 +384,89 @@ struct HydrationView: View {
             service = HydrationService(modelContext: modelContext, targets: config.hydrationTargetsOz)
         } catch {
             loadError = error.localizedDescription
+        }
+    }
+}
+
+/// Editor for a single HydrationEntry. Lets the user fix mis-entered amounts
+/// or change the beverage type retroactively. Delete is also exposed here for
+/// users who prefer modal flows over swipe gestures.
+private struct HydrationEntryEditSheet: View {
+    @Bindable var entry: HydrationEntry
+    let service: HydrationService
+    let onChange: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var draftAmount: Double
+    @State private var draftBeverage: BeverageType
+    @State private var error: String?
+
+    init(entry: HydrationEntry, service: HydrationService, onChange: @escaping () -> Void) {
+        self.entry = entry
+        self.service = service
+        self.onChange = onChange
+        _draftAmount = State(initialValue: entry.amountOz)
+        _draftBeverage = State(initialValue: entry.beverageType)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Amount") {
+                    HStack {
+                        TextField("Amount", value: $draftAmount, format: .number)
+                            .keyboardType(.decimalPad)
+                        Text("oz").foregroundStyle(.secondary)
+                    }
+                    Stepper("Adjust by 1 oz", value: $draftAmount, in: 0...200, step: 1)
+                        .labelsHidden()
+                }
+                Section("Beverage") {
+                    Picker("Type", selection: $draftBeverage) {
+                        ForEach(BeverageType.allCases, id: \.rawValue) { b in
+                            Text(b.displayName).tag(b)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                if let error {
+                    Section {
+                        Text(error).foregroundStyle(.red).font(.footnote)
+                    }
+                }
+                Section {
+                    Button(role: .destructive) {
+                        do {
+                            try service.deleteEntry(entry)
+                            onChange()
+                            dismiss()
+                        } catch {
+                            self.error = error.localizedDescription
+                        }
+                    } label: {
+                        Label("Delete this entry", systemImage: "trash")
+                    }
+                }
+            }
+            .navigationTitle("Edit hydration")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        do {
+                            try service.updateEntry(entry,
+                                                    newAmountOz: draftAmount,
+                                                    newBeverageType: draftBeverage)
+                            onChange()
+                            dismiss()
+                        } catch {
+                            self.error = error.localizedDescription
+                        }
+                    }
+                    .disabled(draftAmount <= 0)
+                }
+            }
         }
     }
 }

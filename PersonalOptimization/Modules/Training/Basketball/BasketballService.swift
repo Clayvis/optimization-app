@@ -58,6 +58,36 @@ final class BasketballService {
         cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
         let day = cal.startOfDay(for: session.date)
         modelContext.insert(WorkoutEvent(date: day, completed: true, source: .basketball))
+
+        // Bridge in-session hydration into the global hydration ledger so the
+        // Hydration tab + streaks reflect water consumed during basketball.
+        // Idempotent per session: a HydrationEntry stamped at session.date with a
+        // "basketball" note is upserted rather than appended.
+        if hydrationOz > 0 {
+            let sessionDay = session.date
+            let descriptor = FetchDescriptor<HydrationEntry>(
+                predicate: #Predicate<HydrationEntry> {
+                    $0.date == sessionDay && $0.note == "basketball"
+                }
+            )
+            let existing = (try? modelContext.fetch(descriptor))?.first
+            let priorEffective = existing?.effectiveOz ?? 0
+            let entry: HydrationEntry
+            if let existing {
+                entry = existing
+                entry.amountOz = hydrationOz
+                entry.beverageTypeRaw = BeverageType.water.rawValue
+            } else {
+                entry = HydrationEntry(date: session.date,
+                                       amountOz: hydrationOz,
+                                       beverageType: .water,
+                                       note: "basketball")
+                modelContext.insert(entry)
+            }
+            dailyLog.waterOz = max(0, dailyLog.waterOz - priorEffective + entry.effectiveOz)
+            CompletionHistoryWriter.record(domain: .hydration, at: session.date, modelContext: modelContext)
+        }
+
         try modelContext.save()
         CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
         logger.info("Ended basketball session, achilles=\(achillesPostScore ?? -1, privacy: .public)")

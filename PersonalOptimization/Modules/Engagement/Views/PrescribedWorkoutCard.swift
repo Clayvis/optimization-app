@@ -37,6 +37,12 @@ struct PrescribedWorkoutCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
         .task { await ensureLoaded() }
+        .onAppear {
+            // Re-check API key whenever the card surfaces so a Settings-side
+            // change is reflected immediately. Without this, removing or
+            // setting the key would only take effect after a full relaunch.
+            apiKeyMissing = !keychainHasApiKey()
+        }
         .sheet(isPresented: $showingDetail) {
             if let p = todays {
                 PrescribedWorkoutDetailSheet(prescription: p)
@@ -44,6 +50,15 @@ struct PrescribedWorkoutCard: View {
         }
         .sheet(isPresented: $showingSkipSheet) {
             skipSheet
+        }
+    }
+
+    private func keychainHasApiKey() -> Bool {
+        do {
+            let key = try KeychainService.shared.getApiKey()
+            return !key.isEmpty
+        } catch {
+            return false
         }
     }
 
@@ -73,7 +88,7 @@ struct PrescribedWorkoutCard: View {
                     Text(p.rationale)
                         .font(.subheadline)
                         .foregroundStyle(.primary)
-                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 actionRow(prescription: p)
             } else if let errorMessage {
@@ -103,33 +118,25 @@ struct PrescribedWorkoutCard: View {
     private func actionRow(prescription: PrescribedWorkout) -> some View {
         HStack(spacing: 8) {
             if prescription.status == .suggested || prescription.status == .modified {
-                Button {
+                actionButton(label: "Accept",
+                             systemImage: "checkmark",
+                             role: nil,
+                             prominent: true) {
                     accept(prescription: prescription)
-                } label: {
-                    Label("Accept", systemImage: "checkmark.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
-
-                Button {
+                actionButton(label: "Modify",
+                             systemImage: "pencil",
+                             role: nil,
+                             prominent: false) {
                     showingDetail = true
-                } label: {
-                    Label("Modify", systemImage: "pencil")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
-
-                Button(role: .destructive) {
+                actionButton(label: "Skip",
+                             systemImage: "xmark",
+                             role: .destructive,
+                             prominent: false) {
                     skipReason = ""
                     showingSkipSheet = true
-                } label: {
-                    Label("Skip", systemImage: "xmark.circle")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
             } else {
                 Text(statusBadge(for: prescription.status))
                     .font(.caption.weight(.bold))
@@ -146,6 +153,36 @@ struct PrescribedWorkoutCard: View {
                 }
                 .buttonStyle(.bordered)
             }
+        }
+    }
+
+    /// Compact, equal-width action button. Icon stacked over a one-word label so
+    /// nothing wraps awkwardly across narrow rows. Each button gets the same
+    /// width via `frame(maxWidth: .infinity)`.
+    @ViewBuilder
+    private func actionButton(label: String,
+                              systemImage: String,
+                              role: ButtonRole?,
+                              prominent: Bool,
+                              action: @escaping () -> Void) -> some View {
+        let button = Button(role: role, action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: systemImage)
+                    .font(.subheadline.weight(.semibold))
+                Text(label)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+        .accessibilityLabel(label)
+
+        if prominent {
+            button.buttonStyle(.borderedProminent)
+        } else {
+            button.buttonStyle(.bordered)
         }
     }
 

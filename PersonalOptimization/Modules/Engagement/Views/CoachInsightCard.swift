@@ -13,16 +13,16 @@ struct CoachInsightCard: View {
     @State private var errorMessage: String?
     @State private var apiKeyMissing = false
     @State private var showingDetail = false
-    @State private var showingKeyEntry = false
 
     private var profile: UserProfile? { profiles.first }
     private var latest: CoachInsight? { insights.first }
 
     var body: some View {
         Button {
-            if apiKeyMissing {
-                showingKeyEntry = true
-            } else if latest != nil {
+            // API key entry lives in Settings only. The card stays passive when key
+            // is missing — no sheet from here. Tapping when an insight is present
+            // opens the detail sheet.
+            if !apiKeyMissing, latest != nil {
                 showingDetail = true
             }
         } label: {
@@ -31,18 +31,27 @@ struct CoachInsightCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
         .task { await loadIfNeeded() }
+        .onAppear {
+            // Re-check key status whenever the card appears so a Settings-side
+            // change is reflected without restart.
+            apiKeyMissing = !keychainHasApiKey()
+            if !apiKeyMissing {
+                Task { await loadIfNeeded() }
+            }
+        }
         .sheet(isPresented: $showingDetail) {
             if let latest {
                 CoachInsightDetailSheet(insight: latest)
             }
         }
-        .sheet(isPresented: $showingKeyEntry) {
-            APIKeyEntrySheet { _ in
-                Task {
-                    apiKeyMissing = false
-                    await loadIfNeeded(force: true)
-                }
-            }
+    }
+
+    private func keychainHasApiKey() -> Bool {
+        do {
+            let key = try KeychainService.shared.getApiKey()
+            return !key.isEmpty
+        } catch {
+            return false
         }
     }
 

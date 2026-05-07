@@ -24,6 +24,7 @@ struct PersonalOptimizationApp: App {
                     Logger.schedule.error("Seed failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
+            DevSecretsBootstrap.bootstrapIfNeeded()
             ArchiveBackgroundScheduler.registerHandler(modelContainer: container)
             ArchiveBackgroundScheduler.runRollupNow(modelContainer: container)
             return container

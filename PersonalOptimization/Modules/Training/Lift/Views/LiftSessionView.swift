@@ -185,6 +185,19 @@ struct LiftSessionView: View {
         do {
             let templates = try LiftTemplatesLoader.load()
             let svc = LiftService(modelContext: modelContext, templatesFile: templates, healthKit: LiveHealthKitService.shared)
+
+            // Resume an in-progress session for the same template today before
+            // creating a new one. Without this, leaving the screen mid-lift
+            // (to check the schedule, log water, etc.) would orphan the prior
+            // session row and start a fresh blank one on return.
+            if let resumed = inProgressSession(for: templateName) {
+                session = resumed
+                service = svc
+                startedAt = resumed.date
+                _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)
+                return
+            }
+
             let s = try svc.startSession(templateName: templateName)
             startedAt = Date()
             session = s
@@ -192,6 +205,23 @@ struct LiftSessionView: View {
             _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)
         } catch {
             loadError = error.localizedDescription
+        }
+    }
+
+    /// Active LiftSession matching `templateName` from today (durationMinutes==0).
+    /// Used to resume a workout the user navigated away from.
+    private func inProgressSession(for templateName: String) -> LiftSession? {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        let today = cal.startOfDay(for: Date())
+        let descriptor = FetchDescriptor<LiftSession>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        return sessions.first {
+            $0.template == templateName
+                && $0.durationMinutes == 0
+                && cal.isDate($0.date, inSameDayAs: today)
         }
     }
 

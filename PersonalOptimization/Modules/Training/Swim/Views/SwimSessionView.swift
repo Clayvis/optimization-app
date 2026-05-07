@@ -25,6 +25,23 @@ struct SwimSessionView: View {
             }
         }
         .navigationTitle("Swim")
+        .task { resumeIfNeeded() }
+    }
+
+    /// Resume an in-progress swim session that the user navigated away from.
+    private func resumeIfNeeded() {
+        guard session == nil else { return }
+        let svc = SwimService(modelContext: modelContext, healthKit: LiveHealthKitService.shared)
+        if let active = svc.currentSession(at: Date()) {
+            session = active
+            service = svc
+            startedAt = active.date
+            poolLengthMeters = active.poolLengthMeters
+            locationText = active.location ?? ""
+            waterType = active.waterType
+            lapsExact = active.laps
+            metersExact = active.totalMeters
+        }
     }
 
     @ViewBuilder

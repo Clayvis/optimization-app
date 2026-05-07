@@ -55,6 +55,10 @@ targets:
         optional: true
       - path: PersonalOptimization/PrivacyInfo.xcprivacy
         optional: true
+      # DEBUG-only Anthropic API key bootstrap. Optional: file may not exist.
+      # Gitignored. See .dev-secrets/README.md.
+      - path: .dev-secrets/anthropic_key.txt
+        optional: true
     info:
       path: PersonalOptimization/Info.plist
       properties:
