@@ -65,6 +65,29 @@ struct TodayView: View {
                 }
 
                 Section {
+                    PrescribedWorkoutCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                if isSunday {
+                    Section {
+                        WeeklyProgramCard()
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                    }
+                }
+
+                Section {
+                    ScheduleSuggestionInbox()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
                     CoachInsightCard()
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -302,6 +325,14 @@ struct TodayView: View {
     private func stopTicking() {
         tickTimer?.invalidate()
         tickTimer = nil
+    }
+
+    private var isSunday: Bool {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        let raw = cal.component(.weekday, from: now)
+        let iso = raw == 1 ? 7 : raw - 1
+        return iso == 7
     }
 
     private func loadDailyQuote() async {

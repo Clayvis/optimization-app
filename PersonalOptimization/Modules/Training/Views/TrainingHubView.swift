@@ -7,6 +7,13 @@ struct TrainingHubView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    PrescribedWorkoutCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                }
+
                 Section("Start a session") {
                     NavigationLink(destination: LiftSessionView(templateName: "Lift A")) {
                         startRow(icon: "figure.strengthtraining.traditional", title: "Lift A", subtitle: "legs, push, pull")

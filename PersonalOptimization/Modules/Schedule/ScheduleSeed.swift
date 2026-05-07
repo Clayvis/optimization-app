@@ -34,15 +34,17 @@ enum ScheduleSeedError: LocalizedError {
 @MainActor
 enum ScheduleSeed {
 
-    /// Seeds the template schedule from the bundled JSON if no template blocks exist yet.
-    /// Idempotent across multiple launches and across iOS + watchOS targets.
+    /// Seeds the template schedule from the bundled JSON if no seeded (non-custom)
+    /// template blocks exist yet. Idempotent across multiple launches. User-marked
+    /// `isCustom` blocks do not block re-seeding so the schedule template chooser
+    /// can apply a fresh template while preserving the user's custom rows.
     static func seedIfNeeded(modelContext: ModelContext, bundle: Bundle = .main) throws {
         let descriptor = FetchDescriptor<ScheduleBlock>(
-            predicate: #Predicate { $0.isOverride == false }
+            predicate: #Predicate<ScheduleBlock> { $0.isOverride == false && $0.isCustom == false }
         )
         let existing = try modelContext.fetchCount(descriptor)
         guard existing == 0 else {
-            Logger.schedule.info("Skipping seed: \(existing, privacy: .public) template blocks present")
+            Logger.schedule.info("Skipping seed: \(existing, privacy: .public) seeded blocks present")
             return
         }
 

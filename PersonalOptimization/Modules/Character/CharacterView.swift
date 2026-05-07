@@ -1,11 +1,13 @@
 import SwiftUI
+import SwiftData
 
 /// Renders the current character state with breathing animation, alert pulses on
 /// `.urgent` and `.achievement`, and a cross-fade transition between states.
-/// Honors the system reduce-motion setting.
+/// Honors the system reduce-motion setting and the user's `mascotVariant` choice.
 struct CharacterView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable var service = CharacterStateService.shared
+    @Query private var profiles: [UserProfile]
 
     var size: CGFloat = 200
     var showsReason: Bool = true
@@ -14,10 +16,14 @@ struct CharacterView: View {
     @State private var pulseScale: CGFloat = 1.0
     @State private var lastAlertState: CharacterState?
 
+    private var variant: String {
+        profiles.first?.mascotVariant ?? "ninja_male"
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             ZStack {
-                Image(service.currentState.assetName)
+                Image(service.currentState.assetName(for: variant))
                     .resizable()
                     .interpolation(.high)
                     .aspectRatio(contentMode: .fit)

@@ -11,18 +11,33 @@ enum CharacterState: String, Codable, CaseIterable {
     case tired
     case achievement
 
-    var assetName: String {
+    /// Capitalized state suffix used in asset filenames (e.g., "Neutral").
+    var suffix: String {
         switch self {
-        case .neutral: return "MascotNeutral"
-        case .thirsty: return "MascotThirsty"
-        case .fasting: return "MascotFasting"
-        case .urgent: return "MascotUrgent"
-        case .proud: return "MascotProud"
-        case .disappointed: return "MascotDisappointed"
-        case .tired: return "MascotTired"
-        case .achievement: return "MascotAchievement"
+        case .neutral:      return "Neutral"
+        case .thirsty:      return "Thirsty"
+        case .fasting:      return "Fasting"
+        case .urgent:       return "Urgent"
+        case .proud:        return "Proud"
+        case .disappointed: return "Disappointed"
+        case .tired:        return "Tired"
+        case .achievement:  return "Achievement"
         }
     }
+
+    /// Returns the Asset Catalog name for this state under the given variant.
+    /// Defaults to ninja_male when variant is unknown.
+    func assetName(for variant: String) -> String {
+        switch variant {
+        case "ninja_male":   return "NinjaMale_\(suffix)"
+        case "ninja_female": return "NinjaFemale_\(suffix)"
+        default:             return "NinjaMale_\(suffix)"
+        }
+    }
+
+    /// Backward-compatible default that maps to the ninja_male variant.
+    /// Prefer `assetName(for:)` so user-selected variant can take effect.
+    var assetName: String { assetName(for: "ninja_male") }
 
     static let precedenceOrder: [CharacterState] = [
         .urgent, .achievement, .proud, .disappointed,

@@ -106,6 +106,39 @@ struct SettingsView: View {
                 } label: {
                     Label("Edit schedule", systemImage: "calendar")
                 }
+                NavigationLink {
+                    ScheduleTemplateChooserView()
+                } label: {
+                    Label("Start fresh from template", systemImage: "doc.badge.gearshape")
+                }
+            }
+
+            Section("Goals & equipment") {
+                LabeledContent("Primary goal") {
+                    TextField("e.g., build muscle, stay sharp", text: Binding(
+                        get: { profile.primaryGoal ?? "" },
+                        set: { profile.primaryGoal = $0.isEmpty ? nil : $0 }
+                    ))
+                    .multilineTextAlignment(.trailing)
+                }
+                LabeledContent("Secondary goals") {
+                    TextField("comma-separated", text: $profile.secondaryGoalsCSV)
+                        .multilineTextAlignment(.trailing)
+                        .autocapitalization(.none)
+                }
+                Picker("Equipment access", selection: $profile.equipmentAccess) {
+                    Text("Full gym").tag("gym")
+                    Text("Home (full)").tag("home_full")
+                    Text("Home (minimal)").tag("home_minimal")
+                    Text("Bodyweight").tag("bodyweight")
+                    Text("Outdoor").tag("outdoor")
+                }
+                Stepper("Weekly target: \(profile.weeklyTrainingTargetSessions) sessions", value: $profile.weeklyTrainingTargetSessions, in: 0...14)
+                LabeledContent("Restrictions") {
+                    TextField("injuries, dietary, time", text: $profile.restrictionsCSV)
+                        .multilineTextAlignment(.trailing)
+                        .autocapitalization(.none)
+                }
             }
 
             Section("AI") {
@@ -144,6 +177,16 @@ struct SettingsView: View {
             Section("Mascot") {
                 Toggle("Show mascot", isOn: $profile.mascotEnabled)
                 Toggle("Reduced motion", isOn: $profile.reducedMotion)
+                NavigationLink {
+                    MascotVariantPickerView()
+                } label: {
+                    HStack {
+                        Label("Variant", systemImage: "person.2.fill")
+                        Spacer()
+                        Text(MascotVariant(rawValue: profile.mascotVariant)?.displayName ?? "Ninja (male)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Section("Coaching") {
