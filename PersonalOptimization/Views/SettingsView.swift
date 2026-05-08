@@ -52,6 +52,43 @@ struct SettingsView: View {
         }
     }
 
+    /// Pre-populated mailto: URL for the 30-day TestFlight feedback loop.
+    /// Subject + body templated so both Clay and his wife send structured
+    /// notes. No infrastructure, no SDKs, no analytics — just email.
+    private func feedbackMailtoURL(profile: UserProfile?) -> URL? {
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let appBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        let variant = profile?.mascotVariant ?? "ninja_male"
+        let dateFmt = DateFormatter()
+        dateFmt.dateFormat = "yyyy-MM-dd"
+        let today = dateFmt.string(from: Date())
+
+        let subject = "PersonalOptimization feedback \(today)"
+        let body = """
+            App version: \(appVersion) (\(appBuild))
+            Mascot variant: \(variant)
+            Date: \(today)
+
+            What's working:
+
+
+            What's broken:
+
+
+            What's missing:
+
+            """
+
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = "clayvis27@gmail.com"
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body)
+        ]
+        return components.url
+    }
+
     @ViewBuilder
     private func profileForm(profile: UserProfile) -> some View {
         @Bindable var profile = profile
@@ -184,6 +221,16 @@ struct SettingsView: View {
                     AchievementsView()
                 } label: {
                     Label("Achievements", systemImage: "trophy.fill")
+                }
+                NavigationLink {
+                    AboutView()
+                } label: {
+                    Label("About", systemImage: "info.circle")
+                }
+                if let url = feedbackMailtoURL(profile: profile) {
+                    Link(destination: url) {
+                        Label("Send feedback", systemImage: "envelope")
+                    }
                 }
             }
 

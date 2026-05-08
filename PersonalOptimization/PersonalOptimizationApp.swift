@@ -25,6 +25,7 @@ struct PersonalOptimizationApp: App {
                 }
             }
             DevSecretsBootstrap.bootstrapIfNeeded()
+            FirstLaunchTracker.shared.recordIfNeeded()
             ArchiveBackgroundScheduler.registerHandler(modelContainer: container)
             ArchiveBackgroundScheduler.runRollupNow(modelContainer: container)
             // Activate phone↔watch bridge so the watch can push session events

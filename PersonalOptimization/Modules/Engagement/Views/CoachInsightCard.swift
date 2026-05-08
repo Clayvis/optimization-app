@@ -14,6 +14,8 @@ struct CoachInsightCard: View {
     @State private var apiKeyMissing = false
     @State private var showingDetail = false
     @State private var refreshCount = 0
+    @State private var viewVisibleSince: Date?
+    @State private var feedbackTrigger = 0
 
     private var profile: UserProfile? { profiles.first }
     private var latest: CoachInsight? { insights.first }
@@ -40,12 +42,76 @@ struct CoachInsightCard: View {
                 Task { await loadIfNeeded() }
             }
         }
-        .sheet(isPresented: $showingDetail) {
+        .sheet(isPresented: $showingDetail, onDismiss: {
+            // Treat closing the detail sheet as a "dismissed" signal — but only
+            // when the user hasn't already given a stronger signal.
+            if let latest, latest.userInteraction.precedence < CoachInsightInteraction.dismissed.precedence {
+                latest.userInteraction = .dismissed
+                try? modelContext.save()
+            }
+        }) {
             if let latest {
                 CoachInsightDetailSheet(insight: latest)
             }
         }
         .sensoryFeedback(.impact(weight: .light), trigger: refreshCount)
+        .sensoryFeedback(.selection, trigger: feedbackTrigger)
+        .onAppear { startVisibilityTimer() }
+        .onDisappear { viewVisibleSince = nil }
+    }
+
+    @ViewBuilder
+    private func feedbackButtons(for insight: CoachInsight) -> some View {
+        let current = insight.userInteraction
+        HStack(spacing: 12) {
+            Button {
+                record(.markedHelpful, on: insight)
+            } label: {
+                Image(systemName: current == .markedHelpful ? "hand.thumbsup.fill" : "hand.thumbsup")
+                    .font(.subheadline)
+                    .foregroundStyle(current == .markedHelpful ? Color.green : Color.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Mark insight helpful")
+
+            Button {
+                record(.markedUnhelpful, on: insight)
+            } label: {
+                Image(systemName: current == .markedUnhelpful ? "hand.thumbsdown.fill" : "hand.thumbsdown")
+                    .font(.subheadline)
+                    .foregroundStyle(current == .markedUnhelpful ? Color.orange : Color.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Mark insight unhelpful")
+        }
+    }
+
+    private func record(_ interaction: CoachInsightInteraction, on insight: CoachInsight) {
+        // Toggle off if same button tapped twice; otherwise overwrite.
+        if insight.userInteraction == interaction {
+            insight.userInteraction = .viewed
+        } else {
+            insight.userInteraction = interaction
+        }
+        try? modelContext.save()
+        feedbackTrigger &+= 1
+    }
+
+    /// Starts a 1.5s window. If the card stays on screen the full duration,
+    /// auto-mark `.viewed` (only if the row is currently `.ignored`, so we
+    /// never demote a stronger signal).
+    private func startVisibilityTimer() {
+        viewVisibleSince = Date()
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard let started = viewVisibleSince,
+                  Date().timeIntervalSince(started) >= 1.5,
+                  let latest else { return }
+            if latest.userInteraction == .ignored {
+                latest.userInteraction = .viewed
+                try? modelContext.save()
+            }
+        }
     }
 
     private func keychainHasApiKey() -> Bool {
@@ -89,9 +155,13 @@ struct CoachInsightCard: View {
                     .font(.body)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.leading)
-                Text(timeAgo(latest.generatedAt))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Text(timeAgo(latest.generatedAt))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    feedbackButtons(for: latest)
+                }
             } else if loading {
                 ProgressView()
                     .controlSize(.small)
