@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "timezone": "UTC",
+  "description": "Fasting-priority template. Built around the eating window with minimal training disruption. 2 light strength days, 1 cardio day. Fast hours configured in Settings, not the schedule.",
+  "blocks": [
+    {
+      "dayOfWeek": 1,
+      "startTime": "12:00",
+      "endTime": "12:30",
+      "activity": "Break fast",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "12:00",
+      "endTime": "12:30",
+      "activity": "Break fast",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "17:00",
+      "endTime": "18:00",
+      "activity": "Lift A",
+      "type": "training",
+      "module": "lift_a"
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "12:00",
+      "endTime": "12:30",
+      "activity": "Break fast",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "12:00",
+      "endTime": "12:30",
+      "activity": "Break fast",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "17:00",
+      "endTime": "18:00",
+      "activity": "Cardio",
+      "type": "training",
+      "module": "basketball"
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "12:00",
+      "endTime": "12:30",
+      "activity": "Break fast",
+      "type": "recovery",
+      "module": null
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "17:00",
+      "endTime": "18:00",
+      "activity": "Lift B",
+      "type": "training",
+      "module": "lift_b"
+    }
+  ]
+}

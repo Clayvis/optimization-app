@@ -24,6 +24,10 @@
 		0C2278932F310463E2197F40 /* SchemaV8.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528CBFEE3F1CEF9256E5F74A /* SchemaV8.swift */; };
 		0C496AA97A7A343CB905C178 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */; };
 		0DB87612ACCE386EC13E771C /* default_schedule.json in Resources */ = {isa = PBXBuildFile; fileRef = 82221D5BC1BA379932EC9A6A /* default_schedule.json */; };
+		BB1AAAAAAAAAAAAAAAAAAA01 /* schedule_balanced.json in Resources */ = {isa = PBXBuildFile; fileRef = BB2BBBBBBBBBBBBBBBBBBB01 /* schedule_balanced.json */; };
+		BB1AAAAAAAAAAAAAAAAAAA02 /* schedule_fasting_focused.json in Resources */ = {isa = PBXBuildFile; fileRef = BB2BBBBBBBBBBBBBBBBBBB02 /* schedule_fasting_focused.json */; };
+		BB1AAAAAAAAAAAAAAAAAAA03 /* schedule_gym_focused.json in Resources */ = {isa = PBXBuildFile; fileRef = BB2BBBBBBBBBBBBBBBBBBB03 /* schedule_gym_focused.json */; };
+		BB1AAAAAAAAAAAAAAAAAAA04 /* schedule_language_focused.json in Resources */ = {isa = PBXBuildFile; fileRef = BB2BBBBBBBBBBBBBBBBBBB04 /* schedule_language_focused.json */; };
 		0F1C0E2B5655FBCDECD31527 /* CharacterStateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354926C56217E04EDDF8B579 /* CharacterStateService.swift */; };
 		1010CD77E02850FD282ED7A5 /* LiftSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177EF30368767AF7EBD3F9D1 /* LiftSession.swift */; };
 		10332B686AD5D0D6BDAB4BC3 /* WatchConnectivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD10E6A03C2E680DC668FCD /* WatchConnectivityService.swift */; };
@@ -523,6 +527,10 @@
 		81284154F15F132A77F952B8 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		81377E5B2AFD84404F6F324B /* EngagementIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngagementIntegrationTests.swift; sourceTree = "<group>"; };
 		82221D5BC1BA379932EC9A6A /* default_schedule.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_schedule.json; sourceTree = "<group>"; };
+		BB2BBBBBBBBBBBBBBBBBBB01 /* schedule_balanced.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schedule_balanced.json; sourceTree = "<group>"; };
+		BB2BBBBBBBBBBBBBBBBBBB02 /* schedule_fasting_focused.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schedule_fasting_focused.json; sourceTree = "<group>"; };
+		BB2BBBBBBBBBBBBBBBBBBB03 /* schedule_gym_focused.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schedule_gym_focused.json; sourceTree = "<group>"; };
+		BB2BBBBBBBBBBBBBBBBBBB04 /* schedule_language_focused.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schedule_language_focused.json; sourceTree = "<group>"; };
 		823154A880207FCF1C483BA8 /* ScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleService.swift; sourceTree = "<group>"; };
 		86D7C70A5FFD1546175FE70D /* WeeklyReflectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReflectionCard.swift; sourceTree = "<group>"; };
 		873E62A777CAB922DCCD5038 /* LearningReminderSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningReminderSchedulerTests.swift; sourceTree = "<group>"; };
@@ -807,6 +815,10 @@
 				21796439F3D7569CB9B4EF96 /* default_schedule_blank.json */,
 				82221D5BC1BA379932EC9A6A /* default_schedule.json */,
 				4A4485BD775F87B682EA483E /* lift_templates.json */,
+				BB2BBBBBBBBBBBBBBBBBBB01 /* schedule_balanced.json */,
+				BB2BBBBBBBBBBBBBBBBBBB02 /* schedule_fasting_focused.json */,
+				BB2BBBBBBBBBBBBBBBBBBB03 /* schedule_gym_focused.json */,
+				BB2BBBBBBBBBBBBBBBBBBB04 /* schedule_language_focused.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -1341,6 +1353,10 @@
 				0DB87612ACCE386EC13E771C /* default_schedule.json in Resources */,
 				746F1AB26B1B09D5C6462AC9 /* default_schedule_blank.json in Resources */,
 				E39C4A5B0DD8E67C1ABFB4DF /* lift_templates.json in Resources */,
+				BB1AAAAAAAAAAAAAAAAAAA01 /* schedule_balanced.json in Resources */,
+				BB1AAAAAAAAAAAAAAAAAAA02 /* schedule_fasting_focused.json in Resources */,
+				BB1AAAAAAAAAAAAAAAAAAA03 /* schedule_gym_focused.json in Resources */,
+				BB1AAAAAAAAAAAAAAAAAAA04 /* schedule_language_focused.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -126,22 +126,24 @@ enum ScheduleTemplate: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// Bundle resource filename for the JSON seed. Blank uses an empty array.
+    /// Bundle resource filename (no extension) for the JSON seed. Blank uses an
+    /// empty seed. Each non-blank template maps to a generic, non-personal JSON
+    /// so new users (e.g., partner installs) never inherit Clay's
+    /// `default_schedule.json`.
     var resourceName: String? {
         switch self {
-        case .balanced:        return "default_schedule"
-        case .gymFocused:      return "default_schedule"
-        case .languageFocused: return "default_schedule"
-        case .fastingFocused:  return "default_schedule"
-        case .blank:           return "default_schedule_blank"
+        case .balanced:        return "schedule_balanced"
+        case .gymFocused:      return "schedule_gym_focused"
+        case .languageFocused: return "schedule_language_focused"
+        case .fastingFocused:  return "schedule_fasting_focused"
+        case .blank:           return nil
         }
     }
 }
 
 /// Applies a ScheduleTemplate by re-seeding from the chosen JSON. Preserves
-/// `isCustom` blocks. M3.7 ships only the balanced + blank seeds; the focused
-/// templates currently fall back to the balanced seed and will be expanded
-/// by future seed JSONs without code changes.
+/// `isCustom` blocks (user-defined rows survive across template swaps).
+/// Each non-blank template maps to its own generic JSON via `resourceName`.
 @MainActor
 enum ScheduleTemplateApplier {
     static func apply(_ template: ScheduleTemplate,
@@ -157,8 +159,15 @@ enum ScheduleTemplateApplier {
             try modelContext.save()
             return
         }
-        // Other templates: reset-to-default uses the bundled default_schedule.json
-        // for now. When focused JSON seeds land, route through resourceName.
-        try ScheduleSeed.resetToDefault(modelContext: modelContext, bundle: bundle)
+        guard let resourceName = template.resourceName else {
+            // Defensive: every non-blank template above has a resourceName.
+            // If a new case is added without one, fall back to blank semantics.
+            return
+        }
+        try ScheduleSeed.resetToTemplate(
+            resourceName: resourceName,
+            modelContext: modelContext,
+            bundle: bundle
+        )
     }
 }

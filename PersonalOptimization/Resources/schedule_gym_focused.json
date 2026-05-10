@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "timezone": "UTC",
+  "description": "Strength-priority template. 4 lift days plus 1 light cardio. Thu and Sun rest. Suited for a gym-first routine.",
+  "blocks": [
+    {
+      "dayOfWeek": 1,
+      "startTime": "17:30",
+      "endTime": "19:00",
+      "activity": "Lift A",
+      "type": "training",
+      "module": "lift_a"
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "18:00",
+      "endTime": "18:30",
+      "activity": "Light cardio",
+      "type": "training",
+      "module": "basketball"
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "17:30",
+      "endTime": "19:00",
+      "activity": "Lift B",
+      "type": "training",
+      "module": "lift_b"
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "17:30",
+      "endTime": "19:00",
+      "activity": "Lift A",
+      "type": "training",
+      "module": "lift_a"
+    },
+    {
+      "dayOfWeek": 6,
+      "startTime": "10:00",
+      "endTime": "11:30",
+      "activity": "Lift B",
+      "type": "training",
+      "module": "lift_b"
+    }
+  ]
+}

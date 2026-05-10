@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "timezone": "UTC",
+  "description": "Skill-building template. Daily evening study block plus 2 light training days. Saturday morning extended learning. Sunday rest.",
+  "blocks": [
+    {
+      "dayOfWeek": 1,
+      "startTime": "19:00",
+      "endTime": "19:30",
+      "activity": "Language practice",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "18:00",
+      "endTime": "18:30",
+      "activity": "Light cardio",
+      "type": "training",
+      "module": "basketball"
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "19:00",
+      "endTime": "19:30",
+      "activity": "Language practice",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "19:00",
+      "endTime": "19:30",
+      "activity": "Language practice",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "18:00",
+      "endTime": "18:30",
+      "activity": "Light cardio",
+      "type": "training",
+      "module": "swim"
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "19:00",
+      "endTime": "19:30",
+      "activity": "Language practice",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "19:00",
+      "endTime": "19:30",
+      "activity": "Language practice",
+      "type": "learning",
+      "module": "japanese"
+    },
+    {
+      "dayOfWeek": 6,
+      "startTime": "09:00",
+      "endTime": "10:00",
+      "activity": "Extended language study",
+      "type": "learning",
+      "module": "japanese"
+    }
+  ]
+}
