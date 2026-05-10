@@ -36,7 +36,7 @@ struct MascotTimelineProvider: TimelineProvider {
     }
 
     static func staticPlaceholder() -> MascotEntry {
-        MascotEntry(date: Date(), stateRaw: "neutral", assetName: "MascotNeutral", triggerReason: "default")
+        MascotEntry(date: Date(), stateRaw: "neutral", assetName: "NinjaMale_Neutral", triggerReason: "default")
     }
 
     @MainActor
@@ -47,15 +47,19 @@ struct MascotTimelineProvider: TimelineProvider {
         let inputs = CharacterStateService.gatherInputs(modelContext: container.mainContext,
                                                         timezone: TimeZone(identifier: "Asia/Tokyo") ?? .current)
         let resolved = CharacterStateService.resolve(inputs: inputs)
+        // Variant-aware: read the user's chosen mascot variant so the
+        // complication renders the female ninja for the wife test profile
+        // without code changes per variant.
+        let variant = inputs.profile?.mascotVariant ?? "ninja_male"
         return MascotEntry(date: date,
                            stateRaw: resolved.state.rawValue,
-                           assetName: resolved.state.assetName,
+                           assetName: resolved.state.assetName(for: variant),
                            triggerReason: resolved.reason)
     }
 
     @MainActor
     private static func sharedContainer() -> ModelContainer? {
-        let schema = Schema(versionedSchema: SchemaV2.self)
+        let schema = Schema(versionedSchema: SchemaV8.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,

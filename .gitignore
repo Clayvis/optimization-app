@@ -99,6 +99,7 @@ config.local.json
 .claude/sessions/
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+.claude/worktrees/
 
 # =========================
 # Editor / IDE
@@ -135,3 +136,6 @@ htmlcov/
 *.log
 *.tmp
 tmp/
+
+# Dev secrets (Anthropic API key for local DEBUG runs)
+.dev-secrets/

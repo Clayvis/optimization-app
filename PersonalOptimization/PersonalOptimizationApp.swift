@@ -5,7 +5,7 @@ import os
 @main
 struct PersonalOptimizationApp: App {
     let container: ModelContainer = {
-        let schema = Schema(versionedSchema: SchemaV2.self)
+        let schema = Schema(versionedSchema: SchemaV8.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
@@ -24,6 +24,14 @@ struct PersonalOptimizationApp: App {
                     Logger.schedule.error("Seed failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
+            DevSecretsBootstrap.bootstrapIfNeeded()
+            FirstLaunchTracker.shared.recordIfNeeded()
+            ArchiveBackgroundScheduler.registerHandler(modelContainer: container)
+            ArchiveBackgroundScheduler.runRollupNow(modelContainer: container)
+            // Activate phone↔watch bridge so the watch can push session events
+            // back in real time. Cheap: the WC session activates async and is
+            // a no-op on devices without a paired Watch.
+            WatchConnectivityService.shared.activateIfPossible()
             return container
         } catch {
             Logger.persistence.fault("ModelContainer init failed: \(error.localizedDescription, privacy: .public)")

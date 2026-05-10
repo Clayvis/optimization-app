@@ -1,0 +1,307 @@
+<svg
+  width="512"
+  height="512"
+  viewBox="0 0 512 512"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="Animated chibi ninja mascot"
+>
+  <title>Animated chibi ninja mascot</title>
+
+  <style>
+    /* -----------------------------
+       Core timing
+       ----------------------------- */
+    .root {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: idleBob 4s ease-in-out infinite;
+    }
+
+    /* -----------------------------
+       Eye states
+       open visible most of the time
+       closed appears briefly for blink
+       ----------------------------- */
+    .eyes-open {
+      animation: eyesOpenCycle 5s infinite;
+    }
+
+    .eyes-closed {
+      opacity: 0;
+      animation: blinkCycle 5s infinite;
+    }
+
+    /* -----------------------------
+       Mouth states
+       smile is default
+       yawn appears once per loop
+       ----------------------------- */
+    .mouth-smile {
+      animation: smileCycle 8s infinite;
+    }
+
+    .mouth-yawn {
+      opacity: 0;
+      animation: yawnCycle 8s infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    /* -----------------------------
+       Arm gesture states
+       arms-down is default
+       shrug appears once
+       wave appears once
+       ----------------------------- */
+    .arms-down {
+      animation: armsDownCycle 12s infinite;
+    }
+
+    .arms-shrug {
+      opacity: 0;
+      animation: shrugCycle 12s infinite;
+    }
+
+    .arm-wave {
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: 160px 300px;
+      animation: waveCycle 12s infinite;
+    }
+
+    /* headband tails */
+    .headband-tail {
+      transform-box: fill-box;
+      transform-origin: 352px 150px;
+      animation: tailSway 2.5s ease-in-out infinite;
+    }
+
+    /* -----------------------------
+       Keyframes
+       ----------------------------- */
+    @keyframes idleBob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes tailSway {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(5deg); }
+    }
+
+    @keyframes eyesOpenCycle {
+      0%, 92%, 100% { opacity: 1; }
+      93%, 96% { opacity: 0; }
+    }
+
+    @keyframes blinkCycle {
+      0%, 92%, 100% { opacity: 0; }
+      93%, 96% { opacity: 1; }
+    }
+
+    @keyframes smileCycle {
+      0%, 18%, 42%, 100% { opacity: 1; }
+      20%, 40% { opacity: 0; }
+    }
+
+    @keyframes yawnCycle {
+      0%, 18%, 42%, 100% { opacity: 0; }
+      20%, 40% { opacity: 1; }
+    }
+
+    @keyframes armsDownCycle {
+      0%, 48%, 74%, 100% { opacity: 1; }
+      50%, 72% { opacity: 0; }
+    }
+
+    @keyframes shrugCycle {
+      0%, 48%, 60%, 100% { opacity: 0; }
+      50%, 58% { opacity: 1; }
+    }
+
+    @keyframes waveCycle {
+      0%, 72%, 100% {
+        opacity: 0;
+        transform: rotate(0deg);
+      }
+      74% {
+        opacity: 1;
+        transform: rotate(0deg);
+      }
+      78% {
+        opacity: 1;
+        transform: rotate(-10deg);
+      }
+      82% {
+        opacity: 1;
+        transform: rotate(10deg);
+      }
+      86% {
+        opacity: 1;
+        transform: rotate(-8deg);
+      }
+      90% {
+        opacity: 1;
+        transform: rotate(0deg);
+      }
+      92% {
+        opacity: 0;
+        transform: rotate(0deg);
+      }
+    }
+  </style>
+
+  <!-- =============================
+       ROOT CHARACTER GROUP
+       ============================= -->
+  <g class="root">
+
+    <!-- -----------------------------
+         LEGS / FEET
+         ----------------------------- -->
+    <g id="legs">
+      <rect x="196" y="332" width="48" height="72" rx="22" fill="#3C4351" stroke="#000" stroke-width="8"/>
+      <rect x="268" y="332" width="48" height="72" rx="22" fill="#3C4351" stroke="#000" stroke-width="8"/>
+
+      <path d="M188 396 H246 Q254 396 254 406 V418 Q254 430 240 430 H196 Q180 430 180 416 V406 Q180 396 188 396 Z"
+            fill="#0F141E" stroke="#000" stroke-width="8"/>
+      <path d="M258 396 H324 Q338 396 338 406 V416 Q338 430 322 430 H272 Q258 430 258 418 Z"
+            fill="#0F141E" stroke="#000" stroke-width="8"/>
+    </g>
+
+    <!-- -----------------------------
+         TORSO
+         ----------------------------- -->
+    <g id="body">
+      <rect x="160" y="210" width="192" height="150" rx="48" fill="#3F4655" stroke="#000" stroke-width="8"/>
+
+      <!-- wrap lines -->
+      <path d="M198 236 L264 306" fill="none" stroke="#1E2430" stroke-width="14" stroke-linecap="round"/>
+      <path d="M252 220 L322 306" fill="none" stroke="#1E2430" stroke-width="14" stroke-linecap="round"/>
+      <path d="M150 304 H358" fill="none" stroke="#000" stroke-width="10" stroke-linecap="round"/>
+
+      <!-- pouch -->
+      <rect x="282" y="292" width="52" height="66" rx="10" fill="#38404C" stroke="#000" stroke-width="8"/>
+      <path d="M282 314 H334" fill="none" stroke="#000" stroke-width="8"/>
+      <circle cx="322" cy="326" r="4" fill="#000"/>
+    </g>
+
+    <!-- -----------------------------
+         ARMS - DEFAULT DOWN
+         ----------------------------- -->
+    <g class="arms-down">
+      <rect x="136" y="238" width="42" height="98" rx="20" fill="#3F4655" stroke="#000" stroke-width="8"/>
+      <rect x="334" y="238" width="42" height="98" rx="20" fill="#3F4655" stroke="#000" stroke-width="8"/>
+
+      <circle cx="156" cy="346" r="22" fill="#F2B06C" stroke="#000" stroke-width="8"/>
+      <circle cx="356" cy="346" r="22" fill="#F2B06C" stroke="#000" stroke-width="8"/>
+    </g>
+
+    <!-- -----------------------------
+         ARMS - SHRUG
+         ----------------------------- -->
+    <g class="arms-shrug">
+      <path d="M174 250 Q130 260 114 300" fill="none" stroke="#3F4655" stroke-width="32" stroke-linecap="round"/>
+      <path d="M338 250 Q382 260 398 300" fill="none" stroke="#3F4655" stroke-width="32" stroke-linecap="round"/>
+
+      <path d="M114 300 Q126 288 140 296 Q150 304 148 318 Q134 326 118 320 Q108 314 114 300 Z"
+            fill="#F2B06C" stroke="#000" stroke-width="8"/>
+      <path d="M398 300 Q386 288 372 296 Q362 304 364 318 Q378 326 394 320 Q404 314 398 300 Z"
+            fill="#F2B06C" stroke="#000" stroke-width="8"/>
+    </g>
+
+    <!-- -----------------------------
+         ARM - WAVE
+         left arm stays down
+         right arm waves
+         ----------------------------- -->
+    <g class="arm-wave">
+      <!-- left down arm -->
+      <rect x="136" y="238" width="42" height="98" rx="20" fill="#3F4655" stroke="#000" stroke-width="8"/>
+      <circle cx="156" cy="346" r="22" fill="#F2B06C" stroke="#000" stroke-width="8"/>
+
+      <!-- right raised arm -->
+      <path d="M338 252 Q380 224 394 180" fill="none" stroke="#3F4655" stroke-width="32" stroke-linecap="round"/>
+      <path d="M394 180 Q408 176 418 186 Q424 198 416 210 Q402 216 390 208 Q382 198 394 180 Z"
+            fill="#F2B06C" stroke="#000" stroke-width="8"/>
+    </g>
+
+    <!-- -----------------------------
+         HEAD / HOOD
+         ----------------------------- -->
+    <g id="head">
+      <!-- hood -->
+      <circle cx="256" cy="148" r="108" fill="#2D3442" stroke="#000" stroke-width="8"/>
+
+      <!-- face -->
+      <circle cx="256" cy="176" r="82" fill="#F2B06C"/>
+
+      <!-- face shading -->
+      <ellipse cx="256" cy="205" rx="70" ry="30" fill="#EE9C5C" opacity="0.25"/>
+
+      <!-- cheek blush -->
+      <ellipse cx="198" cy="202" rx="16" ry="10" fill="#E98A67" opacity="0.7"/>
+      <ellipse cx="314" cy="202" rx="16" ry="10" fill="#E98A67" opacity="0.7"/>
+
+      <!-- hood face border -->
+      <path d="M178 173 Q182 246 256 258 Q330 246 334 173"
+            fill="none" stroke="#000" stroke-width="8" stroke-linecap="round"/>
+    </g>
+
+    <!-- -----------------------------
+         HEADBAND
+         ----------------------------- -->
+    <g id="headband">
+      <rect x="132" y="108" width="248" height="40" rx="18" fill="#F12B2B" stroke="#000" stroke-width="8"/>
+      <rect x="132" y="128" width="248" height="20" rx="10" fill="#D81E1E" opacity="0.75"/>
+
+      <g class="headband-tail">
+        <path d="M356 132 L396 152 L366 190 Z" fill="#F12B2B" stroke="#000" stroke-width="8" stroke-linejoin="round"/>
+        <path d="M340 138 L378 172 L348 204 Z" fill="#E01F1F" stroke="#000" stroke-width="8" stroke-linejoin="round"/>
+      </g>
+    </g>
+
+    <!-- -----------------------------
+         BROWS
+         ----------------------------- -->
+    <g id="brows">
+      <path d="M206 158 L234 148" stroke="#3A170E" stroke-width="10" stroke-linecap="round"/>
+      <path d="M278 148 L306 158" stroke="#3A170E" stroke-width="10" stroke-linecap="round"/>
+    </g>
+
+    <!-- -----------------------------
+         EYES - OPEN
+         ----------------------------- -->
+    <g class="eyes-open">
+      <ellipse cx="212" cy="176" rx="18" ry="24" fill="#401407"/>
+      <ellipse cx="300" cy="176" rx="18" ry="24" fill="#401407"/>
+      <circle cx="206" cy="168" r="5" fill="#FFF"/>
+      <circle cx="294" cy="168" r="5" fill="#FFF"/>
+    </g>
+
+    <!-- -----------------------------
+         EYES - CLOSED
+         ----------------------------- -->
+    <g class="eyes-closed">
+      <path d="M194 178 Q212 188 230 178" fill="none" stroke="#401407" stroke-width="8" stroke-linecap="round"/>
+      <path d="M282 178 Q300 188 318 178" fill="none" stroke="#401407" stroke-width="8" stroke-linecap="round"/>
+    </g>
+
+    <!-- -----------------------------
+         MOUTH - SMILE
+         ----------------------------- -->
+    <g class="mouth-smile">
+      <path d="M232 214 Q256 228 280 214" fill="none" stroke="#401407" stroke-width="8" stroke-linecap="round"/>
+    </g>
+
+    <!-- -----------------------------
+         MOUTH - YAWN
+         ----------------------------- -->
+    <g class="mouth-yawn">
+      <ellipse cx="256" cy="216" rx="20" ry="26" fill="#7A1C14" stroke="#401407" stroke-width="6"/>
+      <ellipse cx="256" cy="224" rx="10" ry="8" fill="#E57F85"/>
+    </g>
+
+  </g>
+</svg>

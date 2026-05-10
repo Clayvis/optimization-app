@@ -30,7 +30,7 @@ enum JSONImportService {
             throw JSONImportError.decodingFailed(error)
         }
 
-        guard payload.version == 1 else {
+        guard (1...2).contains(payload.version) else {
             throw JSONImportError.unsupportedVersion(payload.version)
         }
 
@@ -56,6 +56,12 @@ enum JSONImportService {
         try modelContext.delete(model: AdminTask.self)
         try modelContext.delete(model: LearningStreak.self)
         try modelContext.delete(model: CharacterStateLog.self)
+        // M3.7 entities. Safe-no-op when payload is version 1 (no rows to load).
+        try modelContext.delete(model: ActivityArchive.self)
+        try modelContext.delete(model: DetectedPattern.self)
+        try modelContext.delete(model: PrescribedWorkout.self)
+        try modelContext.delete(model: ScheduleSuggestion.self)
+        try modelContext.delete(model: WeeklyProgram.self)
     }
 
     private static func insertAll(from payload: ExportPayload, into ctx: ModelContext) throws {
@@ -74,6 +80,11 @@ enum JSONImportService {
         for dto in payload.adminTasks { ctx.insert(makeAdmin(from: dto)) }
         for dto in payload.learningStreaks { ctx.insert(makeStreak(from: dto)) }
         for dto in payload.characterStateLogs { ctx.insert(makeCharacterLog(from: dto)) }
+        for dto in payload.activityArchives ?? [] { ctx.insert(makeActivityArchive(from: dto)) }
+        for dto in payload.detectedPatterns ?? [] { ctx.insert(makeDetectedPattern(from: dto)) }
+        for dto in payload.prescribedWorkouts ?? [] { ctx.insert(makePrescribedWorkout(from: dto)) }
+        for dto in payload.scheduleSuggestions ?? [] { ctx.insert(makeScheduleSuggestion(from: dto)) }
+        for dto in payload.weeklyPrograms ?? [] { ctx.insert(makeWeeklyProgram(from: dto)) }
     }
 
     // MARK: - DTO -> Model factories
@@ -91,7 +102,93 @@ enum JSONImportService {
         p.notificationBundling = d.notificationBundling
         p.mascotEnabled = d.mascotEnabled
         p.reducedMotion = d.reducedMotion
+        // M3.7 fields. Optional in v1 payloads; keep struct defaults if absent.
+        if let v = d.mascotVariant { p.mascotVariant = v }
+        p.primaryGoal = d.primaryGoal
+        if let v = d.secondaryGoalsCSV { p.secondaryGoalsCSV = v }
+        if let v = d.equipmentAccess { p.equipmentAccess = v }
+        if let v = d.weeklyTrainingTargetSessions { p.weeklyTrainingTargetSessions = v }
+        if let v = d.restrictionsCSV { p.restrictionsCSV = v }
         return p
+    }
+
+    // MARK: - M3.7 factories
+
+    private static func makeActivityArchive(from d: ActivityArchiveDTO) -> ActivityArchive {
+        let a = ActivityArchive(date: d.date)
+        a.workoutVolumeTotal = d.workoutVolumeTotal
+        a.workoutCount = d.workoutCount
+        a.fastingHours = d.fastingHours
+        a.hydrationOz = d.hydrationOz
+        a.learningMinutes = d.learningMinutes
+        a.dominantMascotState = d.dominantMascotState
+        a.masterMetric = d.masterMetric
+        a.stepsHK = d.stepsHK
+        a.activeCaloriesHK = d.activeCaloriesHK
+        a.exerciseMinutesHK = d.exerciseMinutesHK
+        a.sleepMinutesHK = d.sleepMinutesHK
+        a.hrvAvgHK = d.hrvAvgHK
+        a.restingHRHK = d.restingHRHK
+        return a
+    }
+
+    private static func makeDetectedPattern(from d: DetectedPatternDTO) -> DetectedPattern {
+        let type = PatternType(rawValue: d.patternTypeRaw) ?? .scheduleDrift
+        let p = DetectedPattern(
+            detectedAt: d.detectedAt,
+            patternType: type,
+            confidence: d.confidence,
+            summary: d.summary,
+            detail: d.detail,
+            actionableSuggestion: d.actionableSuggestion
+        )
+        p.dismissed = d.dismissed
+        p.snoozedUntil = d.snoozedUntil
+        return p
+    }
+
+    private static func makePrescribedWorkout(from d: PrescribedWorkoutDTO) -> PrescribedWorkout {
+        let type = PrescribedWorkoutType(rawValue: d.workoutTypeRaw) ?? .rest
+        let pw = PrescribedWorkout(
+            generatedAt: d.generatedAt,
+            forDate: d.forDate,
+            workoutType: type,
+            template: d.template,
+            rationale: d.rationale,
+            tokenUsage: d.tokenUsage,
+            modelUsed: d.modelUsed
+        )
+        pw.statusRaw = d.statusRaw
+        pw.sessionUUIDString = d.sessionUUIDString
+        return pw
+    }
+
+    private static func makeScheduleSuggestion(from d: ScheduleSuggestionDTO) -> ScheduleSuggestion {
+        let type = ScheduleSuggestionChangeType(rawValue: d.changeTypeRaw) ?? .shiftBlock
+        let s = ScheduleSuggestion(
+            generatedAt: d.generatedAt,
+            summary: d.summary,
+            detail: d.detail,
+            changeType: type,
+            changePayload: d.changePayload,
+            rationaleData: d.rationaleData
+        )
+        s.statusRaw = d.statusRaw
+        s.snoozedUntil = d.snoozedUntil
+        return s
+    }
+
+    private static func makeWeeklyProgram(from d: WeeklyProgramDTO) -> WeeklyProgram {
+        let wp = WeeklyProgram(
+            weekStartDate: d.weekStartDate,
+            generatedAt: d.generatedAt,
+            programJSON: d.programJSON,
+            coachNarrative: d.coachNarrative,
+            tokenUsage: d.tokenUsage,
+            modelUsed: d.modelUsed
+        )
+        wp.statusRaw = d.statusRaw
+        return wp
     }
 
     private static func makeScheduleBlock(from d: ScheduleBlockDTO) -> ScheduleBlock {

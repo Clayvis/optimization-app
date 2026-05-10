@@ -32,4 +32,9 @@ enum WorkoutLiveActivityController {
             await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .immediate)
         }
     }
+
+    /// Synchronous dismissal helper for service callers.
+    static func dismissAllSync() {
+        Task { @MainActor in await WorkoutLiveActivityController.endAll() }
+    }
 }

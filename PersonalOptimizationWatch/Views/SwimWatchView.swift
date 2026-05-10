@@ -9,6 +9,7 @@ struct SwimWatchView: View {
     @State private var session: SwimSession?
     @State private var service: SwimService?
     @State private var startedAt = Date()
+    @State private var live = LiveWorkoutSessionService.shared
 
     var body: some View {
         Group {
@@ -25,6 +26,22 @@ struct SwimWatchView: View {
     private func content(session: SwimSession, service: SwimService) -> some View {
         ScrollView {
             VStack(spacing: 8) {
+                if live.isActive {
+                    HStack(spacing: 6) {
+                        Label("\(Int(live.heartRate))", systemImage: "heart.fill")
+                            .foregroundStyle(.red)
+                            .font(.caption2.monospacedDigit())
+                        Spacer()
+                        Label("\(Int(live.activeCaloriesKcal))", systemImage: "flame.fill")
+                            .foregroundStyle(.orange)
+                            .font(.caption2.monospacedDigit())
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 4)
+                    .background(Color.gray.opacity(0.18))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     VStack(spacing: 2) {
                         Text(formatDuration(context.date.timeIntervalSince(startedAt)))
@@ -61,16 +78,27 @@ struct SwimWatchView: View {
             session = try svc.startSession(at: Date(), poolLengthMeters: 25, location: "McTureous")
             service = svc
             startedAt = Date()
+            try? live.start(activityType: .swimming, locationType: .indoor)
+            WatchConnectivityService.shared.send(
+                WatchConnectivityEvent(kind: .workoutStarted, payload: ["type": "swim"])
+            )
         } catch {
             // logged inside service
         }
     }
 
     private func end(service: SwimService, session: SwimSession) async {
-        let mins = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
+        let summary = await live.end()
+        let mins = max(1, summary?.durationMinutes ?? Int(Date().timeIntervalSince(startedAt) / 60))
         do {
-            try await service.endSession(session, durationMinutes: mins)
+            try service.endSession(session,
+                                   durationMinutes: mins,
+                                   avgHR: summary?.avgHeartRate,
+                                   estimatedCalories: summary?.activeCaloriesKcal)
             WKInterfaceDevice.current().play(.success)
+            WatchConnectivityService.shared.send(
+                WatchConnectivityEvent(kind: .workoutEnded, payload: ["type": "swim"])
+            )
             dismiss()
         } catch {
             // logged inside service

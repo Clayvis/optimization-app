@@ -4,11 +4,26 @@ import Charts
 
 struct HydrationView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var profiles: [UserProfile]
     @State private var service: HydrationService?
     @State private var loadError: String?
     @State private var refreshTrigger = 0
 
-    private let bottleSizes: [Double] = [8, 16, 24, 32]
+    @State private var customAmount: Double = 0
+    @State private var customUnit: HydrationUnit = .oz
+    @State private var customBeverage: BeverageType = .water
+    @State private var editingEntry: HydrationEntry?
+    @State private var celebrationTrigger = 0
+
+    enum HydrationUnit: String, CaseIterable, Identifiable {
+        case oz, mL
+        var id: String { rawValue }
+    }
+
+    private var quickPicks: [Double] {
+        let csv = profiles.first?.hydrationQuickPicksOzCSV ?? "4,8,12,16,20,24,32"
+        return HydrationService.parseQuickPicksCSV(csv)
+    }
 
     var body: some View {
         NavigationStack {
@@ -16,6 +31,14 @@ struct HydrationView: View {
                 .navigationTitle("Hydration")
         }
         .task { await loadService() }
+        .sensoryFeedback(.increase, trigger: celebrationTrigger)
+        .sheet(item: $editingEntry) { entry in
+            if let service {
+                HydrationEntryEditSheet(entry: entry, service: service) {
+                    refreshTrigger += 1
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -38,14 +61,18 @@ struct HydrationView: View {
         let electrolytes = service.electrolyteCount(for: now)
 
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
                 progressCard(intake: intake, target: target, dayType: dayType)
 
                 paceCard(intake: intake, target: target, now: now)
 
-                logCard(service: service)
+                quickLogCard(service: service)
+
+                customLogCard(service: service)
 
                 electrolyteCard(count: electrolytes, service: service)
+
+                recentEntriesCard(service: service, now: now)
             }
             .padding()
             .id(refreshTrigger)
@@ -129,16 +156,29 @@ struct HydrationView: View {
     }
 
     @ViewBuilder
-    private func logCard(service: HydrationService) -> some View {
+    private func quickLogCard(service: HydrationService) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Log a bottle")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-            HStack(spacing: 8) {
-                ForEach(bottleSizes, id: \.self) { oz in
+            HStack {
+                Text("Quick log")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Picker("Beverage", selection: $customBeverage) {
+                    ForEach(BeverageType.allCases, id: \.rawValue) { b in
+                        Text(b.displayName).tag(b)
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityLabel("Beverage type")
+            }
+
+            let columns = [GridItem(.adaptive(minimum: 64), spacing: 8)]
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(quickPicks, id: \.self) { oz in
                     Button {
-                        _ = try? service.logBottle(oz: oz)
+                        _ = try? service.logBeverage(amountOz: oz, beverageType: customBeverage)
                         refreshTrigger += 1
+                        celebrationTrigger += 1
                     } label: {
                         VStack(spacing: 2) {
                             Text("\(Int(oz))")
@@ -147,13 +187,49 @@ struct HydrationView: View {
                                 .font(.caption2)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 64)
+                        .frame(height: 56)
                         .background(Color(.tertiarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Log \(Int(oz)) ounces of water")
+                    .accessibilityLabel("Log \(Int(oz)) ounces of \(customBeverage.displayName)")
                 }
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func customLogCard(service: HydrationService) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Custom amount")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                TextField("Amount", value: $customAmount, format: .number)
+                    .keyboardType(.decimalPad)
+                    .padding(8)
+                    .background(Color(.tertiarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                Picker("Unit", selection: $customUnit) {
+                    Text("oz").tag(HydrationUnit.oz)
+                    Text("mL").tag(HydrationUnit.mL)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 110)
+                Button {
+                    logCustom(service: service)
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(customAmount <= 0)
+                .accessibilityLabel("Log custom amount")
             }
         }
         .padding()
@@ -176,6 +252,7 @@ struct HydrationView: View {
             Button {
                 _ = try? service.logElectrolyte()
                 refreshTrigger += 1
+                celebrationTrigger += 1
             } label: {
                 Label("Log", systemImage: "plus.circle.fill")
                     .padding(.horizontal, 12)
@@ -187,6 +264,96 @@ struct HydrationView: View {
         .padding()
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func recentEntriesCard(service: HydrationService, now: Date) -> some View {
+        let entries = service.entriesForDay(of: now)
+        if !entries.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Today's log")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("Tap to edit · swipe to delete")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                ForEach(entries.prefix(8), id: \.persistentModelID) { entry in
+                    Button {
+                        editingEntry = entry
+                    } label: {
+                        HStack {
+                            Image(systemName: iconFor(beverage: entry.beverageType))
+                                .foregroundStyle(colorFor(beverage: entry.beverageType))
+                            Text("\(Int(entry.amountOz)) oz · \(entry.beverageType.displayName)")
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Text(timeFormatter.string(from: entry.date))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            _ = try? service.deleteEntry(entry)
+                            refreshTrigger += 1
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+    }
+
+    private func logCustom(service: HydrationService) {
+        switch customUnit {
+        case .oz:
+            _ = try? service.logBeverage(amountOz: customAmount, beverageType: customBeverage)
+        case .mL:
+            _ = try? service.logBeverage(amountML: customAmount, beverageType: customBeverage)
+        }
+        customAmount = 0
+        refreshTrigger += 1
+    }
+
+    private func iconFor(beverage: BeverageType) -> String {
+        switch beverage {
+        case .water: return "drop.fill"
+        case .coffee: return "cup.and.saucer.fill"
+        case .tea: return "leaf.fill"
+        case .electrolyte: return "bolt.fill"
+        case .other: return "drop.halffull"
+        }
+    }
+
+    private func colorFor(beverage: BeverageType) -> Color {
+        switch beverage {
+        case .water: return .blue
+        case .coffee: return .brown
+        case .tea: return .green
+        case .electrolyte: return .yellow
+        case .other: return .gray
+        }
+    }
+
+    private var timeFormatter: DateFormatter {
+        let f = DateFormatter()
+        f.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        f.dateFormat = "HH:mm"
+        return f
     }
 
     private func progressTint(intake: Double, target: ClosedRange<Double>) -> Color {
@@ -225,8 +392,91 @@ struct HydrationView: View {
     }
 }
 
+/// Editor for a single HydrationEntry. Lets the user fix mis-entered amounts
+/// or change the beverage type retroactively. Delete is also exposed here for
+/// users who prefer modal flows over swipe gestures.
+private struct HydrationEntryEditSheet: View {
+    @Bindable var entry: HydrationEntry
+    let service: HydrationService
+    let onChange: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var draftAmount: Double
+    @State private var draftBeverage: BeverageType
+    @State private var error: String?
+
+    init(entry: HydrationEntry, service: HydrationService, onChange: @escaping () -> Void) {
+        self.entry = entry
+        self.service = service
+        self.onChange = onChange
+        _draftAmount = State(initialValue: entry.amountOz)
+        _draftBeverage = State(initialValue: entry.beverageType)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Amount") {
+                    HStack {
+                        TextField("Amount", value: $draftAmount, format: .number)
+                            .keyboardType(.decimalPad)
+                        Text("oz").foregroundStyle(.secondary)
+                    }
+                    Stepper("Adjust by 1 oz", value: $draftAmount, in: 0...200, step: 1)
+                        .labelsHidden()
+                }
+                Section("Beverage") {
+                    Picker("Type", selection: $draftBeverage) {
+                        ForEach(BeverageType.allCases, id: \.rawValue) { b in
+                            Text(b.displayName).tag(b)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                if let error {
+                    Section {
+                        Text(error).foregroundStyle(.red).font(.footnote)
+                    }
+                }
+                Section {
+                    Button(role: .destructive) {
+                        do {
+                            try service.deleteEntry(entry)
+                            onChange()
+                            dismiss()
+                        } catch {
+                            self.error = error.localizedDescription
+                        }
+                    } label: {
+                        Label("Delete this entry", systemImage: "trash")
+                    }
+                }
+            }
+            .navigationTitle("Edit hydration")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        do {
+                            try service.updateEntry(entry,
+                                                    newAmountOz: draftAmount,
+                                                    newBeverageType: draftBeverage)
+                            onChange()
+                            dismiss()
+                        } catch {
+                            self.error = error.localizedDescription
+                        }
+                    }
+                    .disabled(draftAmount <= 0)
+                }
+            }
+        }
+    }
+}
+
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV2.self)
+    let schema = Schema(versionedSchema: SchemaV8.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return HydrationView().modelContainer(container)

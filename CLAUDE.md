@@ -61,6 +61,20 @@ NO third-party packages. No CocoaPods, no Carthage, no SPM dependencies beyond A
 - No Combine for new code. SwiftUI `@Observable` macro replaces it.
 - All `@Model` types are Sendable by default in SwiftData.
 
+## Data Retention (load-bearing from M3.7 onward)
+
+SwiftData retention is **permanent**. There is no auto-delete code, no TTL-based cleanup, no "after N days" purge. The full activity history (sessions, daily logs, biomarkers, character state log) is preserved forever in the user's iCloud-backed private database. TrendAnalyticsService and CoachService v2 depend on this guarantee to produce year-plus historical context.
+
+Allowed deletions (explicit user actions only):
+- ScheduleEditorView swipe-to-delete on a ScheduleBlock
+- ScheduleSeed.resetToDefault (preserves user-marked isCustom blocks)
+- JSONImportService.replaceAll (called only when user imports a file)
+- KeychainService.deleteApiKey (Settings -> AI -> Remove API key)
+
+ActivityArchive (added M3.7) is an additive rollup; it does not replace or supersede source-of-truth session rows. Source rows remain intact even if archives are corrupted or migrated.
+
+If you find yourself writing `modelContext.delete(...)` inside a service method that runs on a timer, BG task, or any non-user-action path: stop. That violates retention. Add a TODO and surface it.
+
 ## Error Handling
 
 - Errors are typed, conform to `LocalizedError`, and thrown.

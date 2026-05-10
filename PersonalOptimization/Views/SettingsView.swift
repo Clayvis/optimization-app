@@ -6,6 +6,12 @@ struct SettingsView: View {
     @Query private var profiles: [UserProfile]
     @State private var travelDays: Int = 7
     @State private var graceFeedback: String?
+    @State private var showingKeyEntry = false
+    @State private var apiKeyStatus: APIKeyStatus = .unknown
+
+    enum APIKeyStatus {
+        case unknown, set, missing
+    }
 
     var body: some View {
         NavigationStack {
@@ -20,7 +26,67 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .onAppear { refreshAPIKeyStatus() }
+            .sheet(isPresented: $showingKeyEntry) {
+                APIKeyEntrySheet { _ in
+                    refreshAPIKeyStatus()
+                }
+            }
         }
+    }
+
+    private var apiKeyStatusText: String {
+        switch apiKeyStatus {
+        case .unknown: return "Checking…"
+        case .set: return "Set"
+        case .missing: return "Not set"
+        }
+    }
+
+    private func refreshAPIKeyStatus() {
+        do {
+            let key = try KeychainService.shared.getApiKey()
+            apiKeyStatus = key.isEmpty ? .missing : .set
+        } catch {
+            apiKeyStatus = .missing
+        }
+    }
+
+    /// Pre-populated mailto: URL for the 30-day TestFlight feedback loop.
+    /// Subject + body templated so both Clay and his wife send structured
+    /// notes. No infrastructure, no SDKs, no analytics — just email.
+    private func feedbackMailtoURL(profile: UserProfile?) -> URL? {
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let appBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        let variant = profile?.mascotVariant ?? "ninja_male"
+        let dateFmt = DateFormatter()
+        dateFmt.dateFormat = "yyyy-MM-dd"
+        let today = dateFmt.string(from: Date())
+
+        let subject = "PersonalOptimization feedback \(today)"
+        let body = """
+            App version: \(appVersion) (\(appBuild))
+            Mascot variant: \(variant)
+            Date: \(today)
+
+            What's working:
+
+
+            What's broken:
+
+
+            What's missing:
+
+            """
+
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = "clayvis27@gmail.com"
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body)
+        ]
+        return components.url
     }
 
     @ViewBuilder
@@ -64,6 +130,57 @@ struct SettingsView: View {
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                 }
+                LabeledContent("Quick-pick presets (oz)") {
+                    TextField("4,8,12,16,20,24,32", text: $profile.hydrationQuickPicksOzCSV)
+                        .multilineTextAlignment(.trailing)
+                        .autocapitalization(.none)
+                }
+            }
+
+            Section("Schedule") {
+                NavigationLink {
+                    ScheduleEditorView()
+                } label: {
+                    Label("Edit schedule", systemImage: "calendar")
+                }
+                NavigationLink {
+                    ScheduleTemplateChooserView()
+                } label: {
+                    Label("Start fresh from template", systemImage: "doc.badge.gearshape")
+                }
+                NavigationLink {
+                    ImplementationIntentionsView()
+                } label: {
+                    Label("Implementation intentions", systemImage: "arrow.right.circle.fill")
+                }
+            }
+
+            Section("Goals & equipment") {
+                LabeledContent("Primary goal") {
+                    TextField("e.g., build muscle, stay sharp", text: Binding(
+                        get: { profile.primaryGoal ?? "" },
+                        set: { profile.primaryGoal = $0.isEmpty ? nil : $0 }
+                    ))
+                    .multilineTextAlignment(.trailing)
+                }
+                LabeledContent("Secondary goals") {
+                    TextField("comma-separated", text: $profile.secondaryGoalsCSV)
+                        .multilineTextAlignment(.trailing)
+                        .autocapitalization(.none)
+                }
+                Picker("Equipment access", selection: $profile.equipmentAccess) {
+                    Text("Full gym").tag("gym")
+                    Text("Home (full)").tag("home_full")
+                    Text("Home (minimal)").tag("home_minimal")
+                    Text("Bodyweight").tag("bodyweight")
+                    Text("Outdoor").tag("outdoor")
+                }
+                Stepper("Weekly target: \(profile.weeklyTrainingTargetSessions) sessions", value: $profile.weeklyTrainingTargetSessions, in: 0...14)
+                LabeledContent("Restrictions") {
+                    TextField("injuries, dietary, time", text: $profile.restrictionsCSV)
+                        .multilineTextAlignment(.trailing)
+                        .autocapitalization(.none)
+                }
             }
 
             Section("AI") {
@@ -72,11 +189,103 @@ struct SettingsView: View {
                     Text("Opus 4.7").tag("claude-opus-4-7")
                     Text("Haiku 4.5").tag("claude-haiku-4-5-20251001")
                 }
+                HStack {
+                    Text("API key")
+                    Spacer()
+                    Text(apiKeyStatusText)
+                        .font(.caption)
+                        .foregroundStyle(apiKeyStatus == .set ? .green : .secondary)
+                }
+                Button {
+                    showingKeyEntry = true
+                } label: {
+                    Label(apiKeyStatus == .set ? "Update API key" : "Set API key", systemImage: "key.fill")
+                }
+                if apiKeyStatus == .set {
+                    Button(role: .destructive) {
+                        try? KeychainService.shared.deleteApiKey()
+                        refreshAPIKeyStatus()
+                    } label: {
+                        Label("Remove API key", systemImage: "trash")
+                    }
+                }
+                NavigationLink {
+                    DiagnosticsView()
+                } label: {
+                    Label("Diagnostics", systemImage: "stethoscope")
+                }
+            }
+
+            Section {
+                NavigationLink {
+                    AchievementsView()
+                } label: {
+                    Label("Achievements", systemImage: "trophy.fill")
+                }
+                NavigationLink {
+                    AboutView()
+                } label: {
+                    Label("About", systemImage: "info.circle")
+                }
+                if let url = feedbackMailtoURL(profile: profile) {
+                    Link(destination: url) {
+                        Label("Send feedback", systemImage: "envelope")
+                    }
+                }
             }
 
             Section("Mascot") {
                 Toggle("Show mascot", isOn: $profile.mascotEnabled)
                 Toggle("Reduced motion", isOn: $profile.reducedMotion)
+                NavigationLink {
+                    MascotVariantPickerView()
+                } label: {
+                    HStack {
+                        Label("Variant", systemImage: "person.2.fill")
+                        Spacer()
+                        Text(MascotVariant(rawValue: profile.mascotVariant)?.displayName ?? "Ninja (male)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Section("Coaching") {
+                Picker("Motivation style", selection: $profile.motivationStyle) {
+                    Text("Balanced").tag("balanced")
+                    Text("Stoic").tag("stoic")
+                    Text("Holistic").tag("holistic")
+                    Text("Warrior").tag("warrior")
+                    Text("Spiritual").tag("spiritual")
+                    Text("Scientific").tag("scientific")
+                    Text("Custom").tag("custom")
+                }
+                if profile.motivationStyle == "custom" {
+                    TextField("Custom style notes",
+                              text: Binding(
+                                get: { profile.customStylePrompt ?? "" },
+                                set: { profile.customStylePrompt = $0.isEmpty ? nil : $0 }
+                              ),
+                              axis: .vertical)
+                    .lineLimit(2...5)
+                }
+                Toggle("AI-generated quotes", isOn: $profile.aiQuotesEnabled)
+            }
+
+            Section("Training") {
+                Toggle("Achilles check-in after basketball", isOn: $profile.achillesCheckInEnabled)
+                NavigationLink {
+                    CustomActivitiesSettingsView()
+                } label: {
+                    Label("Activities (running, HIIT, yoga…)", systemImage: "figure.run")
+                }
+            }
+
+            Section("Partnership") {
+                NavigationLink {
+                    PartnerSettingsView()
+                } label: {
+                    Label("Partner mode", systemImage: "person.2.fill")
+                }
             }
 
             graceModeSection(profile: profile)
@@ -110,6 +319,7 @@ struct SettingsView: View {
                     }
                 }
             ))
+            .sensoryFeedback(.selection, trigger: sickActive)
 
             HStack {
                 Text("Travel mode")
@@ -131,6 +341,7 @@ struct SettingsView: View {
                 } label: {
                     Label("Activate travel mode", systemImage: "airplane.departure")
                 }
+                .sensoryFeedback(.success, trigger: travelActive)
             }
 
             if let feedback = graceFeedback {
@@ -145,7 +356,7 @@ struct SettingsView: View {
 }
 
 #Preview("Settings") {
-    let schema = Schema(versionedSchema: SchemaV2.self)
+    let schema = Schema(versionedSchema: SchemaV8.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return SettingsView().modelContainer(container)

@@ -8,8 +8,14 @@ struct SwimSessionView: View {
     @State private var session: SwimSession?
     @State private var service: SwimService?
     @State private var startedAt = Date()
+
     @State private var poolLengthMeters: Double = 25
-    @State private var location: String = "McTureous"
+    @State private var locationText: String = ""
+    @State private var waterType: SwimWaterType = .pool
+
+    @State private var lapsExact: Int = 0
+    @State private var metersExact: Double = 0
+    @State private var completionCount: Int = 0
 
     var body: some View {
         Group {
@@ -20,22 +26,73 @@ struct SwimSessionView: View {
             }
         }
         .navigationTitle("Swim")
+        .task { resumeIfNeeded() }
+        .sensoryFeedback(.success, trigger: completionCount)
+    }
+
+    /// Resume an in-progress swim session that the user navigated away from.
+    private func resumeIfNeeded() {
+        guard session == nil else { return }
+        let svc = SwimService(modelContext: modelContext, healthKit: LiveHealthKitService.shared)
+        if let active = svc.currentSession(at: Date()) {
+            session = active
+            service = svc
+            startedAt = active.date
+            poolLengthMeters = active.poolLengthMeters
+            locationText = active.location ?? ""
+            waterType = active.waterType
+            lapsExact = active.laps
+            metersExact = active.totalMeters
+        }
     }
 
     @ViewBuilder
     private var setupContent: some View {
         Form {
-            Section("Pool") {
-                Picker("Pool length", selection: $poolLengthMeters) {
-                    Text("25 m").tag(25.0)
-                    Text("50 m").tag(50.0)
+            Section("Where") {
+                Picker("Water type", selection: $waterType) {
+                    ForEach(SwimWaterType.allCases, id: \.rawValue) { t in
+                        Text(t.displayName).tag(t)
+                    }
                 }
                 .pickerStyle(.segmented)
-                Picker("Location", selection: $location) {
-                    Text("McTureous").tag("McTureous")
-                    Text("Hansen").tag("Hansen")
+
+                TextField("Location", text: $locationText)
+                    .autocapitalization(.words)
+                    .accessibilityLabel("Location")
+
+                let recents = recentLocations()
+                if !recents.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(recents, id: \.self) { name in
+                                Button {
+                                    locationText = name
+                                } label: {
+                                    Text(name)
+                                        .font(.caption.weight(.medium))
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(Color(.tertiarySystemBackground))
+                                        .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .accessibilityLabel("Recent locations")
                 }
             }
+
+            if waterType == .pool {
+                Section("Pool length") {
+                    Stepper(value: $poolLengthMeters, in: 10...100, step: 5) {
+                        Text("\(Int(poolLengthMeters)) m")
+                    }
+                    .accessibilityValue("\(Int(poolLengthMeters)) meters")
+                }
+            }
+
             Section {
                 Button {
                     start()
@@ -59,21 +116,16 @@ struct SwimSessionView: View {
                             .font(.title3.weight(.semibold))
                             .monospacedDigit()
                         Spacer()
-                        Text("\(session.laps) laps · \(Int(session.totalMeters)) m")
+                        Text("\(session.laps) lap\(session.laps == 1 ? "" : "s") · \(Int(session.totalMeters)) m")
                             .font(.subheadline.weight(.medium))
                     }
                 }
             }
 
-            Section {
-                Button {
-                    // try? justified: SwiftData local write, see overall pattern.
-                    _ = try? service.logLap(in: session, count: 1)
-                } label: {
-                    Label("+1 lap", systemImage: "plus.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
+            if session.waterType == .pool {
+                poolEntrySection(session: session, service: service)
+            } else {
+                openWaterEntrySection(session: session, service: service)
             }
 
             Section {
@@ -87,13 +139,92 @@ struct SwimSessionView: View {
         }
     }
 
+    @ViewBuilder
+    private func poolEntrySection(session: SwimSession, service: SwimService) -> some View {
+        Section("Add laps") {
+            HStack(spacing: 8) {
+                ForEach([1, 2, 5, 10], id: \.self) { count in
+                    Button {
+                        _ = try? service.logLap(in: session, count: count)
+                    } label: {
+                        Text("+\(count)")
+                            .font(.subheadline.weight(.bold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color(.tertiarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Add \(count) lap\(count == 1 ? "" : "s")")
+                }
+            }
+        }
+
+        Section("Set exact laps") {
+            HStack {
+                Stepper("Laps: \(lapsExact)", value: $lapsExact, in: 0...500)
+                Button("Set") {
+                    _ = try? service.setExactLaps(in: session, laps: lapsExact)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func openWaterEntrySection(session: SwimSession, service: SwimService) -> some View {
+        Section("Add meters") {
+            HStack(spacing: 8) {
+                ForEach([100.0, 250.0, 500.0, 1000.0], id: \.self) { m in
+                    Button {
+                        _ = try? service.logMeters(in: session, meters: m)
+                    } label: {
+                        Text("+\(Int(m))")
+                            .font(.subheadline.weight(.bold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color(.tertiarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Add \(Int(m)) meters")
+                }
+            }
+        }
+
+        Section("Set exact distance") {
+            HStack {
+                TextField("Meters", value: $metersExact, format: .number)
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.leading)
+                Button("Set") {
+                    _ = try? service.setExactDistance(in: session, meters: metersExact)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    private func recentLocations() -> [String] {
+        let svc = SwimService(modelContext: modelContext, healthKit: nil)
+        return svc.recentLocations(limit: 5)
+    }
+
     private func start() {
         let svc = SwimService(modelContext: modelContext, healthKit: LiveHealthKitService.shared)
         do {
-            let s = try svc.startSession(at: Date(), poolLengthMeters: poolLengthMeters, location: location)
+            let trimmed = locationText.trimmingCharacters(in: .whitespaces)
+            let s = try svc.startSession(
+                at: Date(),
+                poolLengthMeters: poolLengthMeters,
+                location: trimmed.isEmpty ? nil : trimmed,
+                waterType: waterType
+            )
             startedAt = Date()
             session = s
             service = svc
+            lapsExact = s.laps
+            metersExact = s.totalMeters
             Task { _ = await WorkoutLiveActivityController.start(workoutType: "Swim", startDate: startedAt) }
         } catch {
             // logged inside service
@@ -103,8 +234,9 @@ struct SwimSessionView: View {
     private func end(service: SwimService, session: SwimSession) async {
         let mins = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
         do {
-            try await service.endSession(session, durationMinutes: mins)
+            try service.endSession(session, durationMinutes: mins)
             await WorkoutLiveActivityController.endAll()
+            completionCount &+= 1
             dismiss()
         } catch {
             // logged inside service

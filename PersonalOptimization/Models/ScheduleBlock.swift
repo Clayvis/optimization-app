@@ -1,8 +1,27 @@
 import Foundation
 import SwiftData
 
-enum BlockType: String, Codable {
-    case transit, training, study, learning, admin, recovery, other
+enum BlockType: String, Codable, CaseIterable, Sendable {
+    case transit, training, study, learning, admin, recovery, family, other
+
+    /// Family blocks represent intentionally protected time (kid drop-off,
+    /// family dinner, weekends). NotificationService treats them like quiet
+    /// hours, and the master metric doesn't fault the user for "missing" a
+    /// scheduled domain during a family block.
+    var isFamilyTime: Bool { self == .family }
+
+    var displayName: String {
+        switch self {
+        case .transit:   return "Transit"
+        case .training:  return "Training"
+        case .study:     return "Study"
+        case .learning:  return "Learning"
+        case .admin:     return "Admin"
+        case .recovery:  return "Recovery"
+        case .family:    return "Family"
+        case .other:     return "Other"
+        }
+    }
 }
 
 @Model
@@ -15,6 +34,7 @@ final class ScheduleBlock {
     var module: String?
     var isOverride: Bool = false
     var overrideDate: Date?
+    var isCustom: Bool = false
 
     var type: BlockType { BlockType(rawValue: typeRaw) ?? .other }
 

@@ -86,7 +86,7 @@ final class BasketballServiceTests: XCTestCase {
     func test_endSession_writesCheckInAndDailyLog() async throws {
         let start = Date()
         let session = try service.startSession(at: start)
-        try await service.endSession(session,
+        try service.endSession(session,
                               endTime: start.addingTimeInterval(4 * 3600),
                               achillesPostScore: 5,
                               hydrationOz: 120)
@@ -105,7 +105,8 @@ final class BasketballServiceTests: XCTestCase {
         let bsk = BasketballService(modelContext: context, healthKit: fake)
         let start = Date()
         let session = try bsk.startSession(at: start)
-        try await bsk.endSession(session, endTime: start.addingTimeInterval(4 * 3600), achillesPostScore: 4, hydrationOz: 150, estimatedCalories: 800)
+        try bsk.endSession(session, endTime: start.addingTimeInterval(4 * 3600), achillesPostScore: 4, hydrationOz: 150, estimatedCalories: 800)
+        await SessionLifecycleService.shared.lastDispatchedTask?.value
 
         XCTAssertEqual(fake.savedWorkouts.count, 1)
         XCTAssertEqual(fake.savedWorkouts[0].0, .basketball)
@@ -121,7 +122,32 @@ final class BasketballServiceTests: XCTestCase {
 
     func test_currentSession_returnsNilAfterEnd() async throws {
         let s = try service.startSession(at: Date())
-        try await service.endSession(s, endTime: Date().addingTimeInterval(3600), achillesPostScore: 4, hydrationOz: 100)
+        try service.endSession(s, endTime: Date().addingTimeInterval(3600), achillesPostScore: 4, hydrationOz: 100)
         XCTAssertNil(service.currentSession(at: Date()))
+    }
+
+    // MARK: - Hydration bridge (M3.7+ pass)
+
+    func test_endSession_writesHydrationEntry_andUpdatesDailyLog() throws {
+        let start = Date()
+        let s = try service.startSession(at: start)
+        try service.endSession(s, endTime: start.addingTimeInterval(3600), achillesPostScore: 5, hydrationOz: 32)
+
+        let entries = try context.fetch(FetchDescriptor<HydrationEntry>())
+        XCTAssertEqual(entries.count, 1)
+        XCTAssertEqual(entries.first?.amountOz, 32)
+        XCTAssertEqual(entries.first?.note, "basketball")
+
+        let logs = try context.fetch(FetchDescriptor<DailyLog>())
+        XCTAssertEqual(logs.first?.waterOz, 32)
+    }
+
+    func test_endSession_zeroHydration_doesNotCreateEntry() throws {
+        let start = Date()
+        let s = try service.startSession(at: start)
+        try service.endSession(s, endTime: start.addingTimeInterval(3600), achillesPostScore: 5, hydrationOz: 0)
+
+        let entries = try context.fetch(FetchDescriptor<HydrationEntry>())
+        XCTAssertTrue(entries.isEmpty)
     }
 }

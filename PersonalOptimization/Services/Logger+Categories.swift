@@ -12,4 +12,5 @@ extension Logger {
     static let api = Logger(subsystem: subsystem, category: "api")
     static let keychain = Logger(subsystem: subsystem, category: "keychain")
     static let persistence = Logger(subsystem: subsystem, category: "persistence")
+    static let coach = Logger(subsystem: subsystem, category: "coach")
 }

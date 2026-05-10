@@ -4,6 +4,7 @@ import SwiftData
 struct BasketballSessionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var profiles: [UserProfile]
 
     @State private var session: BasketballSession?
     @State private var service: BasketballService?
@@ -11,6 +12,10 @@ struct BasketballSessionView: View {
     @State private var hydrationOz: Double = 0
     @State private var achillesScore: Int = 5
     @State private var ended = false
+
+    private var achillesCheckInEnabled: Bool {
+        profiles.first?.achillesCheckInEnabled ?? true
+    }
 
     var body: some View {
         Group {
@@ -22,6 +27,7 @@ struct BasketballSessionView: View {
         }
         .navigationTitle("Basketball")
         .task { await start() }
+        .sensoryFeedback(.success, trigger: ended)
     }
 
     @ViewBuilder
@@ -49,16 +55,18 @@ struct BasketballSessionView: View {
                 Stepper("\(Int(hydrationOz)) oz", value: $hydrationOz, in: 0...300, step: 8)
             }
 
-            Section("Achilles check-in (1-10)") {
-                HStack {
-                    Text("Score").foregroundStyle(.secondary).font(.subheadline)
-                    Spacer()
-                    Picker("", selection: $achillesScore) {
-                        ForEach(1...10, id: \.self) { Text("\($0)").tag($0) }
+            if achillesCheckInEnabled {
+                Section("Achilles check-in (1-10)") {
+                    HStack {
+                        Text("Score").foregroundStyle(.secondary).font(.subheadline)
+                        Spacer()
+                        Picker("", selection: $achillesScore) {
+                            ForEach(1...10, id: \.self) { Text("\($0)").tag($0) }
+                        }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
+                    .padding(.vertical, 4)
                 }
-                .padding(.vertical, 4)
             }
 
             Section {
@@ -74,6 +82,17 @@ struct BasketballSessionView: View {
 
     private func start() async {
         let svc = BasketballService(modelContext: modelContext, healthKit: LiveHealthKitService.shared)
+
+        // Resume an in-progress basketball session if one exists. Without this,
+        // navigating away mid-session and returning would orphan the row and
+        // start fresh.
+        if let active = svc.currentSession(at: Date()) {
+            session = active
+            service = svc
+            startedAt = active.startTime
+            return
+        }
+
         do {
             let s = try svc.startSession(at: Date())
             startedAt = Date()
@@ -88,9 +107,9 @@ struct BasketballSessionView: View {
     private func endWorkout(session: BasketballSession, service: BasketballService) async {
         let end = Date()
         do {
-            try await service.endSession(session,
+            try service.endSession(session,
                                           endTime: end,
-                                          achillesPostScore: achillesScore,
+                                          achillesPostScore: achillesCheckInEnabled ? achillesScore : nil,
                                           hydrationOz: hydrationOz)
             await WorkoutLiveActivityController.endAll()
             ended = true

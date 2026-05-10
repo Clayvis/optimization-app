@@ -8,6 +8,10 @@ struct TodayView: View {
     @State private var tickTimer: Timer?
     @State private var characterService = CharacterStateService.shared
     @State private var showingProtocolDetail = false
+    @State private var quoteService = DailyQuoteService()
+    @State private var dailyQuote: DailyQuote?
+    @State private var pendingCelebration: MilestoneUnlock?
+    @State private var showingMemorySheet = false
 
     private var service: ScheduleService {
         ScheduleService(modelContext: modelContext)
@@ -36,10 +40,112 @@ struct TodayView: View {
                 graceBannerSection
 
                 Section {
+                    WelcomeBackCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                if let quote = dailyQuote {
+                    Section {
+                        Text(quote.displayText)
+                            .font(.footnote.italic())
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+                            .accessibilityLabel(quote.displayText)
+                    }
+                }
+
+                Section {
                     masterMetricCard
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
+                    streakStrip
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
+                    DailyProgressBars()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
+                    PrescribedWorkoutCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                if isSunday {
+                    Section {
+                        WeeklyProgramCard()
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                    }
+                    Section {
+                        WeeklyReflectionCard()
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                    }
+                }
+
+                Section {
+                    IntentionsStrip()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
+                    ScheduleSuggestionInbox()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
+                    CoachInsightCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+                }
+
+                Section {
+                    Button {
+                        showingMemorySheet = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "text.bubble.fill")
+                            Text("Tell the Coach what's going on")
+                                .font(.caption.weight(.semibold))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color(.tertiarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
                 }
 
                 Section {
@@ -52,8 +158,9 @@ struct TodayView: View {
                 Section("Today's blocks") {
                     let blocks = service.todayBlocks(for: now)
                     if blocks.isEmpty {
-                        Text("No blocks scheduled today.")
+                        Text("Open day. You write the plan.")
                             .foregroundStyle(.secondary)
+                            .accessibilityLabel("No blocks scheduled today")
                     } else {
                         ForEach(blocks) { block in
                             blockRow(block: block, isCurrent: isCurrent(block))
@@ -63,16 +170,47 @@ struct TodayView: View {
             }
             .navigationTitle(weekdayTitle)
             .listStyle(.insetGrouped)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        ScheduleEditorView()
+                    } label: {
+                        Label("Edit schedule", systemImage: "calendar.badge.plus")
+                    }
+                    .accessibilityLabel("Edit schedule")
+                }
+            }
             .onAppear {
                 now = Date()
                 startTicking()
                 characterService.start(modelContext: modelContext)
+                Task { await loadDailyQuote() }
+                refreshLapseAndMilestones()
             }
             .onDisappear {
                 stopTicking()
                 characterService.stop()
             }
+            .sheet(item: $pendingCelebration) { unlock in
+                MilestoneCelebrationSheet(unlock: unlock)
+            }
+            .sheet(isPresented: $showingMemorySheet) {
+                CoachMemoryEntrySheet()
+            }
         }
+    }
+
+    /// Walk lapse + milestone services on Today appearance. Cheap (mostly
+    /// SwiftData reads) and gives the user immediate feedback when they
+    /// cross a threshold or come back from a slump.
+    private func refreshLapseAndMilestones() {
+        _ = try? LapseDetectionService(modelContext: modelContext).recompute()
+        let milestones = MilestoneService(modelContext: modelContext)
+        _ = try? milestones.evaluate()
+        if let next = milestones.nextPendingCelebration() {
+            pendingCelebration = next
+        }
+        _ = try? AchievementService(modelContext: modelContext).evaluate()
     }
 
     @ViewBuilder
@@ -139,6 +277,67 @@ struct TodayView: View {
         .sheet(isPresented: $showingProtocolDetail) {
             ProtocolDetailView(tally: tally)
         }
+    }
+
+    /// Labeled streak card. Identity-framed. Day-count framing makes the chips
+    /// read clearly as streaks rather than ambiguous counters. Flame glyph on
+    /// chips with active streaks; muted otherwise so non-streaks don't shout.
+    @ViewBuilder
+    private var streakStrip: some View {
+        let counters = (try? modelContext.fetch(FetchDescriptor<StreakCounter>())) ?? []
+        let workout = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
+        let hydration = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0
+        let learning = counters.first { $0.domain == StreakDomain.learning.rawValue }?.currentStreak ?? 0
+
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.orange)
+                Text("STREAKS")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 8) {
+                streakChip(label: "Workout", days: workout, systemImage: "figure.strengthtraining.traditional")
+                streakChip(label: "Hydration", days: hydration, systemImage: "drop.fill")
+                streakChip(label: "Learning", days: learning, systemImage: "book.fill")
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func streakChip(label: String, days: Int, systemImage: String) -> some View {
+        let dayLabel = days == 1 ? "day streak" : "day streak"
+        return VStack(spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(.caption2)
+                if days > 0 {
+                    Image(systemName: "flame.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("\(days)")
+                    .font(.title3.weight(.bold))
+                    .monospacedDigit()
+                Text("d")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            Text(label.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Color(.tertiarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityLabel("\(label) \(days) \(dayLabel)")
     }
 
     @ViewBuilder
@@ -232,10 +431,30 @@ struct TodayView: View {
         tickTimer?.invalidate()
         tickTimer = nil
     }
+
+    private var isSunday: Bool {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        let raw = cal.component(.weekday, from: now)
+        let iso = raw == 1 ? 7 : raw - 1
+        return iso == 7
+    }
+
+    private func loadDailyQuote() async {
+        guard let profile else {
+            dailyQuote = quoteService.curatedQuote(style: "balanced")
+            return
+        }
+        dailyQuote = await quoteService.dailyQuote(
+            style: profile.motivationStyle,
+            customStylePrompt: profile.customStylePrompt,
+            aiEnabled: profile.aiQuotesEnabled
+        )
+    }
 }
 
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV2.self)
+    let schema = Schema(versionedSchema: SchemaV8.self)
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)

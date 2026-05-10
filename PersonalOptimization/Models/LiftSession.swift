@@ -26,10 +26,12 @@ final class LiftExercise {
     var sets: [LiftSet]? = []
     var rpe: Int?
     var session: LiftSession?
+    var isCustom: Bool = false
 
-    init(name: String, orderIndex: Int) {
+    init(name: String, orderIndex: Int, isCustom: Bool = false) {
         self.name = name
         self.orderIndex = orderIndex
+        self.isCustom = isCustom
     }
 }
 

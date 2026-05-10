@@ -7,5 +7,6 @@ struct ComplicationBundle: WidgetBundle {
         CurrentBlockComplication()
         FastCountdownComplication()
         MascotComplication()
+        HydrationComplication()
     }
 }

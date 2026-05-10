@@ -142,17 +142,23 @@ final class CharacterStateServiceTests: XCTestCase {
         let container = try InMemoryContainer.make()
         let context = container.mainContext
         let profile = UserProfile()
-        // 24-hour wrap window guarantees coverage regardless of wall-clock test time.
-        profile.fastWindowStartHour = 0
-        profile.fastWindowEndHour = 0
-        // Fix: use startHour > endHour wrap with widest possible window: 1 -> 0
-        profile.fastWindowStartHour = 1
-        profile.fastWindowEndHour = 0
+        // The window math has no 24h-coverage solution (start==end is ambiguous;
+        // any wrap leaves a 1-minute hole). Compute a window that bracketed
+        // the current JST hour so the test is deterministic regardless of when
+        // it runs.
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = jst
+        let nowHour = cal.component(.hour, from: Date())
+        // Window: from (nowHour - 1) through (nowHour + 1), modular 24, using
+        // wrap branch when needed.
+        profile.fastWindowStartHour = (nowHour + 23) % 24   // = nowHour - 1
+        profile.fastWindowEndHour = (nowHour + 2) % 24
         context.insert(profile)
         try context.save()
 
         let inputs = CharacterStateService.gatherInputs(modelContext: context, timezone: jst)
-        XCTAssertTrue(inputs.inFastWindow, "Wrap-around fast window 01:00 -> 00:00 should cover non-midnight wall-clock times")
+        XCTAssertTrue(inputs.inFastWindow,
+                      "Window bracketing the current JST hour should report inFastWindow")
     }
 
     func test_gatherInputs_readsSickDayActiveFromProfile() throws {

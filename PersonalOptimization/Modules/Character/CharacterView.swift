@@ -1,11 +1,13 @@
 import SwiftUI
+import SwiftData
 
 /// Renders the current character state with breathing animation, alert pulses on
 /// `.urgent` and `.achievement`, and a cross-fade transition between states.
-/// Honors the system reduce-motion setting.
+/// Honors the system reduce-motion setting and the user's `mascotVariant` choice.
 struct CharacterView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable var service = CharacterStateService.shared
+    @Query private var profiles: [UserProfile]
 
     var size: CGFloat = 200
     var showsReason: Bool = true
@@ -14,10 +16,14 @@ struct CharacterView: View {
     @State private var pulseScale: CGFloat = 1.0
     @State private var lastAlertState: CharacterState?
 
+    private var variant: String {
+        profiles.first?.mascotVariant ?? "ninja_male"
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             ZStack {
-                Image(service.currentState.assetName)
+                Image(service.currentState.assetName(for: variant))
                     .resizable()
                     .interpolation(.high)
                     .aspectRatio(contentMode: .fit)
@@ -31,7 +37,7 @@ struct CharacterView: View {
             .frame(width: size, height: size)
             .animation(.easeInOut(duration: 0.5), value: service.currentState)
 
-            if showsReason {
+            if showsReason, !isInternalReason(service.triggerReason) {
                 Text(service.triggerReason)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -46,6 +52,22 @@ struct CharacterView: View {
         .onChange(of: service.currentState) { _, newValue in
             triggerAlertPulseIfNeeded(for: newValue)
         }
+        .sensoryFeedback(trigger: service.currentState) { _, newValue in
+            switch newValue {
+            case .achievement: return .success
+            case .urgent:      return .warning
+            case .proud:       return .increase
+            default:           return nil
+            }
+        }
+    }
+
+    /// Filters internal placeholder reasons that shouldn't be shown to the user.
+    /// "default" and similar diagnostics ride in service.triggerReason for logging
+    /// purposes; the UI should stay quiet when there's nothing meaningful to say.
+    private func isInternalReason(_ reason: String) -> Bool {
+        let trimmed = reason.trimmingCharacters(in: .whitespaces).lowercased()
+        return trimmed.isEmpty || trimmed == "default"
     }
 
     private func startBreathing() {

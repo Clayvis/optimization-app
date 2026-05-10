@@ -76,4 +76,66 @@ final class PerformanceTests: XCTestCase {
             }
         }
     }
+
+    /// M3.6_SPEC: Coach insight cache lookup < 10ms.
+    /// Insert one cached row and re-fetch via the service path used by todayInsight().
+    func test_perf_coachCacheLookup_under10ms() throws {
+        let insight = CoachInsight(generatedAt: Date(),
+                                   insightText: "Stay the course.",
+                                   contextSummary: "test",
+                                   tokenUsage: 100,
+                                   refreshCount: 0)
+        context.insert(insight)
+        try context.save()
+        let service = CoachService(modelContext: context, api: NoopAPI())
+        measure {
+            for _ in 0..<200 {
+                _ = service.cachedInsight()
+            }
+        }
+    }
+
+    /// M3.6_SPEC: Daily quote rendering < 50ms (curated path).
+    func test_perf_dailyQuoteCurated_under50ms() {
+        let service = DailyQuoteService()
+        measure {
+            for _ in 0..<200 {
+                _ = service.curatedQuote(style: "stoic")
+            }
+        }
+    }
+
+    /// M3.6_SPEC: Schedule editor list with 50 blocks renders in < 100ms (fetch path).
+    func test_perf_scheduleEditorFetch_50Blocks_under100ms() throws {
+        for day in 1...7 {
+            for i in 0..<8 {
+                let hour = String(format: "%02d", i + 6)
+                let nextHour = String(format: "%02d", i + 7)
+                let block = ScheduleBlock(
+                    dayOfWeek: day,
+                    startTime: "\(hour):00",
+                    endTime: "\(nextHour):00",
+                    activity: "Block \(i)",
+                    type: .other
+                )
+                context.insert(block)
+            }
+        }
+        try context.save()
+        measure {
+            _ = (try? context.fetch(FetchDescriptor<ScheduleBlock>(
+                sortBy: [SortDescriptor(\ScheduleBlock.dayOfWeek), SortDescriptor(\ScheduleBlock.startTime)]
+            ))) ?? []
+        }
+    }
+}
+
+@MainActor
+private final class NoopAPI: CoachAPIInvoking {
+    nonisolated func complete(model: String,
+                              systemPrompt: String,
+                              userPrompt: String,
+                              maxTokens: Int) async throws -> ClaudeAPIClient.Response {
+        ClaudeAPIClient.Response(text: "noop", inputTokens: 0, outputTokens: 0)
+    }
 }

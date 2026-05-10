@@ -34,15 +34,17 @@ enum ScheduleSeedError: LocalizedError {
 @MainActor
 enum ScheduleSeed {
 
-    /// Seeds the template schedule from the bundled JSON if no template blocks exist yet.
-    /// Idempotent across multiple launches and across iOS + watchOS targets.
+    /// Seeds the template schedule from the bundled JSON if no seeded (non-custom)
+    /// template blocks exist yet. Idempotent across multiple launches. User-marked
+    /// `isCustom` blocks do not block re-seeding so the schedule template chooser
+    /// can apply a fresh template while preserving the user's custom rows.
     static func seedIfNeeded(modelContext: ModelContext, bundle: Bundle = .main) throws {
         let descriptor = FetchDescriptor<ScheduleBlock>(
-            predicate: #Predicate { $0.isOverride == false }
+            predicate: #Predicate<ScheduleBlock> { $0.isOverride == false && $0.isCustom == false }
         )
         let existing = try modelContext.fetchCount(descriptor)
         guard existing == 0 else {
-            Logger.schedule.info("Skipping seed: \(existing, privacy: .public) template blocks present")
+            Logger.schedule.info("Skipping seed: \(existing, privacy: .public) seeded blocks present")
             return
         }
 
@@ -61,6 +63,21 @@ enum ScheduleSeed {
         }
         try modelContext.save()
         Logger.schedule.info("Seeded \(file.blocks.count, privacy: .public) template blocks")
+    }
+
+    /// Wipes all non-custom (`isCustom == false`) ScheduleBlocks and re-seeds from the
+    /// default file. User-created blocks (`isCustom == true`) are preserved verbatim.
+    static func resetToDefault(modelContext: ModelContext, bundle: Bundle = .main) throws {
+        let descriptor = FetchDescriptor<ScheduleBlock>(
+            predicate: #Predicate<ScheduleBlock> { $0.isCustom == false && $0.isOverride == false }
+        )
+        let toDelete = try modelContext.fetch(descriptor)
+        for block in toDelete {
+            modelContext.delete(block)
+        }
+        try modelContext.save()
+        try seedIfNeeded(modelContext: modelContext, bundle: bundle)
+        Logger.schedule.info("Reset to default schedule, deleted \(toDelete.count, privacy: .public), re-seeded")
     }
 
     static func loadDefaultScheduleFile(bundle: Bundle = .main) throws -> DefaultScheduleFile {

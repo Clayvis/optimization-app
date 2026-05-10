@@ -272,6 +272,202 @@ Estimated effort: 22-28 hours of agent execution.
 
 ---
 
+## M3.6: Bug Fixes + Personalization Foundation + Coach Mode
+
+Goal: unblock daily usability and wife onboarding before M4. Fix end-session bugs, ship schedule editor, add hydration/swim/lift granularity, introduce Coach Mode (one Claude call/day) and a daily quote, plus diagnostics.
+
+### Block 1: Bug fixes
+
+1. **SessionLifecycleService refactor**: SwiftData authoritative; HealthKit best-effort with bounded retry (3 attempts, exponential backoff); HK failures persist a `HealthKitWriteFailure` row but never block UI. Migrate Fasting/Basketball/Lift/Swim end paths.
+2. **Live Activity SwiftData observers**: FastingLiveActivity + WorkoutLiveActivity dismiss when SwiftData session.endTime is set; SessionLifecycleService.end() calls `Activity.end(_:dismissalPolicy:.immediate)` synchronously.
+3. **HealthKit error handling**: wrap all `HKWorkoutBuilder` calls in do/catch; never throw from session-end; expose recent failures via Diagnostics.
+4. **Regression tests**: 8-12 tests covering end-session paths with HK unavailable / in error state.
+
+### Block 2: Personalization foundation
+
+5. **Schedule editor**: in-app CRUD on ScheduleBlock; Settings -> Schedule; add/edit/delete/reorder; `ScheduleBlock.isCustom` (default false; seeded blocks false, user-added true). Re-seed skips isCustom=true.
+6. **Schedule reset**: Settings -> Advanced -> Reset Schedule with "deletes your custom blocks" confirmation.
+7. **default_schedule_blank.json**: ship empty schedule alongside default for M4 onboarding choice.
+
+### Block 3: Granularity fixes
+
+8. **Swim location**: free text + Pool/Beach/Open Water/Other picker + recent locations.
+9. **Swim distance**: stepper + free input; lap-aware vs meters by location type.
+10. **Hydration granularity**: quick-pick presets (4/8/12/16/20/24/32oz), free oz/mL input, beverage type picker, hydration coefficient. New `HydrationEntry` @Model with `beverageType` and `amountOz`. SchemaV2.1 additive.
+11. **Hydration gamification**: streak counts on hitting hydration target; surface on TodayView; mascot reacts.
+12. **Lift add-custom-exercise**: inline free-text entry; persists with `LiftExercise.isCustom = true`.
+13. **Lift volume aggregator surface**: bottom of LiftView shows today's volume / sets / reps with concentric arcs vs 7-day rolling avg; identity copy on completion.
+14. **Achilles check-in optional**: `UserProfile.achillesCheckInEnabled` default ON; when OFF basketball flow skips the prompt.
+
+### Block 4: Coach Mode
+
+15. **CoachService**: one Claude API call per day per user, cached 24 hours, manual refresh. Style picker via UserProfile.motivationStyle. Sonnet 4.6 default. Token usage logged to OSLog.
+16. **CoachInsight @Model**: generatedAt, insightText, contextSummary, tokenUsage, refreshCount.
+17. **UserProfile.motivationStyle**: default "balanced"; allowed stoic|holistic|warrior|spiritual|scientific|balanced|custom; `customStylePrompt` for custom.
+18. **Today CoachInsightCard**: below master metric, mascot face avatar, insight, refresh, expand sheet, missing-key error state.
+19. **Daily quote**: curated DB by motivationStyle (~50 quotes/style), optional Haiku AI mode in Settings; small italic under date.
+20. **Coach tests**: context gather, cache hit, manual refresh, API failure fallback, style selection, token logging. 8-10 tests.
+
+### Block 5: Polish
+
+21. **Suppress simulator-only haptic noise**: wrap CHHapticPattern in `#if !targetEnvironment(simulator)` or fallback to UIImpactFeedbackGenerator.
+22. **Diagnostics view**: Settings > Diagnostics shows HK auth status, recent HK write failures, API key status, token usage today/this month, "Test API key" button.
+
+### Definition of Done
+
+- All 22 tasks complete, tests passing.
+- End-session bugs verified fixed via simulator manual test (fast / basketball / lift / swim end without HK auth).
+- Schedule editor functional; custom blocks survive a re-seed.
+- Swim location accepts free text + pool/beach toggle.
+- Hydration accepts free amounts + beverage types.
+- Lift volume aggregator surfaces visually.
+- Hydration streak appears on TodayView and triggers mascot.
+- Achilles check-in toggle works.
+- Coach Mode card appears on TodayView; daily quote shows in user's motivationStyle.
+- Diagnostics view shows accurate state.
+- All unit tests pass.
+- Build clean, zero warnings.
+- Performance: Today view cold start <2s with Coach card + hydration streak + master metric.
+- PR merged to main, tag `m3.6-complete` pushed.
+
+### Performance Benchmarks
+
+- SessionLifecycleService.end() returns synchronously in <50ms (HK write happens async).
+- Schedule editor list with 50 blocks renders in <100ms.
+- Coach insight cache lookup <10ms.
+- Coach insight generation (cold, with API call) <5s.
+- Daily quote rendering <50ms.
+
+Estimated effort: 20-26 hours of agent execution.
+
+---
+
+## M3.7: Coach v2 (Prescriptive) + Long-Term Log + Multi-Mascot
+
+Goal: turn Coach Mode from "daily insight commentary" into "prescriptive holistic optimizer" with year-plus historical context, ship long-term log infrastructure, add multi-mascot variant system (ninja_male default + ninja_female for wife). Source: M3.7_SPEC.md.
+
+Tasks:
+
+Block 1 — Long-term log persistence + trend analytics (~8-12h):
+
+1. Audit and confirm SwiftData retention. No auto-delete code anywhere; document explicitly.
+2. ActivityArchive @Model entity (one row per user per day) + BGAppRefreshTask daily rollup writer.
+3. TrendAnalyticsService with dailyAdherence, volumeProgression, patternsDetected, summaryForCoach. ~10+ unit tests covering empty/partial/full-year data and edge cases.
+4. DetectedPattern detection rules: schedule_drift, volume_decline, hydration_correlation, sleep_impact, fasting_consistency, learning_streak_decay (6+ patterns).
+5. Settings → Data → export/import expansion covering all new entities + round-trip test.
+
+Block 2 — Coach Mode v2 (~10-14h):
+
+6. CoachService.gatherFullContext returning CoachContextV2 (M3.6 context + TrendAnalytics summary + goals + equipment + time-available + temperature stub).
+7. CoachService.prescribeTodaysWorkout → PrescribedWorkout @Model with full template, status (suggested/accepted/modified/skipped/completed). Sonnet 4.6, system prompt tuned to motivationStyle + equipmentAccess + primaryGoal.
+8. CoachService.suggestScheduleOptimizations → ScheduleSuggestion @Model rows. Reads pattern detector. 1-3 suggestions per week.
+9. CoachService.generateWeeklyProgrammingPass → WeeklyProgram @Model. Sundays auto-trigger or manual.
+10. TodayView Coach card: shows prescribed workout above daily insight on training days.
+11. TrainView "Today's Prescribed Workout" section at top of LiftView/BasketballView/SwimView with one-tap accept/modify/skip.
+12. ScheduleSuggestion inbox (TodayView badge + accept/dismiss).
+13. WeeklyProgram view (Sunday Today-tab card).
+14. Locked system prompts in Modules/Coach/CoachPrompts.swift (separate prompts per generation mode and per motivationStyle).
+15. Coach v2 tests (15+) covering prescription generation, schedule suggestion accept flow, weekly programming, prescribed workout → session pipeline, API failure fallback.
+
+Block 3 — Multi-mascot variant system (~4-6h):
+
+16. mascotVariant: String field on UserProfile (default "ninja_male"); SchemaV4 additive migration.
+17. Rename existing Mascot{State}.imageset → NinjaMale_{State}.imageset (8 imagesets).
+18. CharacterState.assetName(for variant:) helper; all consumers updated to call with userProfile.mascotVariant.
+19. Settings → Mascot picker with previews of available variants.
+20. Onboarding stub: first-launch picks variant (full M4 onboarding builds on this).
+21. Female mascot pre-flight: if user picks ninja_female and any of 8 PNGs missing, halt with clear message.
+
+Block 4 — Wife-onboarding-readiness polish (~3-4h):
+
+22. Goals capture in Settings: primaryGoal, secondaryGoals, equipmentAccess picker, weeklyTrainingTargetSessions stepper, restrictions text.
+23. Schedule template chooser (Settings → Schedule): gym-focused, language-focused, fasting-focused, balanced, blank slate.
+24. Per-user mascot variant in onboarding flow stub (foundation for M4).
+
+Definition of Done:
+
+- All 24 tasks complete, tests passing.
+- Long-term log persists; activity from M1 onward visible in TrendAnalytics outputs.
+- ActivityArchive populated; daily rollup verified on simulator.
+- Coach Mode v2 produces real prescriptions for both ninja_male and ninja_female test profiles.
+- TrainView shows today's prescribed workout when on training day.
+- ScheduleSuggestion inbox functional.
+- WeeklyProgram generates on Sundays.
+- mascotVariant switch works; female assets render.
+- Build clean, zero warnings (iOS + watch).
+- Performance: TrendAnalytics queries < 200ms with 1 year of data.
+- PR merged to main, tag m3.7-complete pushed.
+
+Performance benchmarks:
+
+- TrendAnalyticsService.summaryForCoach with 365 days of data: < 200ms.
+- CoachService.prescribeTodaysWorkout cold path (with API call): < 6s.
+- ActivityArchive daily rollup: < 500ms per day.
+- Cold start of TrainView with prescribed workout card: < 1.5s.
+
+Estimated effort: 25-36 hours of agent execution.
+
+---
+
+## M3.8: Apple Watch Parity
+
+Goal: bring the watchOS app to parity with the phone — live workout tracking, real-time phone↔watch sync, glance-and-go quick logs from the wrist, mascot-as-companion on the watch face. Battery life is a hard constraint: no continuous polling, no chatty WatchConnectivity, complications update on event not on a timer.
+
+The wrist replaces the phone for in-session use (start a lift, see live HR and elapsed, log water mid-court, end the fast walking out the door). The phone remains the brain (Coach prompts, planning, history).
+
+Tasks:
+
+Block 1 — Diagnostics + foundations (~2h):
+
+1. Verify the watch app installs alongside the phone build. Pair the iPhone and Watch simulators; confirm `xcodebuild -scheme PersonalOptimizationWatch` deploys.
+2. Watch RootView (`ContentView`) restructure into idle home + training + schedule pages. Idle home shows mascot, today's master metric, and one-tap quick-log buttons (water, learning).
+3. Variant-aware mascot rendering on the watch (read `UserProfile.mascotVariant`) plus complication.
+
+Block 2 — Live workout tracking (~6-8h):
+
+4. `LiveWorkoutSessionService` wrapping `HKWorkoutSession` + `HKLiveWorkoutBuilder`. Drives Lift / Basketball / Swim / Custom on the watch with live HR, elapsed time, active calories.
+5. Watch session views (Lift / Basketball / Swim / Custom) show live HR, kcal, duration. End-session writes the same SwiftData rows the phone does so streaks and master metric pick up the wrist-logged work.
+6. Anchored HK queries (no polling). HK observation is event-driven.
+
+Block 3 — WCSession bridge (~3-4h):
+
+7. `WatchConnectivityService` two-way: phone sends profile + active prescription on demand, watch sends session events back the moment they happen. Queue messages when peer not reachable; CloudKit remains the source of truth for catch-up.
+8. Phone TrainingHub shows "Training on watch" when a wrist session is live.
+
+Block 4 — Quick logs + complications (~3-4h):
+
+9. Watch quick-log glances: water (preset oz buttons), learning (start/stop a 25 min Pomodoro tile), end fast (one tap; opens reason picker).
+10. Mascot complication uses `assetName(for: variant)`. Updates only on character-state transitions; no timer.
+11. Hydration progress complication (Move-style ring fill on circular complications).
+12. Fast countdown complication updates on schedule (timeline provider, not polling).
+13. Custom activities exposed on the watch (the iOS-side templates surface as session entry points).
+
+Block 5 — Battery balance + tests (~2-3h):
+
+14. Audit: no Timer.scheduledTimer on watch; use TimelineView for clock-driven UI. HK queries use anchored observers, not 1Hz polling.
+15. Complication timelines: 1h granularity for schedule/fast, event-driven for mascot, on-demand reload for hydration after a log.
+16. WCSession only when reachable; otherwise SwiftData + CloudKit handle eventual consistency.
+17. Unit tests for LiveWorkoutSessionService state machine + WatchConnectivityService payload encoding (15+).
+
+Definition of Done:
+- Watch app installs on the paired simulator and launches.
+- Idle watch home shows mascot + today's master metric + quick-log row.
+- Lift / Basketball / Swim / Custom each have a live workout flow on the watch with HR + kcal + elapsed.
+- Starting a session on the watch surfaces on the phone within 5 seconds; ending propagates back the same window.
+- Mascot complication renders the user's variant.
+- Battery audit notes (no continuous polling, no >1Hz updates) committed.
+- Build clean: phone, watch, complication extension, live activity extension. Tests pass.
+
+Performance targets:
+- Watch app cold start < 2s on Apple Watch Ultra 3 simulator.
+- Live workout view live-updates HR + duration at 1Hz without dropping frames.
+- WCSession message round-trip < 5s when both apps reachable.
+- Complication timeline reload < 200ms.
+
+Estimated effort: 16-20 hours of agent execution.
+
+---
+
 ## M4: Notifications, Onboarding, Implementation Intentions, Weekly Reflection, Ship
 
 Goal: Wrap v1 with high-quality first-run experience, the implementation intentions habit-stack builder, weekly reflection, and App Store submission readiness.
