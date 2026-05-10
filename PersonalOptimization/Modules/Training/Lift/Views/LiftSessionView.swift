@@ -7,8 +7,10 @@ struct LiftSessionView: View {
 
     let templateName: String
 
+    @State private var template: LiftTemplate?
     @State private var session: LiftSession?
     @State private var service: LiftService?
+    @State private var hasResumableDraft = false
     @State private var loadError: String?
     @State private var startedAt = Date()
     @State private var restTimerEndsAt: Date?
@@ -21,19 +23,66 @@ struct LiftSessionView: View {
         Group {
             if let error = loadError {
                 ContentUnavailableView("Could not load template", systemImage: "exclamationmark.triangle", description: Text(error))
-            } else if let session, let service {
-                content(session: session, service: service)
+            } else if let template, let service {
+                if let session {
+                    activeContent(session: session, service: service)
+                } else {
+                    previewContent(template: template, service: service)
+                }
             } else {
                 ProgressView()
             }
         }
         .navigationTitle(templateName)
-        .task { await loadAndStart() }
+        .task { loadPreview() }
         .sensoryFeedback(.success, trigger: completionCount)
     }
 
+    // MARK: - Preview state (no session row inserted)
+
     @ViewBuilder
-    private func content(session: LiftSession, service: LiftService) -> some View {
+    private func previewContent(template: LiftTemplate, service: LiftService) -> some View {
+        List {
+            Section {
+                Text(template.focus)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Focus")
+            } footer: {
+                Text("Tap Start to begin tracking. You can leave and come back without losing progress.")
+            }
+
+            ForEach(template.exercises.sorted(by: { $0.orderIndex < $1.orderIndex }), id: \.name) { exercise in
+                Section(exercise.name) {
+                    HStack {
+                        Text("Target")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text("\(exercise.targetSets) × \(exercise.targetReps) reps")
+                            .font(.body.weight(.medium))
+                    }
+                }
+            }
+
+            Section {
+                Button {
+                    promoteToActiveSession(service: service)
+                } label: {
+                    Label(hasResumableDraft ? "Resume workout" : "Start workout", systemImage: "play.circle.fill")
+                        .frame(maxWidth: .infinity)
+                        .font(.body.weight(.semibold))
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    // MARK: - Active state (session inserted, set logging UI)
+
+    @ViewBuilder
+    private func activeContent(session: LiftSession, service: LiftService) -> some View {
         List {
             if let endsAt = restTimerEndsAt {
                 Section("Rest timer") {
@@ -183,28 +232,40 @@ struct LiftSessionView: View {
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
-    private func loadAndStart() async {
+    // MARK: - State transitions
+
+    /// Loads the template and probes for an in-progress draft, but does NOT
+    /// insert a `LiftSession`. The user gets a read-only preview until they
+    /// explicitly tap Start (or Resume, when a draft exists).
+    private func loadPreview() {
         do {
             let templates = try LiftTemplatesLoader.load()
-            let svc = LiftService(modelContext: modelContext, templatesFile: templates, healthKit: LiveHealthKitService.shared)
+            template = try LiftTemplatesLoader.template(named: templateName, file: templates)
+            service = LiftService(modelContext: modelContext, templatesFile: templates, healthKit: LiveHealthKitService.shared)
+            hasResumableDraft = inProgressSession(for: templateName) != nil
+        } catch {
+            loadError = error.localizedDescription
+        }
+    }
 
-            // Resume an in-progress session for the same template today before
-            // creating a new one. Without this, leaving the screen mid-lift
-            // (to check the schedule, log water, etc.) would orphan the prior
-            // session row and start a fresh blank one on return.
-            if let resumed = inProgressSession(for: templateName) {
-                session = resumed
-                service = svc
-                startedAt = resumed.date
+    /// Promotes the preview to an active session: resumes an existing draft
+    /// when one is present, otherwise inserts a fresh `LiftSession` row.
+    private func promoteToActiveSession(service: LiftService) {
+        if let resumed = inProgressSession(for: templateName) {
+            session = resumed
+            startedAt = resumed.date
+            Task {
                 _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)
-                return
             }
-
-            let s = try svc.startSession(templateName: templateName)
+            return
+        }
+        do {
+            let s = try service.startSession(templateName: templateName)
             startedAt = Date()
             session = s
-            service = svc
-            _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)
+            Task {
+                _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)
+            }
         } catch {
             loadError = error.localizedDescription
         }
