@@ -159,6 +159,43 @@ final class StreakServiceTests: XCTestCase {
         XCTAssertEqual(counter.currentStreak, 0)
     }
 
+    // MARK: - Weekend rest days (workout)
+
+    func test_recompute_workout_weekendBridges_streakSurvivesWithoutWorkouts() throws {
+        // Mon 5/4, Tue 5/5, Wed 5/6, Thu 5/7, Fri 5/8 all completed.
+        // Sat 5/9 and Sun 5/10 are auto rest days. Mon 5/11 today, no workout yet.
+        for d in [4, 5, 6, 7, 8] {
+            try service.recordWorkoutLedger(date: jstDate(2026, 5, d, 10, 0), source: .lift)
+        }
+        let counter = try service.recompute(domain: .workout, asOf: jstDate(2026, 5, 11, 9, 0))
+        // Today is in-progress; weekend bridges Fri→Mon. Streak from Fri walking back = 5.
+        XCTAssertEqual(counter.currentStreak, 5)
+    }
+
+    func test_recompute_workout_weekendDoesNotBridgeWeekdayMiss() throws {
+        // Skip Tuesday entirely. Mon yes, Wed yes, Thu yes, Fri yes. Sat (rest), today=Mon next week.
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 4, 10, 0), source: .lift)
+        // 5/5 Tue intentionally skipped
+        for d in [6, 7, 8] {
+            try service.recordWorkoutLedger(date: jstDate(2026, 5, d, 10, 0), source: .lift)
+        }
+        let counter = try service.recompute(domain: .workout, asOf: jstDate(2026, 5, 11, 9, 0))
+        // Walk back from Mon 5/11: rest 5/10, rest 5/9, Fri 5/8 yes (1), Thu 5/7 yes (2), Wed 5/6 yes (3),
+        // Tue 5/5 missed (not rest) → break.
+        XCTAssertEqual(counter.currentStreak, 3)
+    }
+
+    func test_recompute_workout_weekendBridge_doesNotApplyToOtherDomains() throws {
+        // Hydration: Friday completed, today Monday with no log. No auto-bridge for hydration.
+        let log = DailyLog(date: jstDate(2026, 5, 8, 10, 0))
+        log.waterOz = 200
+        context.insert(log)
+        try context.save()
+        let counter = try service.recompute(domain: .hydration, asOf: jstDate(2026, 5, 11, 9, 0))
+        // Walk back from Mon: today no log → 0. Sun no log → break (no rest bridge for hydration).
+        XCTAssertEqual(counter.currentStreak, 0)
+    }
+
     // MARK: - Longest
 
     func test_recompute_persistsHistoricalLongestStreak() throws {

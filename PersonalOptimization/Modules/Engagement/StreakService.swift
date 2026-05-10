@@ -28,6 +28,10 @@ enum StreakServiceError: LocalizedError {
 /// - `userProfile.travelModeActiveUntil` covers the day
 /// - a `FreezeApplication` exists for the domain on that day
 ///   (workout domain may instead have `WorkoutEvent` with `source == .freeze|.travel|.sickDay`)
+///
+/// Auto rest days (workout domain only): Saturday and Sunday bridge the streak without
+/// incrementing it. A missed Sat/Sun does not break the chain; a completed weekend
+/// workout still records a `WorkoutEvent` but the streak count reflects weekday adherence.
 @MainActor
 final class StreakService {
     static let maxFreezesPerMonth: Int = 2
@@ -56,17 +60,27 @@ final class StreakService {
         let history = try buildCompletionHistory(domain: domain, asOf: asOf)
         let cal = jstCalendar()
         let today = cal.startOfDay(for: asOf)
+        let restDays = autoRestDays(domain: domain)
 
         var current = 0
         if history[today] == true { current = 1 }
+        // Today is in-progress: a missed today doesn't break the chain. Past days must be
+        // either completed or auto-rest (weekend for workout) to keep the chain alive.
         var cursor = cal.date(byAdding: .day, value: -1, to: today) ?? today
-        while history[cursor] == true {
-            current += 1
+        let maxLookback = 730
+        for _ in 0..<maxLookback {
+            if history[cursor] == true {
+                current += 1
+            } else if restDays.contains(isoWeekday(for: cursor)) {
+                // rest day bridges the streak without incrementing
+            } else {
+                break
+            }
             guard let prev = cal.date(byAdding: .day, value: -1, to: cursor) else { break }
             cursor = prev
         }
 
-        let longest = computeLongest(history: history, calendar: cal)
+        let longest = computeLongest(history: history, restDays: restDays, calendar: cal)
         let lastCompleted = mostRecentCompletedDay(history: history)
 
         counter.currentStreak = current
@@ -278,7 +292,7 @@ final class StreakService {
         return targets.rest.min
     }
 
-    private func computeLongest(history: [Date: Bool], calendar: Calendar) -> Int {
+    private func computeLongest(history: [Date: Bool], restDays: Set<Int>, calendar: Calendar) -> Int {
         let days = history.filter { $0.value }.keys.sorted()
         guard !days.isEmpty else { return 0 }
         var longest = 1
@@ -286,8 +300,7 @@ final class StreakService {
         for i in 1..<days.count {
             let prev = days[i - 1]
             let cur = days[i]
-            if let next = calendar.date(byAdding: .day, value: 1, to: prev),
-               calendar.isDate(next, inSameDayAs: cur) {
+            if daysBridge(from: prev, to: cur, restDays: restDays, calendar: calendar) {
                 current += 1
                 longest = max(longest, current)
             } else {
@@ -295,6 +308,27 @@ final class StreakService {
             }
         }
         return longest
+    }
+
+    /// Returns true when every calendar day strictly between `prev` and `cur` is either absent
+    /// (no gap) or an auto rest day. Rest days bridge the chain without incrementing it.
+    private func daysBridge(from prev: Date, to cur: Date, restDays: Set<Int>, calendar: Calendar) -> Bool {
+        guard var cursor = calendar.date(byAdding: .day, value: 1, to: prev) else { return false }
+        while cursor < cur {
+            if !restDays.contains(isoWeekday(for: cursor)) { return false }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { return false }
+            cursor = next
+        }
+        return calendar.isDate(cursor, inSameDayAs: cur)
+    }
+
+    /// ISO weekdays (Mon=1..Sun=7) that bridge the streak without incrementing it.
+    /// Workout domain treats Sat/Sun as auto rest; other domains have no auto rest days.
+    private func autoRestDays(domain: StreakDomain) -> Set<Int> {
+        switch domain {
+        case .workout: return [6, 7]
+        default: return []
+        }
     }
 
     private func mostRecentCompletedDay(history: [Date: Bool]) -> Date? {
