@@ -22,6 +22,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Reads your activity, workouts, heart rate, and sleep data to track daily protocol adherence.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Saves workout sessions and protocol completion data to your Health profile.</string>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKBackgroundModes</key>
