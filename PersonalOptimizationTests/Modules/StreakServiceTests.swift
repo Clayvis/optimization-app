@@ -185,6 +185,24 @@ final class StreakServiceTests: XCTestCase {
         XCTAssertEqual(counter.currentStreak, 3)
     }
 
+    func test_recompute_workout_restDaysComeFromSchedule_midweekRestBridges() throws {
+        // Custom schedule: training Mon/Tue/Thu/Fri only. Wed/Sat/Sun are rest days.
+        for day in [1, 2, 4, 5] {
+            context.insert(ScheduleBlock(
+                dayOfWeek: day, startTime: "09:00", endTime: "10:00",
+                activity: "Lift", type: .training, module: "lift_a"
+            ))
+        }
+        try context.save()
+        // Mon 5/4, Tue 5/5 done. Wed 5/6 today, no workout.
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 4, 10, 0), source: .lift)
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 5, 10, 0), source: .lift)
+        let counter = try service.recompute(domain: .workout, asOf: jstDate(2026, 5, 6, 18, 0))
+        // Wed today is in-progress (rest day). Walk back: Tue yes (1), Mon yes (2), Sun rest, Sat rest,
+        // Fri (no event, weekday=5 IS in trainingDays so not rest) → break. Streak = 2.
+        XCTAssertEqual(counter.currentStreak, 2)
+    }
+
     func test_recompute_workout_weekendBridge_doesNotApplyToOtherDomains() throws {
         // Hydration: Friday completed, today Monday with no log. No auto-bridge for hydration.
         let log = DailyLog(date: jstDate(2026, 5, 8, 10, 0))

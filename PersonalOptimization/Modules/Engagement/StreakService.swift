@@ -29,9 +29,11 @@ enum StreakServiceError: LocalizedError {
 /// - a `FreezeApplication` exists for the domain on that day
 ///   (workout domain may instead have `WorkoutEvent` with `source == .freeze|.travel|.sickDay`)
 ///
-/// Auto rest days (workout domain only): Saturday and Sunday bridge the streak without
-/// incrementing it. A missed Sat/Sun does not break the chain; a completed weekend
-/// workout still records a `WorkoutEvent` but the streak count reflects weekday adherence.
+/// Auto rest days (workout domain only): any ISO weekday with no training block in the
+/// user's schedule template bridges the streak without incrementing it. A missed rest day
+/// does not break the chain; a completed workout on a rest day still records a
+/// `WorkoutEvent` but the streak count reflects scheduled-training-day adherence.
+/// Falls back to Sat/Sun when the schedule is empty (e.g., in tests without seeded data).
 @MainActor
 final class StreakService {
     static let maxFreezesPerMonth: Int = 2
@@ -323,12 +325,20 @@ final class StreakService {
     }
 
     /// ISO weekdays (Mon=1..Sun=7) that bridge the streak without incrementing it.
-    /// Workout domain treats Sat/Sun as auto rest; other domains have no auto rest days.
+    /// Derived from the schedule template for the workout domain: any weekday with no
+    /// training block is a rest day. Falls back to Sat/Sun when the schedule is unseeded.
+    /// Other domains have no auto rest days.
     private func autoRestDays(domain: StreakDomain) -> Set<Int> {
-        switch domain {
-        case .workout: return [6, 7]
-        default: return []
-        }
+        guard domain == .workout else { return [] }
+        let blocks = (try? modelContext.fetch(FetchDescriptor<ScheduleBlock>())) ?? []
+        let trainingDays = Set(
+            blocks.compactMap { block -> Int? in
+                guard !block.isOverride, block.type == .training, block.module != nil else { return nil }
+                return block.dayOfWeek
+            }
+        )
+        if trainingDays.isEmpty { return [6, 7] }
+        return Set(1...7).subtracting(trainingDays)
     }
 
     private func mostRecentCompletedDay(history: [Date: Bool]) -> Date? {
