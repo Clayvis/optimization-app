@@ -4,8 +4,8 @@
 <dict>
 	<key>com.apple.developer.healthkit</key>
 	<true/>
-	<key>com.apple.developer.healthkit.access</key>
-	<array/>
+	<key>com.apple.developer.healthkit.background-delivery</key>
+	<true/>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.com.rawlins.PersonalOptimization</string>
@@ -22,7 +22,7 @@
 	</array>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>com.rawlins.PersonalOptimization</string>
+		<string>$(AppIdentifierPrefix)com.rawlins.PersonalOptimization</string>
 	</array>
 </dict>
 </plist>
