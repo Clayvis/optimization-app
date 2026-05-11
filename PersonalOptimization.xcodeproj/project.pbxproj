@@ -164,6 +164,8 @@
 		74DC1BAD844A842C65F760B2 /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CE13FE68863483CD8470256 /* HealthKitService.swift */; };
 		75CE93E536D27DC0F3B0E6F7 /* WorkoutEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CADA8B9C2AAA96402E53588 /* WorkoutEvent.swift */; };
 		760CD108B7842712787F026C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CDD02E05635F577AB5F176A /* OnboardingView.swift */; };
+		AA41A001000000000000G101 /* ScheduleGenerationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FG01 /* ScheduleGenerationView.swift */; };
+		AA41A001000000000000G102 /* ScheduleDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FG02 /* ScheduleDiffView.swift */; };
 		76E75A6460C88A14D609D280 /* ImplementationIntention.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEC94E59CFCAF2416AA1153 /* ImplementationIntention.swift */; };
 		770D0755E191A08EBDD118DD /* LiftService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF05F9C5ED65B9EDF34C363 /* LiftService.swift */; };
 		77FB59D5842EFAAE0025483C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D571BDFBA1BA85E35E413CB /* Assets.xcassets */; };
@@ -486,6 +488,8 @@
 		3C1405D527E3E5318F280D4F /* TrainingWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingWatchView.swift; sourceTree = "<group>"; };
 		3C21B1F183A1B8E72B77E9EE /* SchemaV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV1.swift; sourceTree = "<group>"; };
 		3CDD02E05635F577AB5F176A /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		AA41A001000000000000FG01 /* ScheduleGenerationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schedule/AI/ScheduleGenerationView.swift; sourceTree = "<group>"; };
+		AA41A001000000000000FG02 /* ScheduleDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schedule/AI/ScheduleDiffView.swift; sourceTree = "<group>"; };
 		3D1014D613B8D66F40EA5159 /* LearningStreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningStreakCalculator.swift; sourceTree = "<group>"; };
 		3F89650DCA4480B234FA0171 /* SessionLifecycleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionLifecycleService.swift; sourceTree = "<group>"; };
 		3FF0F1E795AB55462D194D73 /* FastingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingService.swift; sourceTree = "<group>"; };
@@ -1068,6 +1072,8 @@
 				3CDD02E05635F577AB5F176A /* OnboardingView.swift */,
 				1F84967C0773B287E1F8B349 /* ProtocolDetailView.swift */,
 				FF3E8E2C56CA679596E1AC22 /* RootView.swift */,
+				AA41A001000000000000FG01 /* ScheduleGenerationView.swift */,
+				AA41A001000000000000FG02 /* ScheduleDiffView.swift */,
 				D2890BCBC13A3A36541B1425 /* SettingsView.swift */,
 				5B4A1D03EFC9DE01812670DF /* TodayView.swift */,
 			);
@@ -1534,6 +1540,8 @@
 				2A227B6DCC314887DA998D47 /* Achievement.swift in Sources */,
 				6B73F0CDF2A914042F1F0EC1 /* NotificationService.swift in Sources */,
 				760CD108B7842712787F026C /* OnboardingView.swift in Sources */,
+				AA41A001000000000000G101 /* ScheduleGenerationView.swift in Sources */,
+				AA41A001000000000000G102 /* ScheduleDiffView.swift in Sources */,
 				9F6122B6432265FEB3222A66 /* PartnerService.swift in Sources */,
 				00284E75632C7BB1BD6A2181 /* PartnerSettingsView.swift in Sources */,
 				A87525E6F1E5646C4D35C3E2 /* PersonalOptimizationApp.swift in Sources */,

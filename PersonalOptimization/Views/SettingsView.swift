@@ -55,6 +55,23 @@ struct SettingsView: View {
     /// Pre-populated mailto: URL for the 30-day TestFlight feedback loop.
     /// Subject + body templated so both Clay and his wife send structured
     /// notes. No infrastructure, no SDKs, no analytics — just email.
+    /// Friendly relative timestamp for "Last generated: ..." in the Schedule
+     /// section. Drops to absolute date when older than a week.
+    private func lastGeneratedText(_ date: Date) -> String {
+        let elapsed = Date().timeIntervalSince(date)
+        let day: TimeInterval = 86_400
+        switch elapsed {
+        case ..<3600:               return "just now"
+        case ..<day:                return "today"
+        case ..<(2 * day):          return "yesterday"
+        case ..<(7 * day):          return "\(Int(elapsed / day))d ago"
+        default:
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d"
+            return formatter.string(from: date)
+        }
+    }
+
     private func feedbackMailtoURL(profile: UserProfile?) -> URL? {
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let appBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
@@ -137,7 +154,20 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Schedule") {
+            Section {
+                NavigationLink {
+                    ScheduleGenerationView()
+                } label: {
+                    HStack {
+                        Label("Generate with AI", systemImage: "sparkles")
+                        if let last = profile.lastGeneratedAt {
+                            Spacer()
+                            Text(lastGeneratedText(last))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 NavigationLink {
                     ScheduleEditorView()
                 } label: {
@@ -152,6 +182,12 @@ struct SettingsView: View {
                     ImplementationIntentionsView()
                 } label: {
                     Label("Implementation intentions", systemImage: "arrow.right.circle.fill")
+                }
+            } header: {
+                Text("Schedule")
+            } footer: {
+                if profile.lastGeneratedAt == nil {
+                    Text("Build your week from goals + constraints, or pick a template.")
                 }
             }
 

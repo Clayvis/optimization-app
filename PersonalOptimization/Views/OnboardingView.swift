@@ -20,6 +20,7 @@ struct OnboardingView: View {
     @State private var hkRequested = false
     @State private var notifRequested = false
     @State private var seedingDone = false
+    @State private var showingAIGeneration = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -213,11 +214,51 @@ struct OnboardingView: View {
 
             ScrollView {
                 VStack(spacing: 8) {
+                    aiGenerateTile
                     ForEach(ScheduleTemplate.allCases) { template in
                         scheduleTemplateRow(template)
                     }
                 }
                 .padding(.horizontal, 24)
+            }
+        }
+    }
+
+    /// AI generation tile, sitting above the static templates. Presents the
+    /// intake form as a sheet (OnboardingView is a paged TabView, not a
+    /// NavigationStack, so a sheet is the right modal pattern here). Applying
+    /// the proposal lands the user back on this screen with the schedule
+    /// already seeded; they advance via the normal Next button.
+    @ViewBuilder
+    private var aiGenerateTile: some View {
+        Button {
+            showingAIGeneration = true
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "sparkles")
+                    .font(.title3)
+                    .foregroundStyle(.tint)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Build me a schedule (AI)")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Tell me your goals; I'll draft a week. You review before it lands.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.accentColor.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showingAIGeneration) {
+            NavigationStack {
+                ScheduleGenerationView()
             }
         }
     }
