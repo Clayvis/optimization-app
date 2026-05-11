@@ -26,6 +26,16 @@ struct ScheduleDiffView: View {
 
     var body: some View {
         List {
+            Section {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Nothing applied yet — tap Apply to make this your week.")
+                        .font(.callout.weight(.medium))
+                }
+                .padding(.vertical, 4)
+            }
+
             if !rationale.isEmpty {
                 Section {
                     Text(rationale)

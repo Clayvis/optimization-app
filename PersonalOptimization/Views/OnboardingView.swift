@@ -21,6 +21,10 @@ struct OnboardingView: View {
     @State private var notifRequested = false
     @State private var seedingDone = false
     @State private var showingAIGeneration = false
+    // M4.2 T0c: track explicit schedule choice during this onboarding session.
+    // Set when the user taps a template tile OR returns from the AI flow with
+    // an applied proposal. Gates the Continue button on the schedule step.
+    @State private var scheduleChosenInSession = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -258,7 +262,9 @@ struct OnboardingView: View {
         .buttonStyle(.plain)
         .sheet(isPresented: $showingAIGeneration) {
             NavigationStack {
-                ScheduleGenerationView()
+                ScheduleGenerationView(onApplied: {
+                    scheduleChosenInSession = true
+                })
             }
         }
     }
@@ -300,6 +306,7 @@ struct OnboardingView: View {
     private func applyScheduleTemplate(_ template: ScheduleTemplate) {
         scheduleTemplate = template
         _ = try? ScheduleTemplateApplier.apply(template, modelContext: modelContext)
+        scheduleChosenInSession = true
     }
 
     @ViewBuilder
@@ -396,9 +403,23 @@ struct OnboardingView: View {
         case 0: return true
         case 1: return true // permissions are optional but encouraged
         case 2: return true
-        case 3: return true
+        case 3:
+            // M4.2 T0c: schedule step requires an explicit choice. The user
+            // must either pick a template (non-blank or blank), or apply an
+            // AI-generated schedule (lastGeneratedAt is set). The blank
+            // template still counts as a choice because the user actively
+            // tapped it; Settings → Schedule remains available to refine.
+            return hasMadeScheduleChoice
         default: return true
         }
+    }
+
+    /// True when the user has tapped one of the template tiles or applied an
+    /// AI-generated schedule during this onboarding session.
+    private var hasMadeScheduleChoice: Bool {
+        if scheduleChosenInSession { return true }
+        if profile?.lastGeneratedAt != nil { return true }
+        return false
     }
 
     @ViewBuilder

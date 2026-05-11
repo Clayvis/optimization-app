@@ -146,6 +146,9 @@ struct ScheduleGenerationView: View {
             }
         }
         .onAppear { hydrateFromProfile() }
+        .onChange(of: intake) { _, newValue in
+            persistIntake(newValue)
+        }
     }
 
     private var canGenerate: Bool {
@@ -171,6 +174,18 @@ struct ScheduleGenerationView: View {
 
     private func hydrateFromProfile() {
         guard let profile = profiles.first else { return }
+
+        // M4.2 T0b: if the user filled out the intake form previously and
+        // dismissed without applying, restore those answers verbatim. This is
+        // the primary hydration path on re-entry. Profile defaults below only
+        // fill in fields the prior session didn't touch.
+        if let json = profile.lastIntakeJSON,
+           let data = json.data(using: .utf8),
+           let saved = try? JSONDecoder().decode(ScheduleIntake.self, from: data) {
+            intake = saved
+            return
+        }
+
         intake.equipmentAccess = profile.equipmentAccess
         intake.restrictionsCSV = profile.restrictionsCSV
         intake.weeklyTrainingTargetSessions = profile.weeklyTrainingTargetSessions
@@ -181,6 +196,16 @@ struct ScheduleGenerationView: View {
         if !existing.isEmpty {
             intake.anchorEvents = existing
         }
+    }
+
+    /// Writes the current intake to `UserProfile.lastIntakeJSON` so the form
+    /// hydrates next time the user opens it. Cheap — runs on each field edit.
+    private func persistIntake(_ intake: ScheduleIntake) {
+        guard let profile = profiles.first else { return }
+        guard let data = try? JSONEncoder().encode(intake),
+              let json = String(data: data, encoding: .utf8) else { return }
+        profile.lastIntakeJSON = json
+        try? modelContext.save()
     }
 
     private func addAnchor() {

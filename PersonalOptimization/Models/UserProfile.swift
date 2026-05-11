@@ -61,6 +61,20 @@ final class UserProfile {
     var anchorEventsCSV: String = ""
     var lastGeneratedAt: Date?
 
+    // M4.2 — Persist the user's most recent ScheduleIntake JSON so the form
+    // hydrates next time they open it (instead of losing all their typing on
+    // dismiss). Stored as a JSON string for forward compat — the intake
+    // shape may grow.
+    var lastIntakeJSON: String?
+
+    // M4.2 — "What are you optimizing?" CSV of OptimizationFocus raw values
+    // plus custom labels prefixed "custom:". Fed into both ScheduleAIService
+    // and CoachService prompts so generations + suggestions respect them.
+    var optimizationFocusesCSV: String = ""
+    /// Last time the routine "anything new you're sharpening?" Coach card
+    /// fired. Used by the 30-day cadence gate in TodayView.
+    var lastFocusPromptAt: Date?
+
     /// Parsed view of `anchorEventsCSV`. Empty CSV → empty array.
     /// Trims whitespace, drops empty tokens.
     var anchorEvents: [String] {

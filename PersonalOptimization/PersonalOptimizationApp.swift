@@ -17,9 +17,22 @@ struct PersonalOptimizationApp: App {
                 migrationPlan: AppMigrationPlan.self,
                 configurations: [config]
             )
+            // M4.2 T0a: Gate the bundled-schedule seed. New users (no profile
+            // yet, or onboardingCompleted == false) should NOT get Clay's
+            // bundled default_schedule.json — onboarding picks their schedule.
+            // Existing users (onboardingCompleted == true) on a fresh device
+            // wait for CloudKit to sync their data; seedIfNeeded is a stop-gap
+            // only if the sync hasn't populated their schedule.
             Task { @MainActor in
+                let context = container.mainContext
+                let profile = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first
+                let onboardingComplete = profile?.onboardingCompleted ?? false
+                guard onboardingComplete else {
+                    Logger.schedule.info("Skipping auto-seed: new install awaits onboarding choice")
+                    return
+                }
                 do {
-                    try ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)
+                    try ScheduleSeed.seedIfNeeded(modelContext: context)
                 } catch {
                     Logger.schedule.error("Seed failed: \(error.localizedDescription, privacy: .public)")
                 }
