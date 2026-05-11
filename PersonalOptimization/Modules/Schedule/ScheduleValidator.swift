@@ -20,6 +20,7 @@ enum ScheduleValidator {
         case invalidWeekday(blockIndex: Int, value: Int)
         case invalidTimeFormat(blockIndex: Int, field: String, value: String)
         case timeRangeInverted(blockIndex: Int, start: String, end: String)
+        case trainingBlockOutsideWindow(blockIndex: Int, start: String, end: String, windowStart: String, windowEnd: String)
 
         var errorDescription: String? {
             switch self {
@@ -39,6 +40,8 @@ enum ScheduleValidator {
                 return "Block \(i).\(field) = '\(value)' is not HH:mm."
             case .timeRangeInverted(let i, let start, let end):
                 return "Block \(i) has endTime \(end) before startTime \(start)."
+            case .trainingBlockOutsideWindow(let i, let start, let end, let ws, let we):
+                return "Training block \(i) (\(start)-\(end)) falls outside the user's stated training window \(ws)-\(we). Move it inside the window or change the type to recovery/learning/other."
             }
         }
     }
@@ -51,6 +54,14 @@ enum ScheduleValidator {
         let weeklyLiftMax: Int           // 6 default
         let knownModules: Set<String>    // explicit allowlist; null module is always valid
         let knownAnchors: Set<String>    // explicit allowlist; null anchor is always valid
+        // M4.2 followup: hours the user can actually train. Training-type
+        // blocks (lift / cardio / basketball / swim / etc.) must fall fully
+        // within [trainingWindowStart, trainingWindowEnd]. Non-training types
+        // (learning / recovery / family / transit / admin) are not checked
+        // — those routinely happen outside the training window.
+        let trainingWindowStartHour: Int   // 0 = no lower bound check
+        let trainingWindowEndHour: Int     // 24 = no upper bound check
+        let trainingTypeModules: Set<String>  // modules counted as "training"
 
         static let `default` = Constraints(
             sleepWindowStartHour: 22,
@@ -64,9 +75,16 @@ enum ScheduleValidator {
                 // (running, cycling, etc.) round-trip via CustomActivityTemplate
                 // — the user logs them through the Train tab.
                 "cardio", "running", "cycling", "walking", "hiit", "yoga", "hiking",
-                "japanese", "guitar"
+                "japanese", "guitar", "music"
             ],
-            knownAnchors: ["after_kid_dropoff", "after_coffee", "after_work", "after_dinner", "before_bed"]
+            knownAnchors: ["after_kid_dropoff", "after_coffee", "after_work", "after_dinner", "before_bed"],
+            trainingWindowStartHour: 0,
+            trainingWindowEndHour: 24,
+            trainingTypeModules: [
+                "lift_a", "lift_b",
+                "basketball", "swim",
+                "cardio", "running", "cycling", "walking", "hiit", "yoga", "hiking"
+            ]
         )
     }
 
@@ -122,6 +140,30 @@ enum ScheduleValidator {
             if let s = parseMinutes(block.startTime), let e = parseMinutes(block.endTime), e > s,
                intersectsSleep(startMin: s, endMin: e, constraints: constraints) {
                 errors.append(.sleepWindowIntersect(blockIndex: i, day: block.dayOfWeek))
+            }
+
+            // M4.2 followup: training-type blocks must fall fully inside the
+            // user's stated training window. Skipped when the window is the
+            // open default (0..24).
+            let trainingWindowIsConstraining = constraints.trainingWindowStartHour > 0
+                || constraints.trainingWindowEndHour < 24
+            if trainingWindowIsConstraining,
+               let module = block.module,
+               constraints.trainingTypeModules.contains(module),
+               let s = parseMinutes(block.startTime),
+               let e = parseMinutes(block.endTime),
+               e > s {
+                let ws = constraints.trainingWindowStartHour * 60
+                let we = constraints.trainingWindowEndHour * 60
+                if s < ws || e > we {
+                    errors.append(.trainingBlockOutsideWindow(
+                        blockIndex: i,
+                        start: block.startTime,
+                        end: block.endTime,
+                        windowStart: String(format: "%02d:00", constraints.trainingWindowStartHour),
+                        windowEnd: String(format: "%02d:00", constraints.trainingWindowEndHour)
+                    ))
+                }
             }
         }
 

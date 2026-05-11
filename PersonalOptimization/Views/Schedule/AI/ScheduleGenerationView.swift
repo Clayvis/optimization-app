@@ -50,16 +50,20 @@ struct ScheduleGenerationView: View {
                 }
             }
 
-            Section("Training window") {
-                Stepper("Earliest: \(format(intake.earliestTrainingHour))",
+            Section {
+                Stepper("Earliest I can start: \(format(intake.earliestTrainingHour))",
                         value: $intake.earliestTrainingHour, in: 0...23)
-                Stepper("Latest: \(format(intake.latestTrainingHour))",
+                Stepper("Latest I can finish: \(format(intake.latestTrainingHour))",
                         value: $intake.latestTrainingHour, in: 0...23)
                 Stepper("Target sessions/week: \(intake.weeklyTrainingTargetSessions)",
                         value: $intake.weeklyTrainingTargetSessions, in: 1...7)
                 Stepper("Realistic time/day: \(intake.availableTimeMinutesPerDay) min",
                         value: $intake.availableTimeMinutesPerDay,
                         in: 30...480, step: 15)
+            } header: {
+                Text("When can you actually work out?")
+            } footer: {
+                Text("The AI will only schedule training blocks (lifts, cardio, etc.) between these times. Mornings before kids, lunch breaks, evenings after dinner — pick what's real. Learning and recovery blocks aren't restricted to this window.")
             }
 
             Section {

@@ -122,6 +122,59 @@ final class ScheduleValidatorTests: XCTestCase {
         XCTAssertTrue(errors.contains { if case .sleepWindowIntersect = $0 { return true }; return false })
     }
 
+    // MARK: - Training window (M4.2 followup)
+
+    /// Constraints with a constraining 17:00-20:00 training window —
+    /// "I can only work out after work but before kid bedtime."
+    private var afterWorkOnly: ScheduleValidator.Constraints {
+        ScheduleValidator.Constraints(
+            sleepWindowStartHour: 22,
+            sleepWindowEndHour: 6,
+            weeklyLiftMax: 6,
+            knownModules: ScheduleValidator.Constraints.default.knownModules,
+            knownAnchors: ScheduleValidator.Constraints.default.knownAnchors,
+            trainingWindowStartHour: 17,
+            trainingWindowEndHour: 20,
+            trainingTypeModules: ScheduleValidator.Constraints.default.trainingTypeModules
+        )
+    }
+
+    func test_trainingWindow_morningLiftWhenUserSaysEvenings_caught() {
+        // User said evenings; AI tried a 6 AM lift anyway.
+        let blocks = [block(day: 1, "06:00", "07:00", module: "lift_a")]
+        let errors = ScheduleValidator.collect(blocks, against: afterWorkOnly)
+        XCTAssertTrue(errors.contains { if case .trainingBlockOutsideWindow = $0 { return true }; return false })
+    }
+
+    func test_trainingWindow_blockInsideWindow_passes() throws {
+        let blocks = [block(day: 1, "18:00", "19:00", module: "lift_a")]
+        XCTAssertNoThrow(try ScheduleValidator.validate(blocks, against: afterWorkOnly))
+    }
+
+    func test_trainingWindow_endTimeOverflow_caught() {
+        // Starts inside the window but ends after.
+        let blocks = [block(day: 1, "19:30", "21:00", module: "running")]
+        let errors = ScheduleValidator.collect(blocks, against: afterWorkOnly)
+        XCTAssertTrue(errors.contains { if case .trainingBlockOutsideWindow = $0 { return true }; return false })
+    }
+
+    func test_trainingWindow_learningBlockOutsideWindow_allowed() throws {
+        // Learning + recovery + family aren't training; they're free to live
+        // outside the workout window.
+        let blocks = [
+            block(day: 1, "06:00", "06:30", type: "learning", module: "japanese"),
+            block(day: 1, "21:30", "22:00", type: "recovery", module: nil)
+        ]
+        XCTAssertNoThrow(try ScheduleValidator.validate(blocks, against: afterWorkOnly))
+    }
+
+    func test_trainingWindow_openDefault_noConstraint() throws {
+        // Default 0..24 window is "no constraint" — the validator should not
+        // flag any block that's otherwise valid.
+        let blocks = [block(day: 1, "06:00", "07:00", module: "lift_a")]
+        XCTAssertNoThrow(try ScheduleValidator.validate(blocks, against: defaults))
+    }
+
     // MARK: - Weekly volume
 
     func test_weeklyLiftLimit_exceeded() {

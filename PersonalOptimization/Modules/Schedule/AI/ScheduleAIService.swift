@@ -172,7 +172,10 @@ final class ScheduleAIService {
             sleepWindowEndHour: intake.sleepEndHour,
             weeklyLiftMax: 6,
             knownModules: ScheduleValidator.Constraints.default.knownModules,
-            knownAnchors: knownAnchors
+            knownAnchors: knownAnchors,
+            trainingWindowStartHour: intake.earliestTrainingHour,
+            trainingWindowEndHour: intake.latestTrainingHour,
+            trainingTypeModules: ScheduleValidator.Constraints.default.trainingTypeModules
         )
         let errors = ScheduleValidator.collect(validatorBlocks, against: constraints)
         if !errors.isEmpty {
