@@ -35,6 +35,60 @@ final class FakeHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
             _savedWorkouts.append((activityType, start, end, totalEnergyBurnedKcal, totalDistanceMeters))
         }
     }
+
+    // MARK: - M4.2 Fetch surface stubs
+
+    private var _stubbedLatest: [String: Double] = [:]
+    private var _stubbedSum: [String: Double] = [:]
+    private var _stubbedSleepHours: Double?
+    private var _stubbedMindfulMin: Double?
+    private var _stubbedWorkouts: [HKWorkout] = []
+
+    func stubLatest(_ identifier: HKQuantityTypeIdentifier, value: Double?) {
+        lock.withLock {
+            if let value { _stubbedLatest[identifier.rawValue] = value }
+            else { _stubbedLatest.removeValue(forKey: identifier.rawValue) }
+        }
+    }
+
+    func stubSum(_ identifier: HKQuantityTypeIdentifier, value: Double?) {
+        lock.withLock {
+            if let value { _stubbedSum[identifier.rawValue] = value }
+            else { _stubbedSum.removeValue(forKey: identifier.rawValue) }
+        }
+    }
+
+    func stubSleepHours(_ value: Double?) {
+        lock.withLock { _stubbedSleepHours = value }
+    }
+
+    func stubMindfulMinutes(_ value: Double?) {
+        lock.withLock { _stubbedMindfulMin = value }
+    }
+
+    func fetchLatestQuantity(_ identifier: HKQuantityTypeIdentifier,
+                             unit: HKUnit,
+                             on date: Date) async throws -> Double? {
+        lock.withLock { _stubbedLatest[identifier.rawValue] }
+    }
+
+    func fetchSumQuantity(_ identifier: HKQuantityTypeIdentifier,
+                          unit: HKUnit,
+                          for date: Date) async throws -> Double? {
+        lock.withLock { _stubbedSum[identifier.rawValue] }
+    }
+
+    func fetchSleepHours(for date: Date) async throws -> Double? {
+        lock.withLock { _stubbedSleepHours }
+    }
+
+    func fetchMindfulMinutes(for date: Date) async throws -> Double? {
+        lock.withLock { _stubbedMindfulMin }
+    }
+
+    func fetchWorkouts(in range: DateInterval) async throws -> [HKWorkout] {
+        lock.withLock { _stubbedWorkouts }
+    }
 }
 
 final class FakeHealthKitServiceTests: XCTestCase {

@@ -189,4 +189,15 @@ final class FailingHealthKitService: HealthKitServiceProtocol, @unchecked Sendab
         lock.withLock { _callCount += 1 }
         throw FailingError.simulated
     }
+
+    // M4.2: protocol surface expansion. All fetches return nil for this fake.
+    func fetchLatestQuantity(_ identifier: HKQuantityTypeIdentifier,
+                             unit: HKUnit,
+                             on date: Date) async throws -> Double? { nil }
+    func fetchSumQuantity(_ identifier: HKQuantityTypeIdentifier,
+                          unit: HKUnit,
+                          for date: Date) async throws -> Double? { nil }
+    func fetchSleepHours(for date: Date) async throws -> Double? { nil }
+    func fetchMindfulMinutes(for date: Date) async throws -> Double? { nil }
+    func fetchWorkouts(in range: DateInterval) async throws -> [HKWorkout] { [] }
 }

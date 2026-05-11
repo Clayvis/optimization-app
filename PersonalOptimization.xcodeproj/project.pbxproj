@@ -166,6 +166,7 @@
 		746F1AB26B1B09D5C6462AC9 /* default_schedule_blank.json in Resources */ = {isa = PBXBuildFile; fileRef = 21796439F3D7569CB9B4EF96 /* default_schedule_blank.json */; };
 		747E0FC60C3D5717A38808E8 /* CompletionHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5093DF24E88D099B7076C10A /* CompletionHistory.swift */; };
 		74DC1BAD844A842C65F760B2 /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CE13FE68863483CD8470256 /* HealthKitService.swift */; };
+		AA41A002000000000000HK01 /* HealthKitSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A002000000000000FHK1 /* HealthKitSyncService.swift */; };
 		75CE93E536D27DC0F3B0E6F7 /* WorkoutEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CADA8B9C2AAA96402E53588 /* WorkoutEvent.swift */; };
 		760CD108B7842712787F026C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CDD02E05635F577AB5F176A /* OnboardingView.swift */; };
 		AA41A001000000000000G101 /* ScheduleGenerationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FG01 /* ScheduleGenerationView.swift */; };
@@ -444,6 +445,7 @@
 		0AA42BB296B8E440928F2531 /* ScheduleSuggestionInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSuggestionInbox.swift; sourceTree = "<group>"; };
 		0C555C5B5591BB50DFF12CF3 /* PersonalOptimizationApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalOptimizationApp.swift; sourceTree = "<group>"; };
 		0CE13FE68863483CD8470256 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
+		AA41A002000000000000FHK1 /* HealthKitSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitSyncService.swift; sourceTree = "<group>"; };
 		0DA28CA455A97F5CFFCB0414 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
 		1062CC2459C7A93D354C83F2 /* ActivityArchiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityArchiveService.swift; sourceTree = "<group>"; };
 		107F1D4D82B6EB9F1FC2EF78 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -1027,6 +1029,7 @@
 				C8F222D2CE0A22931521B4A6 /* DevSecretsBootstrap.swift */,
 				96AA8E08857C869653AF7A25 /* FirstLaunchTracker.swift */,
 				0CE13FE68863483CD8470256 /* HealthKitService.swift */,
+				AA41A002000000000000FHK1 /* HealthKitSyncService.swift */,
 				90525181D5415FCDC1A8AD83 /* JSONExportService.swift */,
 				29B2ED03B44C2BC7563DECA8 /* JSONImportService.swift */,
 				9FDEFCFC6D24D7AF6DB1D56F /* KeychainService.swift */,
@@ -1510,6 +1513,7 @@
 				B2590EA43AA467BA42CD498F /* FastingView.swift in Sources */,
 				EE12EA7B688C0A40D08AA22D /* FreezeApplication.swift in Sources */,
 				956FDCF1B79C09CFF8407918 /* HealthKitService.swift in Sources */,
+				AA41A002000000000000HK01 /* HealthKitSyncService.swift in Sources */,
 				011F883361A83F57B4AED2C8 /* HealthKitWriteFailure.swift in Sources */,
 				9DD36C9ABAA7B70B56C61A2A /* HydrationEntry.swift in Sources */,
 				2960497AAA345C8DCE2559C9 /* HydrationService.swift in Sources */,

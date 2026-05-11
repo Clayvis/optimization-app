@@ -39,8 +39,18 @@ struct PersonalOptimizationApp: App {
             }
             DevSecretsBootstrap.bootstrapIfNeeded()
             FirstLaunchTracker.shared.recordIfNeeded()
+            // M4.2: one-shot keychain migration. Existing users get their
+            // API key moved to the iCloud-synced item so it survives an
+            // uninstall + reinstall. Idempotent.
+            KeychainService.shared.migrateApiKeyToICloudSynced()
             ArchiveBackgroundScheduler.registerHandler(modelContainer: container)
             ArchiveBackgroundScheduler.runRollupNow(modelContainer: container)
+            // M4.2: pull today's HealthKit data into DailyLog on launch.
+            // No-op when HK isn't authorized; each fetch returns nil silently.
+            Task { @MainActor in
+                let service = HealthKitSyncService(modelContext: container.mainContext)
+                _ = await service.syncToday()
+            }
             // Activate phone↔watch bridge so the watch can push session events
             // back in real time. Cheap: the WC session activates async and is
             // a no-op on devices without a paired Watch.

@@ -21,6 +21,32 @@ final class DailyLog {
     var weightLbs: Double?
     var notes: String?
 
+    // M4.2 — HealthKit-derived fields. All optional; defaults to nil; populated
+    // by HealthKitSyncService.syncToday. The Coach and TrendAnalytics surface
+    // these when present and ignore them when nil — no fallback synthesis.
+    var respiratoryRate: Double?
+    var oxygenSaturationPercent: Double?
+    var bodyFatPercentage: Double?
+    var leanBodyMassLbs: Double?
+    var heartRateRecovery1minBpm: Int?
+    var appleExerciseMinutes: Int?
+    var appleStandHours: Int?
+    var distanceMeters: Double?
+    var environmentalAudioDb: Double?
+    var wristTemperatureCelsius: Double?
+    var mindfulMinutes: Int?
+    var dietaryKcal: Double?
+    var dietaryProteinG: Double?
+    var dietaryCarbsG: Double?
+    var dietaryFatG: Double?
+    var caffeineMg: Double?
+    var timeInDaylightMinutes: Int?
+    var stepCount: Int?
+
+    /// Timestamp of the last HealthKitSyncService write. Used to throttle
+    /// repeated pulls and surface "last refreshed" in the UI.
+    var healthKitSyncedAt: Date?
+
     init(date: Date) {
         self.date = Calendar.current.startOfDay(for: date)
     }

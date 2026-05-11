@@ -27,7 +27,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Tracks sleep, heart rate, and HRV to power character emotional state and weekly review insights.</string>
+	<string>Reads sleep, heart rate, HRV, recovery signals, activity, body composition, mindful minutes, and nutrition to personalize today's plan and the AI coach. All data stays on your devices and in your iCloud private database.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Logs workouts and water intake to Apple Health for cross-app integration.</string>
 	<key>NSSupportsLiveActivities</key>
