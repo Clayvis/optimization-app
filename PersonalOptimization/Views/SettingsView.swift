@@ -1,5 +1,8 @@
 import SwiftUI
 import SwiftData
+import CloudKit
+import CoreTransferable
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -8,6 +11,13 @@ struct SettingsView: View {
     @State private var graceFeedback: String?
     @State private var showingKeyEntry = false
     @State private var apiKeyStatus: APIKeyStatus = .unknown
+    // M4.2 — Data section state
+    @State private var lastSyncDate: Date?
+    @State private var hkSyncBusy: Bool = false
+    @State private var hkSyncFeedback: String?
+    @State private var iCloudAccountStatus: CKAccountStatus = .couldNotDetermine
+    @State private var exportData: Data?
+    @State private var exportFeedback: String?
 
     enum APIKeyStatus {
         case unknown, set, missing
@@ -55,6 +65,156 @@ struct SettingsView: View {
     /// Pre-populated mailto: URL for the 30-day TestFlight feedback loop.
     /// Subject + body templated so both Clay and his wife send structured
     /// notes. No infrastructure, no SDKs, no analytics — just email.
+    // MARK: - M4.2 Data section
+
+    @ViewBuilder
+    private var dataSection: some View {
+        Section {
+            Button {
+                Task { await refreshFromHealthKit() }
+            } label: {
+                HStack {
+                    Label("Refresh from HealthKit", systemImage: "heart.text.square")
+                    Spacer()
+                    if hkSyncBusy { ProgressView() }
+                }
+            }
+            .disabled(hkSyncBusy)
+
+            if exportData == nil {
+                Button {
+                    prepareExport()
+                } label: {
+                    Label("Prepare export", systemImage: "square.and.arrow.up")
+                }
+            } else if let data = exportData {
+                ShareLink(item: ExportFile(data: data),
+                          preview: SharePreview("PersonalOptimization-export.json")) {
+                    Label("Share export (\(formattedSize(data.count)))", systemImage: "square.and.arrow.up.fill")
+                }
+            }
+
+            HStack {
+                Label("iCloud account", systemImage: iCloudIcon)
+                Spacer()
+                Text(iCloudStatusText)
+                    .foregroundStyle(iCloudStatusColor)
+                    .font(.caption)
+            }
+
+            if let lastSyncDate {
+                HStack {
+                    Label("Last HealthKit sync", systemImage: "clock")
+                    Spacer()
+                    Text(relativeText(lastSyncDate))
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+            }
+
+            if let hkSyncFeedback {
+                Text(hkSyncFeedback)
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
+            if let exportFeedback {
+                Text(exportFeedback)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Data")
+        } footer: {
+            Text("Your data lives in iCloud private database. Reinstalling the app restores your schedule, logs, streaks, and AI history when you sign back in with the same Apple ID. The Anthropic API key syncs via iCloud Keychain.")
+        }
+        .task {
+            await loadDataSectionState()
+        }
+    }
+
+    private var iCloudIcon: String {
+        switch iCloudAccountStatus {
+        case .available: return "icloud.fill"
+        case .noAccount: return "icloud.slash"
+        default: return "icloud"
+        }
+    }
+
+    private var iCloudStatusText: String {
+        switch iCloudAccountStatus {
+        case .available:                return "Signed in"
+        case .noAccount:                return "Not signed in"
+        case .restricted:               return "Restricted"
+        case .temporarilyUnavailable:   return "Unavailable"
+        case .couldNotDetermine:        return "Checking…"
+        @unknown default:               return "Unknown"
+        }
+    }
+
+    private var iCloudStatusColor: Color {
+        switch iCloudAccountStatus {
+        case .available: return .green
+        case .noAccount, .restricted: return .orange
+        default: return .secondary
+        }
+    }
+
+    private func loadDataSectionState() async {
+        // Most recent DailyLog timestamp tells us when HK last wrote.
+        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let mostRecentSync = logs.compactMap(\.healthKitSyncedAt).max()
+        lastSyncDate = mostRecentSync
+
+        // iCloud account status — cheap call to CKContainer.
+        let container = CKContainer(identifier: "iCloud.com.rawlins.PersonalOptimization")
+        if let status = try? await container.accountStatus() {
+            iCloudAccountStatus = status
+        }
+    }
+
+    private func refreshFromHealthKit() async {
+        hkSyncBusy = true
+        hkSyncFeedback = nil
+        defer { hkSyncBusy = false }
+
+        // Request auth (no-op if already granted) then sync today.
+        _ = try? await LiveHealthKitService.shared.requestAuthorization()
+        let service = HealthKitSyncService(modelContext: modelContext)
+        _ = await service.syncToday()
+
+        lastSyncDate = Date()
+        hkSyncFeedback = "Refreshed."
+    }
+
+    private func prepareExport() {
+        do {
+            let data = try JSONExportService.export(modelContext: modelContext)
+            exportData = data
+            exportFeedback = "Ready to share — tap above."
+        } catch {
+            exportFeedback = "Export failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func relativeText(_ date: Date) -> String {
+        let elapsed = Date().timeIntervalSince(date)
+        let day: TimeInterval = 86_400
+        switch elapsed {
+        case ..<60: return "just now"
+        case ..<3600: return "\(Int(elapsed / 60))m ago"
+        case ..<day:  return "\(Int(elapsed / 3600))h ago"
+        case ..<(7 * day): return "\(Int(elapsed / day))d ago"
+        default:
+            let f = DateFormatter()
+            f.dateFormat = "MMM d"
+            return f.string(from: date)
+        }
+    }
+
+    private func formattedSize(_ byteCount: Int) -> String {
+        ByteCountFormatter().string(fromByteCount: Int64(byteCount))
+    }
+
     /// Friendly relative timestamp for "Last generated: ..." in the Schedule
      /// section. Drops to absolute date when older than a week.
     private func lastGeneratedText(_ date: Date) -> String {
@@ -110,6 +270,7 @@ struct SettingsView: View {
     private func profileForm(profile: UserProfile) -> some View {
         @Bindable var profile = profile
         Form {
+            dataSection
             Section("Profile") {
                 LabeledContent("Name") {
                     TextField("Name", text: $profile.name)
@@ -388,6 +549,20 @@ struct SettingsView: View {
         } footer: {
             Text("Sick day covers today. Travel mode covers the next \(travelDays) days. Streaks are preserved through ledger entries; nothing fakes a workout.")
         }
+    }
+}
+
+/// Transferable wrapper for ShareLink. ExportFile wraps the JSON Data with
+/// the correct UTI + filename so the iOS share sheet treats it as a
+/// downloadable .json file rather than raw text.
+struct ExportFile: Transferable {
+    let data: Data
+
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: .json) { file in
+            file.data
+        }
+        .suggestedFileName("PersonalOptimization-export.json")
     }
 }
 

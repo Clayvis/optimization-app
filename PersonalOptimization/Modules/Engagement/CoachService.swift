@@ -26,6 +26,19 @@ struct CoachContext: Sendable {
     var motivationStyle: String
     var customStylePrompt: String?
 
+    // M4.2 — HealthKit-derived signals from DailyLog. Only the day-to-day
+    // high-signal fields are surfaced to Claude; slow trends (body fat,
+    // wrist temperature) belong in TrendAnalyticsService aggregates.
+    var heartRateRecovery1minBpm: Int?
+    var respiratoryRateToday: Double?
+    var mindfulMinutesToday: Int?
+    var dietaryKcalToday: Double?
+    var caffeineMgToday: Double?
+    var timeInDaylightMinutesToday: Int?
+    var appleExerciseMinutesToday: Int?
+    var bodyFatPercentage: Double?
+    var optimizationFocuses: [String]
+
     /// Compact, deterministic dump used as the user content of the Claude API call,
     /// and persisted alongside the insight for debugging/audit.
     var summaryForPrompt: String {
@@ -42,6 +55,36 @@ struct CoachContext: Sendable {
         if let hr = restingHRToday { lines.append("Resting HR: \(hr) bpm.") }
         if let hrv = hrvRmssdToday { lines.append("HRV (RMSSD): \(String(format: "%.0f", hrv)).") }
         if let steps = stepsToday { lines.append("Steps today: \(steps).") }
+
+        // M4.2 — HealthKit-derived signals, surfaced only when present.
+        if let recovery = heartRateRecovery1minBpm {
+            lines.append("HR recovery (1 min): \(recovery) bpm.")
+        }
+        if let rr = respiratoryRateToday {
+            lines.append("Respiratory rate: \(String(format: "%.1f", rr))/min.")
+        }
+        if let exercise = appleExerciseMinutesToday {
+            lines.append("Apple exercise minutes today: \(exercise).")
+        }
+        if let mindful = mindfulMinutesToday, mindful > 0 {
+            lines.append("Mindful minutes today: \(mindful).")
+        }
+        if let kcal = dietaryKcalToday {
+            lines.append("Dietary kcal today: \(Int(kcal)).")
+        }
+        if let caffeine = caffeineMgToday, caffeine > 0 {
+            lines.append("Caffeine today: \(Int(caffeine)) mg.")
+        }
+        if let daylight = timeInDaylightMinutesToday {
+            lines.append("Time in daylight today: \(daylight) min.")
+        }
+        if let bf = bodyFatPercentage {
+            lines.append("Body fat: \(String(format: "%.1f", bf))%.")
+        }
+        if !optimizationFocuses.isEmpty {
+            lines.append("Optimization focuses: \(optimizationFocuses.joined(separator: ", ")).")
+        }
+
         lines.append("Mascot state: \(mascotState).")
         return lines.joined(separator: "\n")
     }
@@ -697,6 +740,8 @@ final class CoachService {
                 return targets.rest.min
             } ?? 64
 
+        let focuses = [OptimizationFocus].fromCSV(profile.optimizationFocusesCSV)
+            .map(\.displayName)
         return CoachContext(
             protocolAdherenceText: summary.displayText,
             workoutStreakDays: workout,
@@ -714,10 +759,19 @@ final class CoachService {
             sleepHoursLastNight: todayLog?.sleepHours,
             restingHRToday: todayLog?.restingHR,
             hrvRmssdToday: todayLog?.hrvRmssd,
-            stepsToday: nil,
+            stepsToday: todayLog?.stepCount,
             mascotState: mascotState,
             motivationStyle: profile.motivationStyle,
-            customStylePrompt: profile.customStylePrompt
+            customStylePrompt: profile.customStylePrompt,
+            heartRateRecovery1minBpm: todayLog?.heartRateRecovery1minBpm,
+            respiratoryRateToday: todayLog?.respiratoryRate,
+            mindfulMinutesToday: todayLog?.mindfulMinutes,
+            dietaryKcalToday: todayLog?.dietaryKcal,
+            caffeineMgToday: todayLog?.caffeineMg,
+            timeInDaylightMinutesToday: todayLog?.timeInDaylightMinutes,
+            appleExerciseMinutesToday: todayLog?.appleExerciseMinutes,
+            bodyFatPercentage: todayLog?.bodyFatPercentage,
+            optimizationFocuses: focuses
         )
     }
 

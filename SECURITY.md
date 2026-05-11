@@ -129,8 +129,32 @@ Implementation rules:
 - API key NEVER logged.
 - API key NEVER written to UserDefaults, plist, or JSON export.
 - API key NEVER printed to console even in debug builds.
-- API key access uses `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` (no iCloud Keychain sync).
+- API key access uses `kSecAttrAccessibleAfterFirstUnlock` with `kSecAttrSynchronizable: true` (M4.2 onward). The key survives uninstall AND syncs to the user's other Apple devices via iCloud Keychain. One-shot `migrateApiKeyToICloudSynced()` runs on launch to relocate any legacy `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` items.
 - Tests for KeychainService run on simulator only (Keychain available there).
+
+## Persistence guarantees (M4.2)
+
+Single source of truth for what survives an uninstall + reinstall when the user signs back in with the same Apple ID:
+
+| Data | Survives uninstall? | Mechanism |
+|---|---|---|
+| Schedule blocks | Yes | SwiftData + CloudKit private DB |
+| Daily logs (incl. HealthKit-derived fields) | Yes | SwiftData + CloudKit private DB |
+| Workout sessions (lift / basketball / swim / custom) | Yes | SwiftData + CloudKit private DB |
+| Streak counters + history | Yes | SwiftData + CloudKit private DB |
+| Coach memory + insights + schedule suggestions | Yes | SwiftData + CloudKit private DB |
+| Schedule generation runs (AI audit trail) | Yes | SwiftData + CloudKit private DB |
+| User profile + optimization focuses + anchor events | Yes | SwiftData + CloudKit private DB |
+| Anthropic API key | Yes | iCloud Keychain (M4.2 onward) |
+| HealthKit history | Yes (independent of our app) | Apple Health app owns the store |
+
+What does NOT survive uninstall:
+- In-progress Live Activity tokens (re-created next session).
+- Transient pomodoro timer state (in-memory only).
+- Notification request IDs (re-registered on launch when the schedule is read).
+- Simulator-only test data (lives in the simulator's per-device sandbox).
+
+User-facing surface: Settings → Data section (M4.2) shows iCloud account status, last HealthKit sync timestamp, an "Export full history" affordance (JSON via `JSONExportService`), and a "Refresh from HealthKit" button that triggers `HealthKitSyncService.syncToday()` on demand.
 
 ## Privacy Manifest
 
