@@ -14,6 +14,7 @@ enum OptimizationFocus: Equatable, Hashable, Sendable {
     case music
     case strength
     case endurance
+    case cardio
     case fasting
     case sleepQuality
     case deepWork
@@ -22,8 +23,9 @@ enum OptimizationFocus: Equatable, Hashable, Sendable {
     case custom(String)
 
     static let builtIn: [OptimizationFocus] = [
-        .language, .music, .strength, .endurance,
-        .fasting, .sleepQuality, .deepWork, .mobility, .nutrition
+        .strength, .cardio, .endurance, .mobility,
+        .language, .music, .deepWork,
+        .fasting, .sleepQuality, .nutrition
     ]
 
     /// CSV-friendly raw value. Custom labels are prefixed "custom:" so a CSV
@@ -34,6 +36,7 @@ enum OptimizationFocus: Equatable, Hashable, Sendable {
         case .music:        return "music"
         case .strength:     return "strength"
         case .endurance:    return "endurance"
+        case .cardio:       return "cardio"
         case .fasting:      return "fasting"
         case .sleepQuality: return "sleep_quality"
         case .deepWork:     return "deep_work"
@@ -58,6 +61,7 @@ enum OptimizationFocus: Equatable, Hashable, Sendable {
         case "music":         self = .music
         case "strength":      self = .strength
         case "endurance":     self = .endurance
+        case "cardio":        self = .cardio
         case "fasting":       self = .fasting
         case "sleep_quality": self = .sleepQuality
         case "deep_work":     self = .deepWork
@@ -74,6 +78,7 @@ enum OptimizationFocus: Equatable, Hashable, Sendable {
         case .music:        return "Music"
         case .strength:     return "Strength"
         case .endurance:    return "Endurance"
+        case .cardio:       return "Cardio"
         case .fasting:      return "Fasting cadence"
         case .sleepQuality: return "Sleep quality"
         case .deepWork:     return "Deep work"
@@ -90,6 +95,7 @@ enum OptimizationFocus: Equatable, Hashable, Sendable {
         case .music:        return "music.note"
         case .strength:     return "figure.strengthtraining.traditional"
         case .endurance:    return "figure.run"
+        case .cardio:       return "heart.fill"
         case .fasting:      return "hourglass"
         case .sleepQuality: return "moon.zzz.fill"
         case .deepWork:     return "brain.head.profile"

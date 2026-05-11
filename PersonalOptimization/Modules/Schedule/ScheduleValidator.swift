@@ -56,7 +56,16 @@ enum ScheduleValidator {
             sleepWindowStartHour: 22,
             sleepWindowEndHour: 6,
             weeklyLiftMax: 6,
-            knownModules: ["lift_a", "lift_b", "basketball", "swim", "japanese", "guitar"],
+            knownModules: [
+                "lift_a", "lift_b",
+                "basketball", "swim",
+                // M4.2 followup: cardio is its own first-class module so the
+                // AI can schedule generic cardio days. Specific activity types
+                // (running, cycling, etc.) round-trip via CustomActivityTemplate
+                // — the user logs them through the Train tab.
+                "cardio", "running", "cycling", "walking", "hiit", "yoga", "hiking",
+                "japanese", "guitar"
+            ],
             knownAnchors: ["after_kid_dropoff", "after_coffee", "after_work", "after_dinner", "before_bed"]
         )
     }

@@ -29,6 +29,9 @@ struct TrainingHubView: View {
                     NavigationLink(destination: SwimSessionView()) {
                         startRow(icon: "figure.pool.swim", title: "Swim", subtitle: "McTureous, 25m")
                     }
+                    NavigationLink(destination: CustomActivitiesSettingsView()) {
+                        startRow(icon: "heart.fill", title: "Cardio", subtitle: "Run, walk, cycle, HIIT, yoga, hike")
+                    }
                     CustomActivitiesQuickList()
                 }
 

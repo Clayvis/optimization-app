@@ -243,6 +243,9 @@ struct LiftSessionView: View {
             case .endurance:
                 return ("Endurance",
                         "12-15 reps, 60-90s rest, RPE 7. Stay smooth, breathe between sets.")
+            case .cardio:
+                return ("Cardio support",
+                        "Keep this short. 5 main lifts, 8-10 reps, 90s rest. Save legs for run/bike days.")
             case .mobility:
                 return ("Mobility",
                         "Lighter weight, slower negatives. Full range over heavy. Pause at end positions.")

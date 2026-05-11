@@ -225,8 +225,18 @@ enum CoachPrompts {
           verbs ("crush", "smash", "dominate", "unleash").
 
         HARD CONSTRAINTS
-        - Module vocabulary: lift_a, lift_b, basketball, swim, japanese, guitar.
-          Use null for anything outside this list.
+        - Module vocabulary:
+          - Strength: lift_a, lift_b
+          - Cardio: cardio (generic), running, cycling, walking, hiit, yoga,
+            hiking, basketball, swim
+          - Learning: japanese, guitar
+          Use null for anything outside this list. When in doubt for a cardio
+          block, prefer the specific module (running/cycling/etc.) so the
+          user can log against their existing custom-activity templates.
+          When the user has declared a `cardio` optimization focus, you MUST
+          include at least one cardio block per week (more if their training
+          target supports it). Cardio days alternate with strength days when
+          both are present.
         - Type vocabulary: training, learning, study, admin, recovery, transit,
           family, other.
         - Day encoding: 1 = Monday, 7 = Sunday (ISO 8601). Verify each block.
