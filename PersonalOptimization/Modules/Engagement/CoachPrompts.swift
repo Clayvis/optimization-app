@@ -140,9 +140,18 @@ enum CoachPrompts {
           "changePayload": { /* model-specific payload */ }
         }
 
+        MODULE VOCABULARY (use the specific module when proposing changes)
+        - Strength: lift_a, lift_b
+        - Cardio: cardio (generic), running, cycling, walking, hiit, yoga,
+          hiking, basketball, swim
+        - Learning: japanese, guitar, music
+        When citing a skipped or shifted block, name the SPECIFIC module
+        ("you keep skipping Wed run" not "you keep skipping Wed cardio")
+        and surface the module name in `changePayload.module`.
+
         Rules:
         - Suggest at most one change per call.
-        - Anchor to the patterns provided. Cite the data inline (e.g., "you've shifted Wed lift 4 weeks running").
+        - Anchor to the patterns provided. Cite the data inline (e.g., "you've shifted Wed run 4 weeks running" or "Tue cycle has slid an average of 47 min later this month").
         - Identity-framed copy. No em dashes. No filler.
         - If patterns are weak (confidence < 0.5 across the board), output:
           {"summary": "no schedule change recommended", "detail": "patterns are noisy", "changeType": "shift_block", "changePayload": {}}

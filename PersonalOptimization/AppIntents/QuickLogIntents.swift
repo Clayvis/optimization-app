@@ -161,6 +161,7 @@ struct LogLearningIntent: AppIntent {
         case .japanese:    log.japaneseMinutes += minutes
         case .guitar:      log.guitarMinutes += minutes
         case .coursework:  log.courseworkMinutes += minutes
+        case .music:       log.musicMinutes += minutes
         }
         try? context.save()
         return .result(dialog: "Added \(minutes) minutes of \(module.rawValue).")
@@ -168,13 +169,14 @@ struct LogLearningIntent: AppIntent {
 }
 
 enum LearningModuleOption: String, AppEnum {
-    case japanese, guitar, coursework
+    case japanese, guitar, coursework, music
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Module"
     static let caseDisplayRepresentations: [LearningModuleOption: DisplayRepresentation] = [
         .japanese:   "Japanese",
         .guitar:     "guitar",
-        .coursework: "coursework"
+        .coursework: "coursework",
+        .music:      "music"
     ]
 }
 

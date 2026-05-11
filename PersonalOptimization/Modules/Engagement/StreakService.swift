@@ -255,10 +255,14 @@ final class StreakService {
             // route generic learning blocks there.
             for log in try modelContext.fetch(FetchDescriptor<DailyLog>()) {
                 let day = cal.startOfDay(for: log.date)
-                let total = log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes
+                let total = log.japaneseMinutes
+                    + log.guitarMinutes
+                    + log.courseworkMinutes
+                    + log.musicMinutes
                 if log.japaneseMinutes >= 30
                     || log.guitarMinutes >= 20
                     || log.courseworkMinutes >= 20
+                    || log.musicMinutes >= 20
                     || total >= 20 {
                     history[day] = true
                 }

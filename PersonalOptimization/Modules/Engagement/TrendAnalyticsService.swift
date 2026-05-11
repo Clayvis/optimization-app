@@ -149,7 +149,7 @@ final class TrendAnalyticsService {
             for log in logs {
                 let day = startOfDay(for: log.date)
                 guard out[day] != nil else { continue }
-                out[day]! += Double(log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes)
+                out[day]! += Double(log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes + log.musicMinutes)
             }
         case .fasting:
             let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
@@ -416,7 +416,7 @@ final class TrendAnalyticsService {
         var byWeek: [Date: Double] = [:]
         for log in inRange {
             let weekStart = mondayOfWeek(containing: log.date)
-            byWeek[weekStart, default: 0] += Double(log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes)
+            byWeek[weekStart, default: 0] += Double(log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes + log.musicMinutes)
         }
         return byWeek
     }

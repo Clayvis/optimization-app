@@ -30,7 +30,13 @@ struct LearningTimerView: View {
             Section("Today") {
                 let today = Calendar.current.startOfDay(for: Date())
                 let todayLog = logs.first { Calendar.current.isDate($0.date, inSameDayAs: today) }
-                let minutes = module == .japanese ? (todayLog?.japaneseMinutes ?? 0) : (todayLog?.guitarMinutes ?? 0)
+                let minutes: Int = {
+                    switch module {
+                    case .japanese: return todayLog?.japaneseMinutes ?? 0
+                    case .guitar:   return todayLog?.guitarMinutes ?? 0
+                    case .music:    return todayLog?.musicMinutes ?? 0
+                    }
+                }()
                 LabeledContent("Logged", value: "\(minutes) min")
                 LabeledContent("Target", value: "\(module.defaultDailyTargetMinutes) min")
             }

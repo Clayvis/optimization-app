@@ -72,7 +72,7 @@ final class ActivityArchiveService {
         if let log = dailyLog(for: dayStart) {
             archive.fastingHours = computeFastingHours(log: log)
             archive.hydrationOz = log.waterOz
-            archive.learningMinutes = log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes
+            archive.learningMinutes = log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes + log.musicMinutes
             archive.sleepMinutesHK = log.sleepHours.map { Int($0 * 60) }
             archive.restingHRHK = log.restingHR
             archive.hrvAvgHK = log.hrvRmssd

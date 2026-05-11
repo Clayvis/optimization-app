@@ -21,6 +21,7 @@ final class LearningService {
         switch module {
         case .japanese: log.japaneseMinutes += minutes
         case .guitar:   log.guitarMinutes += minutes
+        case .music:    log.musicMinutes += minutes
         }
         try modelContext.save()
         CompletionHistoryWriter.record(domain: .learning, at: date, modelContext: modelContext)
@@ -33,7 +34,12 @@ final class LearningService {
     func recomputeStreak(module: LearningModule, asOf: Date = Date()) throws -> LearningStreak {
         let logs = try modelContext.fetch(FetchDescriptor<DailyLog>())
         let history: [DailyMinutes] = logs.map { log in
-            let m = module == .japanese ? log.japaneseMinutes : log.guitarMinutes
+            let m: Int
+            switch module {
+            case .japanese: m = log.japaneseMinutes
+            case .guitar:   m = log.guitarMinutes
+            case .music:    m = log.musicMinutes
+            }
             return DailyMinutes(date: log.date, minutes: m)
         }
         let threshold = module.defaultDailyTargetMinutes

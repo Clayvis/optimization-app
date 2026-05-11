@@ -45,12 +45,25 @@ private struct ModuleCard: View {
     var body: some View {
         let today = Calendar.current.startOfDay(for: Date())
         let todayLog = logs.first { Calendar.current.isDate($0.date, inSameDayAs: today) }
-        let minutes = module == .japanese ? (todayLog?.japaneseMinutes ?? 0) : (todayLog?.guitarMinutes ?? 0)
+        let minutes: Int = {
+            switch module {
+            case .japanese: return todayLog?.japaneseMinutes ?? 0
+            case .guitar:   return todayLog?.guitarMinutes ?? 0
+            case .music:    return todayLog?.musicMinutes ?? 0
+            }
+        }()
         let streak = streaks.first { $0.module == module.rawValue }?.currentStreak ?? 0
         let target = module.defaultDailyTargetMinutes
+        let iconName: String = {
+            switch module {
+            case .japanese: return "character.book.closed"
+            case .guitar:   return "guitars"
+            case .music:    return "music.note"
+            }
+        }()
 
         HStack(spacing: 12) {
-            Image(systemName: module == .japanese ? "character.book.closed" : "guitars")
+            Image(systemName: iconName)
                 .font(.title)
                 .foregroundStyle(.tint)
                 .frame(width: 36)

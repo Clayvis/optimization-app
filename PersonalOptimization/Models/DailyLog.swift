@@ -13,6 +13,7 @@ final class DailyLog {
     var japaneseMinutes: Int = 0
     var guitarMinutes: Int = 0
     var courseworkMinutes: Int = 0
+    var musicMinutes: Int = 0    // M4.2 followup: generic instrument / vocal practice
     var subjectiveEnergy: Int?
     var achillesPain: Int?
     var sleepHours: Double?

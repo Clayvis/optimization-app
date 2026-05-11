@@ -32,7 +32,7 @@ struct DailyProgressBars: View {
 
     private var learningMinutes: Int {
         guard let log = todayLog else { return 0 }
-        return log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes
+        return log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes + log.musicMinutes
     }
 
     /// Active calories burned today. We don't yet ingest the live HK quantity

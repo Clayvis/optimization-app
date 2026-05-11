@@ -74,7 +74,14 @@ final class DailySummaryService {
 
         let japaneseMin = log?.japaneseMinutes ?? 0
         let guitarMin = log?.guitarMinutes ?? 0
-        let learningDone = japaneseMin >= 30 || guitarMin >= 20
+        let musicMin = log?.musicMinutes ?? 0
+        let courseworkMin = log?.courseworkMinutes ?? 0
+        let totalLearningMin = japaneseMin + guitarMin + musicMin + courseworkMin
+        let learningDone = japaneseMin >= 30
+            || guitarMin >= 20
+            || musicMin >= 20
+            || courseworkMin >= 20
+            || totalLearningMin >= 20
 
         // Travel/sick day grace: treat all scheduled domains as completed when active.
         let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first
@@ -84,12 +91,21 @@ final class DailySummaryService {
 
         var domains: [ProtocolDomainResult] = []
 
+        let workoutDetail: String = {
+            if workoutCompleted {
+                if let snippet = todaysWorkoutSnippet(for: day) {
+                    return snippet
+                }
+                return IdentityCopy.workoutLogged
+            }
+            return workoutScheduled ? "Scheduled" : "Rest day"
+        }()
         domains.append(ProtocolDomainResult(
             domain: .workout,
             label: "Workout",
             scheduled: workoutScheduled,
             completed: workoutCompleted || graceCovered,
-            detail: workoutCompleted ? IdentityCopy.workoutLogged : (workoutScheduled ? "Scheduled" : "Rest day")
+            detail: workoutDetail
         ))
 
         domains.append(ProtocolDomainResult(
@@ -113,13 +129,67 @@ final class DailySummaryService {
             label: "Learning",
             scheduled: true,
             completed: learningDone || graceCovered,
-            detail: "JP \(japaneseMin)m · GTR \(guitarMin)m"
+            detail: learningDetail(jp: japaneseMin, gtr: guitarMin, music: musicMin, work: courseworkMin)
         ))
 
         return ProtocolAdherenceTally(date: day, domains: domains)
     }
 
     // MARK: - Helpers
+
+    /// M4.2 followup: replace the generic "workout logged" label with the
+    /// specific activity surface ("Run · 32 min", "Lift A · 4 sets",
+    /// "Cycling · 45 min") when there's a session to point at. Picks the
+    /// most-recent session of the day. Returns nil for cleaner workouts
+    /// (just a WorkoutEvent ledger entry with no session detail).
+    private func todaysWorkoutSnippet(for day: Date) -> String? {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = timezone
+        let isToday: (Date) -> Bool = { cal.isDate($0, inSameDayAs: day) }
+
+        // Most-recent CustomActivitySession beats lift/sport sessions since
+        // cardio is the M4.2 focus. templateName is denormalized at log time.
+        let customs = (try? modelContext.fetch(FetchDescriptor<CustomActivitySession>())) ?? []
+        if let custom = customs
+            .filter({ isToday($0.date) && $0.durationMinutes > 0 })
+            .max(by: { $0.date < $1.date }) {
+            let name = custom.templateName.isEmpty ? "Cardio" : custom.templateName
+            return "\(name) · \(custom.durationMinutes) min"
+        }
+
+        let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+        if let lift = lifts.filter({ isToday($0.date) && $0.durationMinutes > 0 })
+            .max(by: { $0.date < $1.date }) {
+            return "\(lift.template) · \(lift.durationMinutes) min"
+        }
+
+        let bball = (try? modelContext.fetch(FetchDescriptor<BasketballSession>())) ?? []
+        if let game = bball.filter({ isToday($0.date) && $0.endTime > $0.startTime })
+            .max(by: { $0.startTime < $1.startTime }) {
+            let minutes = max(1, Int(game.endTime.timeIntervalSince(game.startTime) / 60))
+            return "Basketball · \(minutes) min"
+        }
+
+        let swims = (try? modelContext.fetch(FetchDescriptor<SwimSession>())) ?? []
+        if let swim = swims.filter({ isToday($0.date) && $0.durationMinutes > 0 })
+            .max(by: { $0.date < $1.date }) {
+            return "Swim · \(swim.durationMinutes) min · \(Int(swim.totalMeters))m"
+        }
+
+        return nil
+    }
+
+    /// Compact one-line learning detail. Surfaces whichever modules had time
+    /// logged today, in a stable order. Drops zero-minute modules.
+    private func learningDetail(jp: Int, gtr: Int, music: Int, work: Int) -> String {
+        var parts: [String] = []
+        if jp > 0    { parts.append("JP \(jp)m") }
+        if gtr > 0   { parts.append("GTR \(gtr)m") }
+        if music > 0 { parts.append("Music \(music)m") }
+        if work > 0  { parts.append("Course \(work)m") }
+        if parts.isEmpty { return "0 min logged" }
+        return parts.joined(separator: " · ")
+    }
 
     private func hydrationFloor(for date: Date) -> Double {
         guard let targets = hydrationTargets else { return 64 }
