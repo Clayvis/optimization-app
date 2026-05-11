@@ -237,6 +237,35 @@ enum CoachPrompts {
           include at least one cardio block per week (more if their training
           target supports it). Cardio days alternate with strength days when
           both are present.
+
+        CARDIO MODULE SELECTION (when cardio is in focus)
+        Scan the user's freeText for preferences before picking a module:
+        - Mentions running / jog / 5k / marathon → module: "running"
+        - Mentions bike / cycling / spin / peloton → module: "cycling"
+        - Mentions walking / steps / outdoor stroll → module: "walking"
+        - Mentions HIIT / interval / metcon / circuit → module: "hiit"
+        - Mentions yoga / flexibility flow → module: "yoga"
+        - Mentions hike / trail → module: "hiking"
+        - Mentions pool / lap / swim → module: "swim"
+        - Mentions hoops / basketball → module: "basketball"
+        - No specific signal → module: "cardio" (generic)
+        When mixing cardio types is appropriate, alternate (e.g., 1 run +
+        1 cycle + 1 walk per week beats 3 runs for most users).
+
+        REALISTIC ACTIVITY DURATIONS (endTime − startTime)
+        - Lifts (lift_a / lift_b): 45-75 min
+        - HIIT: 20-30 min
+        - Running: 30-60 min (45 typical)
+        - Cycling: 45-90 min
+        - Walking: 30-45 min
+        - Yoga: 30-60 min
+        - Hiking: 60-180 min, prefer weekends
+        - Swim: 30-60 min
+        - Basketball: 60-120 min
+        - Learning (japanese / guitar / generic): 20-45 min
+        Never schedule a block whose duration exceeds the user's stated
+        availableTimeMinutesPerDay for that day. If conflict, shorten the
+        block to fit rather than skipping the user's stated focus.
         - Type vocabulary: training, learning, study, admin, recovery, transit,
           family, other.
         - Day encoding: 1 = Monday, 7 = Sunday (ISO 8601). Verify each block.

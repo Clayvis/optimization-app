@@ -163,7 +163,7 @@ struct TodayView: View {
                             .accessibilityLabel("No blocks scheduled today")
                     } else {
                         ForEach(blocks) { block in
-                            blockRow(block: block, isCurrent: isCurrent(block))
+                            tappableBlock(block: block)
                         }
                     }
                 }
@@ -380,7 +380,84 @@ struct TodayView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
+    /// M4.2 followup: wraps blockRow in a NavigationLink when the block's
+    /// module maps to a session view, otherwise renders the plain row. Today
+    /// the user can tap a Lift A / Lift B / Basketball / Swim / cardio /
+    /// learning block and land directly on the matching logging surface.
     @ViewBuilder
+    private func tappableBlock(block: ScheduleBlock) -> some View {
+        let module = block.module ?? ""
+        if cardioModules.contains(module) {
+            NavigationLink {
+                cardioDestination(for: module)
+            } label: {
+                blockRow(block: block, isCurrent: isCurrent(block))
+            }
+        } else if module == "lift_a" {
+            NavigationLink { LiftSessionView(templateName: "Lift A") } label: {
+                blockRow(block: block, isCurrent: isCurrent(block))
+            }
+        } else if module == "lift_b" {
+            NavigationLink { LiftSessionView(templateName: "Lift B") } label: {
+                blockRow(block: block, isCurrent: isCurrent(block))
+            }
+        } else if module == "basketball" {
+            NavigationLink { BasketballSessionView() } label: {
+                blockRow(block: block, isCurrent: isCurrent(block))
+            }
+        } else if module == "swim" {
+            NavigationLink { SwimSessionView() } label: {
+                blockRow(block: block, isCurrent: isCurrent(block))
+            }
+        } else if module == "japanese" {
+            NavigationLink {
+                LearningTimerView(module: .japanese, service: LearningService(modelContext: modelContext))
+            } label: {
+                blockRow(block: block, isCurrent: isCurrent(block))
+            }
+        } else if module == "guitar" {
+            NavigationLink {
+                LearningTimerView(module: .guitar, service: LearningService(modelContext: modelContext))
+            } label: {
+                blockRow(block: block, isCurrent: isCurrent(block))
+            }
+        } else {
+            blockRow(block: block, isCurrent: isCurrent(block))
+        }
+    }
+
+    private let cardioModules: Set<String> = [
+        "cardio", "running", "cycling", "walking", "hiit", "yoga", "hiking"
+    ]
+
+    /// Resolve a cardio module string to a CustomActivityTemplate session.
+    /// Falls back to the templates list if no match (user archived the
+    /// matching template). Case-insensitive lookup against template names.
+    @ViewBuilder
+    private func cardioDestination(for module: String) -> some View {
+        let normalized = module.lowercased()
+        let lookupName: String? = {
+            switch normalized {
+            case "running": return "Running"
+            case "cycling": return "Cycling"
+            case "walking": return "Walking"
+            case "hiit":    return "HIIT"
+            case "yoga":    return "Yoga"
+            case "hiking":  return "Hiking"
+            default:        return nil
+            }
+        }()
+        let templates = (try? modelContext.fetch(FetchDescriptor<CustomActivityTemplate>())) ?? []
+        if let lookupName,
+           let match = templates.first(where: {
+               $0.name.caseInsensitiveCompare(lookupName) == .orderedSame && !$0.archived
+           }) {
+            CustomActivitySessionView(template: match)
+        } else {
+            CustomActivitiesSettingsView()
+        }
+    }
+
     private func blockRow(block: ScheduleBlock, isCurrent: Bool) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
