@@ -140,6 +140,7 @@
 		653B00B8BF5FF2BFCC33BABB /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA2773372A4E5001F3A6F618 /* WorkoutActivityAttributes.swift */; };
 		653CB3C33C6B2560D1F63C6A /* BasketballServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038A8112E68D369AC2CFB1F7 /* BasketballServiceTests.swift */; };
 		AA41A001000000000000T101 /* ScheduleValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FT01 /* ScheduleValidatorTests.swift */; };
+		AA41A001000000000000T201 /* ScheduleAIServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FT02 /* ScheduleAIServiceTests.swift */; };
 		6655538FE52FEFDBD0002B44 /* ScheduleSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79525ED54C2630347BC1E7F /* ScheduleSuggestion.swift */; };
 		66D7C4F136ADECBD76EDB4E0 /* SchemaV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF4652FE69EA281396290FC /* SchemaV5.swift */; };
 		674202788BF9960ADE278F7D /* PersonalOptimizationWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -427,6 +428,7 @@
 		026062AB166F1C6F733696D7 /* FastingServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingServiceTests.swift; sourceTree = "<group>"; };
 		038A8112E68D369AC2CFB1F7 /* BasketballServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballServiceTests.swift; sourceTree = "<group>"; };
 		AA41A001000000000000FT01 /* ScheduleValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleValidatorTests.swift; sourceTree = "<group>"; };
+		AA41A001000000000000FT02 /* ScheduleAIServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schedule/AI/ScheduleAIServiceTests.swift; sourceTree = "<group>"; };
 		044790DF6858E05D889E8DA3 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		0541BD6CAA0B42B120CCD5F0 /* DailyQuoteServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuoteServiceTests.swift; sourceTree = "<group>"; };
 		05D082A46276FE47429C48D8 /* SchemaV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV4.swift; sourceTree = "<group>"; };
@@ -752,6 +754,7 @@
 				ADD6AE4177CF18D51EC8EA5E /* AdaptiveNotificationTimingTests.swift */,
 				038A8112E68D369AC2CFB1F7 /* BasketballServiceTests.swift */,
 				AA41A001000000000000FT01 /* ScheduleValidatorTests.swift */,
+				AA41A001000000000000FT02 /* ScheduleAIServiceTests.swift */,
 				F3305701E5E1EB65C5834DE5 /* CharacterStateServiceTests.swift */,
 				4AE7C01549C09E53CD7FC603 /* CoachMemoryServiceTests.swift */,
 				E830049B609842EAD6F36461 /* CoachServiceTests.swift */,
@@ -1412,6 +1415,7 @@
 				237030E260483256E4AACAB1 /* AdaptiveNotificationTimingTests.swift in Sources */,
 				653CB3C33C6B2560D1F63C6A /* BasketballServiceTests.swift in Sources */,
 				AA41A001000000000000T101 /* ScheduleValidatorTests.swift in Sources */,
+				AA41A001000000000000T201 /* ScheduleAIServiceTests.swift in Sources */,
 				794B19FDB466608CD49D114C /* CharacterStateServiceTests.swift in Sources */,
 				50ED7CC8632D7C59B0DA5103 /* CoachMemoryServiceTests.swift in Sources */,
 				DFE8A50A55E73145CDF2482B /* CoachServiceTests.swift in Sources */,

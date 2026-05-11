@@ -261,11 +261,28 @@ final class CoachService {
         let patternsBlock = patterns.prefix(3).map {
             "- [\($0.patternType.rawValue) conf=\(String(format: "%.2f", $0.confidence))] \($0.summary)"
         }.joined(separator: "\n")
+
+        // M4.1: feed rejected-proposal memory into the prompt so the same
+        // bad suggestion never re-surfaces. CoachMemoryService auto-prunes
+        // expired rows on read; empty list yields an empty rejection block.
+        let memoryService = CoachMemoryService(modelContext: modelContext)
+        let rejected = memoryService.active(asOf: now())
+            .filter { $0.key.hasPrefix("rejected_suggestion_") }
+            .prefix(8)
+            .map { "- \($0.value)" }
+            .joined(separator: "\n")
+        let rejectedBlock: String
+        if rejected.isEmpty {
+            rejectedBlock = ""
+        } else {
+            rejectedBlock = "\n\n=== Previously rejected (do not repeat) ===\n\(rejected)"
+        }
+
         let userPrompt = """
         \(context.summaryForPrompt)
 
         === Detected patterns ===
-        \(patternsBlock)
+        \(patternsBlock)\(rejectedBlock)
         """
 
         let systemPrompt = CoachPrompts.system(

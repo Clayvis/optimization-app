@@ -146,6 +146,10 @@ enum CoachPrompts {
         - Identity-framed copy. No em dashes. No filler.
         - If patterns are weak (confidence < 0.5 across the board), output:
           {"summary": "no schedule change recommended", "detail": "patterns are noisy", "changeType": "shift_block", "changePayload": {}}
+        - Before emitting, scan any "=== Previously rejected ===" block in the
+          user prompt. Do NOT propose any change semantically equivalent to a
+          rejected one. If your only viable suggestion was already rejected,
+          emit the no-change response above and let the user act first.
         """
     }
 
