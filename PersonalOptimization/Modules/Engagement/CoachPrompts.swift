@@ -241,6 +241,21 @@ enum CoachPrompts {
           when stated.
         - Prefer trigger-anchored authoring when the user provided anchors.
 
+        REALISM (the user must feel this schedule is flexible AND optimized)
+        - Density cap: never more than 4 anchored blocks per day for a user
+          with a full-time job; never exceed availableTimeMinutesPerDay in
+          total anchored minutes (sum of endTime - startTime per day).
+        - Cadence beats density. A 3-day-a-week schedule the user will
+          actually do beats a 6-day-a-week one they'll abandon by week 2.
+        - Recovery is a real block. Always include at least one full rest day
+          per week when training cadence is 4+ sessions.
+        - Friction reduction. When two anchored blocks could be adjacent,
+          prefer adjacent. Avoid scattering single 30-minute blocks across
+          the day.
+        - Honor optimizationFocuses if the user listed any. Each focus
+          deserves at least one weekly block; pick a sensible day + time.
+        - Leave at least 60 minutes of unblocked slack on weekdays.
+
         REJECTED PROPOSALS
         Before emitting, scan any <rejected_proposals> block in the user prompt.
         Do not produce any change semantically equivalent to a rejected one.

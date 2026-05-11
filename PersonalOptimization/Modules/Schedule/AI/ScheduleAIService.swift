@@ -198,9 +198,15 @@ final class ScheduleAIService {
         let daysList = intake.availableDays.sorted().map(String.init).joined(separator: ",")
         lines.append("availableDays: [\(daysList)]")
         lines.append("trainingWindow: \(String(format: "%02d:00", intake.earliestTrainingHour))-\(String(format: "%02d:00", intake.latestTrainingHour))")
+        lines.append("availableTimeMinutesPerDay: \(intake.availableTimeMinutesPerDay)")
         lines.append("sleepWindow: \(String(format: "%02d:00", intake.sleepStartHour))-\(String(format: "%02d:00", intake.sleepEndHour))")
         lines.append("weeklyTrainingTargetSessions: \(intake.weeklyTrainingTargetSessions)")
         lines.append("equipmentAccess: \(intake.equipmentAccess)")
+        let focuses = [OptimizationFocus].fromCSV(intake.optimizationFocusesCSV)
+        if !focuses.isEmpty {
+            let labels = focuses.map(\.displayName).joined(separator: ", ")
+            lines.append("optimizationFocuses: \(labels) (each deserves at least one weekly block)")
+        }
         let restrictions = intake.restrictionsCSV
             .split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespaces) }

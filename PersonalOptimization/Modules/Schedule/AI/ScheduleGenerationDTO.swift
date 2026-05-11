@@ -11,6 +11,7 @@ struct ScheduleIntake: Codable, Equatable, Sendable {
     var availableDays: Set<Int>                    // ISO weekday set; e.g. {1,3,5}
     var earliestTrainingHour: Int                  // 0-23
     var latestTrainingHour: Int                    // 0-23
+    var availableTimeMinutesPerDay: Int            // M4.2: soft cap so AI doesn't over-schedule
     var sleepStartHour: Int                        // 0-23
     var sleepEndHour: Int                          // 0-23 (wraps midnight if end < start)
     var weeklyTrainingTargetSessions: Int          // 1-7
@@ -18,6 +19,7 @@ struct ScheduleIntake: Codable, Equatable, Sendable {
     var restrictionsCSV: String                    // "no_running,achilles_flare"
     var anchorEvents: [String]                     // ["after_kid_dropoff", "after_dinner"]
     var motivationStyle: String                    // mirrors UserProfile.motivationStyle
+    var optimizationFocusesCSV: String             // M4.2: language, music, etc. — see OptimizationFocus
 
     enum PrimaryGoal: String, Codable, CaseIterable, Sendable {
         case strength
@@ -47,13 +49,15 @@ extension ScheduleIntake {
             availableDays: [1, 2, 3, 4, 5],
             earliestTrainingHour: 17,
             latestTrainingHour: 20,
+            availableTimeMinutesPerDay: 120,
             sleepStartHour: 22,
             sleepEndHour: 6,
             weeklyTrainingTargetSessions: 4,
             equipmentAccess: "gym",
             restrictionsCSV: "",
             anchorEvents: [],
-            motivationStyle: "balanced"
+            motivationStyle: "balanced",
+            optimizationFocusesCSV: ""
         )
     }
 }

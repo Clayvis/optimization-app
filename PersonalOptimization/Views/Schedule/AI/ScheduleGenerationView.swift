@@ -57,6 +57,21 @@ struct ScheduleGenerationView: View {
                         value: $intake.latestTrainingHour, in: 0...23)
                 Stepper("Target sessions/week: \(intake.weeklyTrainingTargetSessions)",
                         value: $intake.weeklyTrainingTargetSessions, in: 1...7)
+                Stepper("Realistic time/day: \(intake.availableTimeMinutesPerDay) min",
+                        value: $intake.availableTimeMinutesPerDay,
+                        in: 30...480, step: 15)
+            }
+
+            Section {
+                ForEach(OptimizationFocus.builtIn, id: \.rawValue) { focus in
+                    Toggle(isOn: focusBinding(for: focus)) {
+                        Label(focus.displayName, systemImage: focus.systemImage)
+                    }
+                }
+            } header: {
+                Text("What are you optimizing?")
+            } footer: {
+                Text("Language, music, strength, sleep — pick what you're sharpening this season. Each one gets at least one weekly block.")
             }
 
             Section("Sleep window") {
@@ -138,6 +153,7 @@ struct ScheduleGenerationView: View {
                     warnings: result.proposal.warnings,
                     runID: result.runID,
                     anchorEvents: intake.anchorEvents,
+                    optimizationFocusesCSV: intake.optimizationFocusesCSV,
                     onApplied: {
                         onApplied?()
                         dismiss()
@@ -192,6 +208,7 @@ struct ScheduleGenerationView: View {
         intake.motivationStyle = profile.motivationStyle
         intake.sleepStartHour = profile.fastWindowStartHour    // sensible default before user picks
         intake.sleepEndHour = profile.fastWindowEndHour
+        intake.optimizationFocusesCSV = profile.optimizationFocusesCSV
         let existing = profile.anchorEvents
         if !existing.isEmpty {
             intake.anchorEvents = existing
@@ -219,6 +236,24 @@ struct ScheduleGenerationView: View {
         }
         intake.anchorEvents.append(normalized)
         newAnchor = ""
+    }
+
+    private func focusBinding(for focus: OptimizationFocus) -> Binding<Bool> {
+        Binding(
+            get: {
+                let current = [OptimizationFocus].fromCSV(intake.optimizationFocusesCSV)
+                return current.contains(focus)
+            },
+            set: { isOn in
+                var current = [OptimizationFocus].fromCSV(intake.optimizationFocusesCSV)
+                if isOn {
+                    if !current.contains(focus) { current.append(focus) }
+                } else {
+                    current.removeAll { $0 == focus }
+                }
+                intake.optimizationFocusesCSV = current.asCSV
+            }
+        )
     }
 
     private func format(_ hour: Int) -> String { String(format: "%02d:00", hour) }

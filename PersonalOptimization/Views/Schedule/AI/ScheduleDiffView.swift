@@ -19,6 +19,9 @@ struct ScheduleDiffView: View {
     let warnings: [String]
     let runID: PersistentIdentifier
     let anchorEvents: [String]
+    /// CSV of OptimizationFocus raw values from the intake; persisted on
+    /// `UserProfile.optimizationFocusesCSV` when the user applies.
+    var optimizationFocusesCSV: String = ""
     var onApplied: (() -> Void)? = nil
 
     @State private var applying: Bool = false
@@ -155,6 +158,13 @@ struct ScheduleDiffView: View {
             try ScheduleSeed.applyDrafts(drafts,
                                          anchorEvents: anchorEvents,
                                          modelContext: modelContext)
+            // M4.2: persist the optimization focuses that drove this proposal
+            // so Settings + Coach prompts pick them up after apply.
+            if !optimizationFocusesCSV.isEmpty,
+               let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first {
+                profile.optimizationFocusesCSV = optimizationFocusesCSV
+                try? modelContext.save()
+            }
             ScheduleAIService(modelContext: modelContext).markAccepted(runID: runID)
             onApplied?()
             dismiss()

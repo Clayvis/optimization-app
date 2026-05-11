@@ -28,6 +28,9 @@
 		AA41A001000000000000B901 /* ScheduleGenerationRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F902 /* ScheduleGenerationRun.swift */; };
 		AA41A001000000000000B902 /* ScheduleGenerationRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F902 /* ScheduleGenerationRun.swift */; };
 		AA41A001000000000000B903 /* ScheduleGenerationRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F902 /* ScheduleGenerationRun.swift */; };
+		AA41A002000000000000O101 /* OptimizationFocus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A002000000000000FO01 /* OptimizationFocus.swift */; };
+		AA41A002000000000000O102 /* OptimizationFocus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A002000000000000FO01 /* OptimizationFocus.swift */; };
+		AA41A002000000000000O103 /* OptimizationFocus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A002000000000000FO01 /* OptimizationFocus.swift */; };
 		0C496AA97A7A343CB905C178 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */; };
 		0DB87612ACCE386EC13E771C /* default_schedule.json in Resources */ = {isa = PBXBuildFile; fileRef = 82221D5BC1BA379932EC9A6A /* default_schedule.json */; };
 		BB1AAAAAAAAAAAAAAAAAAA01 /* schedule_balanced.json in Resources */ = {isa = PBXBuildFile; fileRef = BB2BBBBBBBBBBBBBBBBBBB01 /* schedule_balanced.json */; };
@@ -514,6 +517,7 @@
 		528CBFEE3F1CEF9256E5F74A /* SchemaV8.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV8.swift; sourceTree = "<group>"; };
 		AA41A001000000000000F901 /* SchemaV9.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV9.swift; sourceTree = "<group>"; };
 		AA41A001000000000000F902 /* ScheduleGenerationRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleGenerationRun.swift; sourceTree = "<group>"; };
+		AA41A002000000000000FO01 /* OptimizationFocus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptimizationFocus.swift; sourceTree = "<group>"; };
 		55921DCD58DBE8640AF42118 /* SchemaV6.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV6.swift; sourceTree = "<group>"; };
 		58D0AE5B943807A2DAB9BE07 /* AchievementRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementRegistry.swift; sourceTree = "<group>"; };
 		590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Categories.swift"; sourceTree = "<group>"; };
@@ -1188,6 +1192,7 @@
 				2F30C85E85590C6112D02188 /* ProtocolEntry.swift */,
 				C3F31266DF504D0F540B369D /* ScheduleBlock.swift */,
 				AA41A001000000000000F902 /* ScheduleGenerationRun.swift */,
+				AA41A002000000000000FO01 /* OptimizationFocus.swift */,
 				B79525ED54C2630347BC1E7F /* ScheduleSuggestion.swift */,
 				3C21B1F183A1B8E72B77E9EE /* SchemaV1.swift */,
 				758596BD9C49AD3F4EEAFB95 /* SchemaV2.swift */,
@@ -1579,6 +1584,7 @@
 				B60931973D2228B08EE21454 /* SchemaV8.swift in Sources */,
 				AA41A001000000000000A901 /* SchemaV9.swift in Sources */,
 				AA41A001000000000000B901 /* ScheduleGenerationRun.swift in Sources */,
+				AA41A002000000000000O101 /* OptimizationFocus.swift in Sources */,
 				5B82A388F1CB30D5A1BA8867 /* SessionLifecycleService.swift in Sources */,
 				9E3778818C6E6EB9782DBB0C /* SettingsView.swift in Sources */,
 				A4044AA4FFA030197C586BD3 /* StartCurrentBlockWorkoutIntent.swift in Sources */,
@@ -1665,6 +1671,7 @@
 				5142EAAD21FBF02CE89AEEB9 /* SchemaV8.swift in Sources */,
 				AA41A001000000000000A902 /* SchemaV9.swift in Sources */,
 				AA41A001000000000000B902 /* ScheduleGenerationRun.swift in Sources */,
+				AA41A002000000000000O102 /* OptimizationFocus.swift in Sources */,
 				AE2F534AABB0B37895EE60E3 /* StreakCounter.swift in Sources */,
 				6C76728BFC40EC9BAF5ED504 /* StreakDomain.swift in Sources */,
 				F4C542F098D6E20BA6AE251D /* SwimSession.swift in Sources */,
@@ -1746,6 +1753,7 @@
 				0C2278932F310463E2197F40 /* SchemaV8.swift in Sources */,
 				AA41A001000000000000A903 /* SchemaV9.swift in Sources */,
 				AA41A001000000000000B903 /* ScheduleGenerationRun.swift in Sources */,
+				AA41A002000000000000O103 /* OptimizationFocus.swift in Sources */,
 				7284A0FBEA2EF743A00A3A9A /* SessionLifecycleService.swift in Sources */,
 				DF86AC64F316D1B1AA37632A /* StartCurrentBlockWorkoutIntent.swift in Sources */,
 				BCE9FA71DD9411E1368775AE /* QuickLogIntents.swift in Sources */,
