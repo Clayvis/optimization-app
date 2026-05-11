@@ -4,6 +4,7 @@ import SwiftData
 struct LiftSessionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var profiles: [UserProfile]
 
     let templateName: String
 
@@ -51,6 +52,30 @@ struct LiftSessionView: View {
                 Text("Focus")
             } footer: {
                 Text("Tap Start to begin tracking. You can leave and come back without losing progress.")
+            }
+
+            // M4.2 followup: surface a tactical hint tied to the user's stated
+            // optimization focuses, so the same lift template feels tailored.
+            // Static mapping — no AI call here, just a smarter way to frame
+            // the same numbers per intent (strength → low reps/long rest;
+            // endurance → higher reps/short rest; mobility → lighter/slower).
+            if let hint = optimizationHint() {
+                Section {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(hint.title)
+                                .font(.subheadline.weight(.semibold))
+                            Text(hint.tactic)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.tint)
+                    }
+                } header: {
+                    Text("Optimizing for")
+                }
             }
 
             ForEach(template.exercises.sorted(by: { $0.orderIndex < $1.orderIndex }), id: \.name) { exercise in
@@ -108,6 +133,23 @@ struct LiftSessionView: View {
                     }
                 }) {
                     let sets = (exercise.sets ?? []).sorted { $0.orderIndex < $1.orderIndex }
+
+                    // M4.2 followup: keep the target on screen during the
+                    // session so the user doesn't lose the workout shape after
+                    // tapping Start. Looked up from the template by name; falls
+                    // back silently for custom exercises with no template row.
+                    if let target = templateTarget(forExerciseName: exercise.name) {
+                        HStack {
+                            Text("Target")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(sets.count) of \(target.sets) sets · \(target.reps) reps")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(sets.count >= target.sets ? .green : .secondary)
+                        }
+                    }
+
                     ForEach(sets, id: \.persistentModelID) { set in
                         HStack {
                             Text("Set \(set.orderIndex + 1)")
@@ -174,6 +216,50 @@ struct LiftSessionView: View {
 
     private func sortedExercises(session: LiftSession) -> [LiftExercise] {
         (session.exercises ?? []).sorted { $0.orderIndex < $1.orderIndex }
+    }
+
+    /// M4.2 followup: look up an exercise's template target by name so the
+    /// active session keeps showing "X of N sets · R reps" once the user taps
+    /// Start. Returns nil for custom exercises that don't have a template row.
+    private func templateTarget(forExerciseName name: String) -> (sets: Int, reps: Int)? {
+        guard let template,
+              let entry = template.exercises.first(where: { $0.name == name }) else {
+            return nil
+        }
+        return (entry.targetSets, entry.targetReps)
+    }
+
+    /// M4.2 followup: static mapping from the user's first matching
+    /// optimization focus to a tactical lift hint. Same template numbers, but
+    /// framed for what the user is actually trying to do. Returns nil when no
+    /// strength-or-endurance focus is set.
+    private func optimizationHint() -> (title: String, tactic: String)? {
+        let focuses = [OptimizationFocus].fromCSV(profiles.first?.optimizationFocusesCSV ?? "")
+        for focus in focuses {
+            switch focus {
+            case .strength:
+                return ("Strength",
+                        "4-6 reps, 3+ min rest, push to RPE 8. Last set is the hardest.")
+            case .endurance:
+                return ("Endurance",
+                        "12-15 reps, 60-90s rest, RPE 7. Stay smooth, breathe between sets.")
+            case .mobility:
+                return ("Mobility",
+                        "Lighter weight, slower negatives. Full range over heavy. Pause at end positions.")
+            case .nutrition:
+                return ("Nutrition support",
+                        "Protein within the hour after. Hydrate during. Track kcal in Health.")
+            case .sleepQuality:
+                return ("Sleep quality",
+                        "Finish at least 3 hours before bed. Cool down properly to keep core temp low.")
+            case .deepWork:
+                return ("Deep work",
+                        "Lift first, mental work after. The cognitive boost lasts 2-3 hours.")
+            default:
+                continue
+            }
+        }
+        return nil
     }
 
     @ViewBuilder

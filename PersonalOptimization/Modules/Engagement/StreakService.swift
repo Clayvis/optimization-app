@@ -246,9 +246,22 @@ final class StreakService {
                 if log.waterOz >= target { history[day] = true }
             }
         case .learning:
+            // M4.2 followup: generalize learning completion. The original rule
+            // was Clay-specific (Japanese >= 30 OR Guitar >= 20). Wife / buddy
+            // may pick a different OptimizationFocus (language, music, deep
+            // work) so we count the day done when ANY tracked learning
+            // module clears its threshold OR total tracked minutes >= 20.
+            // courseworkMinutes is included since the ScheduleEditor can
+            // route generic learning blocks there.
             for log in try modelContext.fetch(FetchDescriptor<DailyLog>()) {
                 let day = cal.startOfDay(for: log.date)
-                if log.japaneseMinutes >= 30 || log.guitarMinutes >= 20 { history[day] = true }
+                let total = log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes
+                if log.japaneseMinutes >= 30
+                    || log.guitarMinutes >= 20
+                    || log.courseworkMinutes >= 20
+                    || total >= 20 {
+                    history[day] = true
+                }
             }
         case .protocolAdherence:
             // protocolAdherence depends on per-day adherence which is computed by
