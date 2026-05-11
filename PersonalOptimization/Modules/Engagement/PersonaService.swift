@@ -82,6 +82,204 @@ final class PersonaService {
         try? modelContext.save()
     }
 
+    // MARK: - Behavioral inference (v2 passive signals)
+
+    /// Reads recent training, recovery, and suggestion data and returns
+    /// persona-update proposals the user can accept or dismiss. Skips fields
+    /// the user has already answered (active beats passive — their declared
+    /// preference wins). Skips signals the user has previously dismissed
+    /// (recorded in CoachMemory under `personaSignalDismissedKey`).
+    ///
+    /// Idempotent: calling repeatedly with the same data returns the same
+    /// proposals, sorted by confidence descending.
+    func inferFromBehavior(asOf date: Date? = nil) -> [PersonaBehavioralInference.PersonaSignal] {
+        let asOf = date ?? now()
+        let cal = Calendar.current
+        let lookbackStart = cal.date(byAdding: .day, value: -60, to: asOf) ?? asOf
+
+        let persona = currentOrCreate()
+        let answered = Set(persona.answeredQuestionKeysCSV
+            .split(separator: ",").map(String.init))
+        let dismissed = dismissedSignalKeys()
+
+        var signals: [PersonaBehavioralInference.PersonaSignal] = []
+
+        // Peak alertness — only propose if not already declared.
+        if !answered.contains("peak_alertness") {
+            let liftStarts = recentLiftStarts(since: lookbackStart)
+            if let s = PersonaBehavioralInference.inferPeakAlertness(from: liftStarts) {
+                signals.append(s)
+            }
+        }
+
+        // Recovery sensitivity.
+        if !answered.contains("recovery_sensitivity") {
+            let recoveryDays = recentRecoveryDays(from: lookbackStart, to: asOf)
+            if let s = PersonaBehavioralInference.inferRecoverySensitivity(from: recoveryDays) {
+                signals.append(s)
+            }
+        }
+
+        // Failure response.
+        if !answered.contains("failure_response") {
+            let pairs = recentSkipPairs(since: lookbackStart, asOf: asOf)
+            if let s = PersonaBehavioralInference.inferFailureResponse(from: pairs) {
+                signals.append(s)
+            }
+        }
+
+        // Decision style.
+        if !answered.contains("decision_style") {
+            let outcomes = suggestionOutcomes(since: lookbackStart)
+            if let s = PersonaBehavioralInference.inferDecisionStyle(from: outcomes) {
+                signals.append(s)
+            }
+        }
+
+        return signals
+            .filter { !dismissed.contains($0.key) }
+            .sorted { $0.confidence > $1.confidence }
+    }
+
+    /// Apply a behavior-derived signal: write the field, mark the question
+    /// answered so the active-inference questionnaire skips it, and bump
+    /// confidence. The user has just validated the inference.
+    func acceptSignal(_ signal: PersonaBehavioralInference.PersonaSignal) {
+        let persona = currentOrCreate()
+        switch signal.field {
+        case .peakAlertness:
+            persona.peakAlertnessRaw = signal.proposedRaw
+            markAnswered("peak_alertness", on: persona)
+        case .recoverySensitivity:
+            persona.recoverySensitivityRaw = signal.proposedRaw
+            markAnswered("recovery_sensitivity", on: persona)
+        case .failureResponse:
+            persona.failureResponseRaw = signal.proposedRaw
+            markAnswered("failure_response", on: persona)
+        case .decisionStyle:
+            persona.decisionStyleRaw = signal.proposedRaw
+            markAnswered("decision_style", on: persona)
+        }
+        persona.confidence = min(100, persona.confidence + 10)
+        try? modelContext.save()
+    }
+
+    /// Record that the user rejected a signal so we do not surface it again.
+    /// We don't permanently silence the *field* — if behavior shifts and a new
+    /// proposal lands on a different value, that will be a different key.
+    func dismissSignal(_ signal: PersonaBehavioralInference.PersonaSignal) {
+        let memory = CoachMemory(
+            key: personaSignalDismissedKey(signal.key),
+            value: "User dismissed behavioral inference: \(signal.proposedDisplay) (\(signal.field.rawValue)).",
+            importance: 1,
+            expiresAt: nil
+        )
+        modelContext.insert(memory)
+        try? modelContext.save()
+    }
+
+    // MARK: - Behavioral inference helpers (private)
+
+    private func personaSignalDismissedKey(_ signalKey: String) -> String {
+        "persona_signal_dismissed_\(signalKey)"
+    }
+
+    private func dismissedSignalKeys() -> Set<String> {
+        let memories = (try? modelContext.fetch(FetchDescriptor<CoachMemory>())) ?? []
+        return Set(memories.compactMap { mem -> String? in
+            let prefix = "persona_signal_dismissed_"
+            guard mem.key.hasPrefix(prefix) else { return nil }
+            return String(mem.key.dropFirst(prefix.count))
+        })
+    }
+
+    private func markAnswered(_ key: String, on persona: UserPersona) {
+        var answered = persona.answeredQuestionKeysCSV
+            .split(separator: ",").map(String.init).filter { !$0.isEmpty }
+        if !answered.contains(key) {
+            answered.append(key)
+            persona.answeredQuestionKeysCSV = answered.joined(separator: ",")
+        }
+    }
+
+    private func recentLiftStarts(since: Date) -> [PersonaBehavioralInference.LiftStart] {
+        let sessions = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+        let cal = Calendar.current
+        return sessions
+            .filter { $0.date >= since }
+            .map { PersonaBehavioralInference.LiftStart(hourOfDay: cal.component(.hour, from: $0.date)) }
+    }
+
+    private func recentRecoveryDays(from start: Date, to end: Date) -> [PersonaBehavioralInference.RecoveryDay] {
+        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let events = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
+        let cal = Calendar.current
+
+        let inRangeLogs = logs.filter { $0.date >= start && $0.date <= end }
+        return inRangeLogs.map { log in
+            let trained = events.contains { ev in
+                ev.completed && cal.isDate(ev.date, inSameDayAs: log.date)
+            }
+            return PersonaBehavioralInference.RecoveryDay(
+                hrvRmssd: log.hrvRmssd,
+                sleepHours: log.sleepHours,
+                trained: trained
+            )
+        }
+    }
+
+    private func recentSkipPairs(since: Date, asOf: Date) -> [PersonaBehavioralInference.SkipDayPair] {
+        let events = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
+        let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+        let cal = Calendar.current
+
+        // Typical duration baseline = median of completed lift sessions in range.
+        let recentLifts = lifts.filter { $0.date >= since && $0.durationMinutes > 0 }
+        let typical: Int = {
+            let durations = recentLifts.map { $0.durationMinutes }.sorted()
+            guard !durations.isEmpty else { return 45 }
+            return durations[durations.count / 2]
+        }()
+
+        let skipKinds: Set<String> = [
+            WorkoutEventSource.manualSkip.rawValue,
+            WorkoutEventSource.sickDay.rawValue,
+            WorkoutEventSource.travel.rawValue
+        ]
+        let skips = events
+            .filter { $0.date >= since }
+            .filter { skipKinds.contains($0.source) || ($0.completed == false && $0.date < cal.startOfDay(for: asOf)) }
+            .sorted { $0.date < $1.date }
+
+        return skips.compactMap { skip -> PersonaBehavioralInference.SkipDayPair? in
+            let nextDay = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: skip.date)) ?? skip.date
+            // Skip events with no observable "next day" yet.
+            guard nextDay < cal.startOfDay(for: asOf) else { return nil }
+            let nextLift = recentLifts.first { cal.isDate($0.date, inSameDayAs: nextDay) }
+            let trainedNext = nextLift != nil
+            return PersonaBehavioralInference.SkipDayPair(
+                trainedNextDay: trainedNext,
+                nextDayDurationMinutes: nextLift?.durationMinutes,
+                typicalDurationMinutes: typical
+            )
+        }
+    }
+
+    private func suggestionOutcomes(since: Date) -> PersonaBehavioralInference.SuggestionOutcomes {
+        let all = (try? modelContext.fetch(FetchDescriptor<ScheduleSuggestion>())) ?? []
+        let inRange = all.filter { $0.generatedAt >= since }
+        var a = 0, d = 0, s = 0
+        for sug in inRange {
+            switch sug.status {
+            case .accepted:  a += 1
+            case .dismissed: d += 1
+            case .snoozed:   s += 1
+            case .pending:   break
+            }
+        }
+        return PersonaBehavioralInference.SuggestionOutcomes(accepted: a, dismissed: d, snoozed: s)
+    }
+
     // MARK: - Prompt context
 
     /// Compact prompt block injected into every Coach prompt. Lists only the

@@ -37,6 +37,8 @@
 		AA41A003000000000000PS01 /* PersonaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A003000000000000FPS1 /* PersonaService.swift */; };
 		AA41A003000000000000PV01 /* PersonaQuestionnaireView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A003000000000000FPV1 /* PersonaQuestionnaireView.swift */; };
 		AA41A003000000000000PC01 /* PersonaWeeklyQuestionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A003000000000000FPC1 /* PersonaWeeklyQuestionCard.swift */; };
+		AA41A003000000000000PI01 /* PersonaBehavioralInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A003000000000000FPI1 /* PersonaBehavioralInference.swift */; };
+		AA41A003000000000000PG01 /* PersonaSignalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A003000000000000FPG1 /* PersonaSignalCard.swift */; };
 		0C496AA97A7A343CB905C178 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */; };
 		0DB87612ACCE386EC13E771C /* default_schedule.json in Resources */ = {isa = PBXBuildFile; fileRef = 82221D5BC1BA379932EC9A6A /* default_schedule.json */; };
 		BB1AAAAAAAAAAAAAAAAAAA01 /* schedule_balanced.json in Resources */ = {isa = PBXBuildFile; fileRef = BB2BBBBBBBBBBBBBBBBBBB01 /* schedule_balanced.json */; };
@@ -152,6 +154,8 @@
 		AA41A001000000000000T201 /* ScheduleAIServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FT02 /* ScheduleAIServiceTests.swift */; };
 		AA41A002000000000000HT01 /* HealthKitSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A002000000000000FHT1 /* HealthKitSyncServiceTests.swift */; };
 		AA41A003000000000000PT01 /* PersonaServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A003000000000000FPT1 /* PersonaServiceTests.swift */; };
+		AA41A003000000000000PT02 /* PersonaBehavioralInferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A003000000000000FPT2 /* PersonaBehavioralInferenceTests.swift */; };
+		AA41A003000000000000PT03 /* PersonaServiceInferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A003000000000000FPT3 /* PersonaServiceInferenceTests.swift */; };
 		6655538FE52FEFDBD0002B44 /* ScheduleSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79525ED54C2630347BC1E7F /* ScheduleSuggestion.swift */; };
 		66D7C4F136ADECBD76EDB4E0 /* SchemaV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF4652FE69EA281396290FC /* SchemaV5.swift */; };
 		674202788BF9960ADE278F7D /* PersonalOptimizationWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -443,6 +447,8 @@
 		AA41A001000000000000FT02 /* ScheduleAIServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schedule/AI/ScheduleAIServiceTests.swift; sourceTree = "<group>"; };
 		AA41A002000000000000FHT1 /* HealthKitSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitSyncServiceTests.swift; sourceTree = "<group>"; };
 		AA41A003000000000000FPT1 /* PersonaServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaServiceTests.swift; sourceTree = "<group>"; };
+		AA41A003000000000000FPT2 /* PersonaBehavioralInferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaBehavioralInferenceTests.swift; sourceTree = "<group>"; };
+		AA41A003000000000000FPT3 /* PersonaServiceInferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaServiceInferenceTests.swift; sourceTree = "<group>"; };
 		044790DF6858E05D889E8DA3 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		0541BD6CAA0B42B120CCD5F0 /* DailyQuoteServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuoteServiceTests.swift; sourceTree = "<group>"; };
 		05D082A46276FE47429C48D8 /* SchemaV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV4.swift; sourceTree = "<group>"; };
@@ -534,6 +540,8 @@
 		AA41A003000000000000FPS1 /* PersonaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaService.swift; sourceTree = "<group>"; };
 		AA41A003000000000000FPV1 /* PersonaQuestionnaireView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaQuestionnaireView.swift; sourceTree = "<group>"; };
 		AA41A003000000000000FPC1 /* PersonaWeeklyQuestionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaWeeklyQuestionCard.swift; sourceTree = "<group>"; };
+		AA41A003000000000000FPI1 /* PersonaBehavioralInference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaBehavioralInference.swift; sourceTree = "<group>"; };
+		AA41A003000000000000FPG1 /* PersonaSignalCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaSignalCard.swift; sourceTree = "<group>"; };
 		55921DCD58DBE8640AF42118 /* SchemaV6.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV6.swift; sourceTree = "<group>"; };
 		58D0AE5B943807A2DAB9BE07 /* AchievementRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementRegistry.swift; sourceTree = "<group>"; };
 		590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Categories.swift"; sourceTree = "<group>"; };
@@ -776,6 +784,8 @@
 				AA41A001000000000000FT01 /* ScheduleValidatorTests.swift */,
 				AA41A001000000000000FT02 /* ScheduleAIServiceTests.swift */,
 				AA41A003000000000000FPT1 /* PersonaServiceTests.swift */,
+				AA41A003000000000000FPT2 /* PersonaBehavioralInferenceTests.swift */,
+				AA41A003000000000000FPT3 /* PersonaServiceInferenceTests.swift */,
 				F3305701E5E1EB65C5834DE5 /* CharacterStateServiceTests.swift */,
 				4AE7C01549C09E53CD7FC603 /* CoachMemoryServiceTests.swift */,
 				E830049B609842EAD6F36461 /* CoachServiceTests.swift */,
@@ -841,6 +851,7 @@
 				A17FB8A4BB496CEA2762528C /* PartnerSettingsView.swift */,
 				9006DA55A1C2A95F2CB43994 /* PrescribedWorkoutCard.swift */,
 				AA41A003000000000000FPC1 /* PersonaWeeklyQuestionCard.swift */,
+				AA41A003000000000000FPG1 /* PersonaSignalCard.swift */,
 				AA41A003000000000000FPV1 /* PersonaQuestionnaireView.swift */,
 				0AA42BB296B8E440928F2531 /* ScheduleSuggestionInbox.swift */,
 				39D17EF8A1B9A58C15B86F49 /* WeeklyProgramCard.swift */,
@@ -994,6 +1005,7 @@
 				9D30B063C68322173BE73D76 /* CoachPrompts.swift */,
 				E523AB4350313132C9720D8D /* CoachService.swift */,
 				AA41A003000000000000FPS1 /* PersonaService.swift */,
+				AA41A003000000000000FPI1 /* PersonaBehavioralInference.swift */,
 				25AE1D357B6EED25F71D50ED /* DailyQuoteService.swift */,
 				4AD938A95999E64B4E2A26F2 /* DailySummaryService.swift */,
 				2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */,
@@ -1446,6 +1458,8 @@
 				AA41A001000000000000T201 /* ScheduleAIServiceTests.swift in Sources */,
 				AA41A002000000000000HT01 /* HealthKitSyncServiceTests.swift in Sources */,
 				AA41A003000000000000PT01 /* PersonaServiceTests.swift in Sources */,
+				AA41A003000000000000PT02 /* PersonaBehavioralInferenceTests.swift in Sources */,
+				AA41A003000000000000PT03 /* PersonaServiceInferenceTests.swift in Sources */,
 				794B19FDB466608CD49D114C /* CharacterStateServiceTests.swift in Sources */,
 				50ED7CC8632D7C59B0DA5103 /* CoachMemoryServiceTests.swift in Sources */,
 				DFE8A50A55E73145CDF2482B /* CoachServiceTests.swift in Sources */,
@@ -1627,8 +1641,10 @@
 				0C496AA97A7A343CB905C178 /* UserProfile.swift in Sources */,
 				AA41A003000000000000P101 /* UserPersona.swift in Sources */,
 				AA41A003000000000000PS01 /* PersonaService.swift in Sources */,
+				AA41A003000000000000PI01 /* PersonaBehavioralInference.swift in Sources */,
 				AA41A003000000000000PV01 /* PersonaQuestionnaireView.swift in Sources */,
 				AA41A003000000000000PC01 /* PersonaWeeklyQuestionCard.swift in Sources */,
+				AA41A003000000000000PG01 /* PersonaSignalCard.swift in Sources */,
 				10332B686AD5D0D6BDAB4BC3 /* WatchConnectivityService.swift in Sources */,
 				E3671262DF547F8B71F77E6B /* WearableEntry.swift in Sources */,
 				B62AA205828CBF1A75EA4418 /* WeeklyProgram.swift in Sources */,

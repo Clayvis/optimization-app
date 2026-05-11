@@ -98,6 +98,18 @@ struct TodayView: View {
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
                 }
 
+                // M4.2 followup v2: passive behavioral inference. Watches
+                // training timing, recovery-vs-workout patterns, post-skip
+                // behavior, suggestion accept/dismiss rates — proposes
+                // persona updates the user can accept or reject. Hidden when
+                // no signal clears its sample-size threshold.
+                Section {
+                    PersonaSignalCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
                 if isSunday {
                     Section {
                         WeeklyProgramCard()
