@@ -87,6 +87,17 @@ struct TodayView: View {
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
                 }
 
+                // M4.2 followup: weekly persona question card. Shows at most
+                // once per 7 days when there's still an unanswered question
+                // in PersonaQuestion.library. Each answer flows into
+                // UserPersona which gets injected into every Coach prompt.
+                Section {
+                    PersonaWeeklyQuestionCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
                 if isSunday {
                     Section {
                         WeeklyProgramCard()

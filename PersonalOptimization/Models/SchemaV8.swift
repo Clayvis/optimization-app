@@ -5,6 +5,7 @@ import SwiftData
 ///
 /// New entities:
 /// - Achievement (Opp 7: granular named wins, sibling to MilestoneUnlock)
+/// - UserPersona (M4.2 followup: coach personality model)
 ///
 /// All new fields default-valued; CloudKit-compatible.
 enum SchemaV8: VersionedSchema {
@@ -12,7 +13,8 @@ enum SchemaV8: VersionedSchema {
 
     static var models: [any PersistentModel.Type] {
         SchemaV7.models + [
-            Achievement.self
+            Achievement.self,
+            UserPersona.self
         ]
     }
 }

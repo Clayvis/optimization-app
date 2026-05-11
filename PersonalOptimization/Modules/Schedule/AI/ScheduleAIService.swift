@@ -232,6 +232,15 @@ final class ScheduleAIService {
             }
         }
 
+        // M4.2 followup: persona block — motivation driver, communication
+        // style, accountability preference, what to avoid re-recommending.
+        // Empty until the user starts answering the weekly question card.
+        let personaBlock = PersonaService(modelContext: modelContext).promptContextBlock()
+        if !personaBlock.isEmpty {
+            lines.append("")
+            lines.append(personaBlock)
+        }
+
         return lines.joined(separator: "\n")
     }
 

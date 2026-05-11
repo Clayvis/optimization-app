@@ -447,6 +447,11 @@ struct SettingsView: View {
             }
 
             Section("Coaching") {
+                NavigationLink {
+                    PersonaQuestionnaireView()
+                } label: {
+                    Label("Coach learns about you", systemImage: "person.text.rectangle")
+                }
                 Picker("Motivation style", selection: $profile.motivationStyle) {
                     Text("Balanced").tag("balanced")
                     Text("Stoic").tag("stoic")

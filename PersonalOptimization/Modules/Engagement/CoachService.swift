@@ -162,6 +162,7 @@ final class CoachService {
         let recentInsightsBlock = recentInsightsSummary()
         let lapseNote = lapseStateNote()
         let recoveryNote = recoveryStateNote(profile: profile)
+        let personaBlock = PersonaService(modelContext: modelContext).promptContextBlock()
 
         return CoachContextV2(
             today: today,
@@ -176,7 +177,8 @@ final class CoachService {
             userMemoryBlock: userMemoryBlock,
             recentInsightsBlock: recentInsightsBlock,
             lapseStateNote: lapseNote,
-            recoveryNote: recoveryNote
+            recoveryNote: recoveryNote,
+            personaBlock: personaBlock
         )
     }
 

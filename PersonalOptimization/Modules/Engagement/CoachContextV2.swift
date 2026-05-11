@@ -31,6 +31,13 @@ struct CoachContextV2: Sendable {
     /// recovery is normal.
     var recoveryNote: String = ""
 
+    /// M4.2 followup: structured user-persona block — motivation driver,
+    /// communication style, accountability preference, identity anchors,
+    /// what to avoid re-recommending, etc. Populated by `PersonaService.
+    /// promptContextBlock()`. Empty until the user starts answering the
+    /// weekly question card or fills in the Settings questionnaire.
+    var personaBlock: String = ""
+
     var summaryForPrompt: String {
         var lines: [String] = []
         lines.append("=== Today snapshot ===")
@@ -74,6 +81,10 @@ struct CoachContextV2: Sendable {
             lines.append("")
             lines.append("=== Lapse state ===")
             lines.append(lapseStateNote)
+        }
+        if !personaBlock.isEmpty {
+            lines.append("")
+            lines.append(personaBlock)
         }
         return lines.joined(separator: "\n")
     }
