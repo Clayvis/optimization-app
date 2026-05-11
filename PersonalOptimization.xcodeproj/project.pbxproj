@@ -22,6 +22,12 @@
 		0AF1C06D93656C69564276F6 /* WorkoutEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CADA8B9C2AAA96402E53588 /* WorkoutEvent.swift */; };
 		0B10F72BCCFD1DA5F75A39CC /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07EA40251321BD4591EB4760 /* AppShortcuts.swift */; };
 		0C2278932F310463E2197F40 /* SchemaV8.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528CBFEE3F1CEF9256E5F74A /* SchemaV8.swift */; };
+		AA41A001000000000000A901 /* SchemaV9.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F901 /* SchemaV9.swift */; };
+		AA41A001000000000000A902 /* SchemaV9.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F901 /* SchemaV9.swift */; };
+		AA41A001000000000000A903 /* SchemaV9.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F901 /* SchemaV9.swift */; };
+		AA41A001000000000000B901 /* ScheduleGenerationRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F902 /* ScheduleGenerationRun.swift */; };
+		AA41A001000000000000B902 /* ScheduleGenerationRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F902 /* ScheduleGenerationRun.swift */; };
+		AA41A001000000000000B903 /* ScheduleGenerationRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F902 /* ScheduleGenerationRun.swift */; };
 		0C496AA97A7A343CB905C178 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */; };
 		0DB87612ACCE386EC13E771C /* default_schedule.json in Resources */ = {isa = PBXBuildFile; fileRef = 82221D5BC1BA379932EC9A6A /* default_schedule.json */; };
 		BB1AAAAAAAAAAAAAAAAAAA01 /* schedule_balanced.json in Resources */ = {isa = PBXBuildFile; fileRef = BB2BBBBBBBBBBBBBBBBBBB01 /* schedule_balanced.json */; };
@@ -87,6 +93,9 @@
 		488DD62356F1108A98657107 /* JourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE955B1AFA7562CB82D75C7 /* JourneyView.swift */; };
 		497B2D2C8A6376B1BA12FDFE /* ScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 823154A880207FCF1C483BA8 /* ScheduleService.swift */; };
 		49CD1909348DFA4995F5963F /* ScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 823154A880207FCF1C483BA8 /* ScheduleService.swift */; };
+		AA41A001000000000000C901 /* ScheduleValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F903 /* ScheduleValidator.swift */; };
+		AA41A001000000000000C902 /* ScheduleValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F903 /* ScheduleValidator.swift */; };
+		AA41A001000000000000C903 /* ScheduleValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F903 /* ScheduleValidator.swift */; };
 		4A077E323F56F15FB88CEA20 /* SchemaV7.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AC5F4A5AC050284B732E324 /* SchemaV7.swift */; };
 		4A2600F097C24352AED6AF0E /* DailyLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92DC0582F729F67ECB583C5E /* DailyLog.swift */; };
 		4A5BFE30794DFA3C373279E8 /* WeeklyProgram.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D1853B432177F68D4B8C3B /* WeeklyProgram.swift */; };
@@ -124,6 +133,7 @@
 		63B9A2C7498EAC50858F490E /* StreakCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF13531E1C84E1B6271EB29 /* StreakCounter.swift */; };
 		653B00B8BF5FF2BFCC33BABB /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA2773372A4E5001F3A6F618 /* WorkoutActivityAttributes.swift */; };
 		653CB3C33C6B2560D1F63C6A /* BasketballServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038A8112E68D369AC2CFB1F7 /* BasketballServiceTests.swift */; };
+		AA41A001000000000000T101 /* ScheduleValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FT01 /* ScheduleValidatorTests.swift */; };
 		6655538FE52FEFDBD0002B44 /* ScheduleSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79525ED54C2630347BC1E7F /* ScheduleSuggestion.swift */; };
 		66D7C4F136ADECBD76EDB4E0 /* SchemaV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF4652FE69EA281396290FC /* SchemaV5.swift */; };
 		674202788BF9960ADE278F7D /* PersonalOptimizationWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -408,6 +418,7 @@
 		00706BB90BB75A496A3D1606 /* LearningTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTimerView.swift; sourceTree = "<group>"; };
 		026062AB166F1C6F733696D7 /* FastingServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingServiceTests.swift; sourceTree = "<group>"; };
 		038A8112E68D369AC2CFB1F7 /* BasketballServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballServiceTests.swift; sourceTree = "<group>"; };
+		AA41A001000000000000FT01 /* ScheduleValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleValidatorTests.swift; sourceTree = "<group>"; };
 		044790DF6858E05D889E8DA3 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		0541BD6CAA0B42B120CCD5F0 /* DailyQuoteServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuoteServiceTests.swift; sourceTree = "<group>"; };
 		05D082A46276FE47429C48D8 /* SchemaV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV4.swift; sourceTree = "<group>"; };
@@ -489,6 +500,8 @@
 		5093DF24E88D099B7076C10A /* CompletionHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionHistory.swift; sourceTree = "<group>"; };
 		5173CC8E9FF996AE96F15D99 /* DataExportImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportImportTests.swift; sourceTree = "<group>"; };
 		528CBFEE3F1CEF9256E5F74A /* SchemaV8.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV8.swift; sourceTree = "<group>"; };
+		AA41A001000000000000F901 /* SchemaV9.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV9.swift; sourceTree = "<group>"; };
+		AA41A001000000000000F902 /* ScheduleGenerationRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleGenerationRun.swift; sourceTree = "<group>"; };
 		55921DCD58DBE8640AF42118 /* SchemaV6.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV6.swift; sourceTree = "<group>"; };
 		58D0AE5B943807A2DAB9BE07 /* AchievementRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementRegistry.swift; sourceTree = "<group>"; };
 		590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Categories.swift"; sourceTree = "<group>"; };
@@ -532,6 +545,7 @@
 		BB2BBBBBBBBBBBBBBBBBBB03 /* schedule_gym_focused.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schedule_gym_focused.json; sourceTree = "<group>"; };
 		BB2BBBBBBBBBBBBBBBBBBB04 /* schedule_language_focused.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schedule_language_focused.json; sourceTree = "<group>"; };
 		823154A880207FCF1C483BA8 /* ScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleService.swift; sourceTree = "<group>"; };
+		AA41A001000000000000F903 /* ScheduleValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleValidator.swift; sourceTree = "<group>"; };
 		86D7C70A5FFD1546175FE70D /* WeeklyReflectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReflectionCard.swift; sourceTree = "<group>"; };
 		873E62A777CAB922DCCD5038 /* LearningReminderSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningReminderSchedulerTests.swift; sourceTree = "<group>"; };
 		898DC874ED5F88B3E0C36FE0 /* TrainingHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingHubView.swift; sourceTree = "<group>"; };
@@ -725,6 +739,7 @@
 			children = (
 				ADD6AE4177CF18D51EC8EA5E /* AdaptiveNotificationTimingTests.swift */,
 				038A8112E68D369AC2CFB1F7 /* BasketballServiceTests.swift */,
+				AA41A001000000000000FT01 /* ScheduleValidatorTests.swift */,
 				F3305701E5E1EB65C5834DE5 /* CharacterStateServiceTests.swift */,
 				4AE7C01549C09E53CD7FC603 /* CoachMemoryServiceTests.swift */,
 				E830049B609842EAD6F36461 /* CoachServiceTests.swift */,
@@ -1020,6 +1035,7 @@
 				360D242A8530DF3073145608 /* ScheduleConfig.swift */,
 				ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */,
 				823154A880207FCF1C483BA8 /* ScheduleService.swift */,
+				AA41A001000000000000F903 /* ScheduleValidator.swift */,
 			);
 			name = SharedSchedule;
 			path = Schedule;
@@ -1152,6 +1168,7 @@
 				6F855A3A3402581056CD01C9 /* PrescribedWorkout.swift */,
 				2F30C85E85590C6112D02188 /* ProtocolEntry.swift */,
 				C3F31266DF504D0F540B369D /* ScheduleBlock.swift */,
+				AA41A001000000000000F902 /* ScheduleGenerationRun.swift */,
 				B79525ED54C2630347BC1E7F /* ScheduleSuggestion.swift */,
 				3C21B1F183A1B8E72B77E9EE /* SchemaV1.swift */,
 				758596BD9C49AD3F4EEAFB95 /* SchemaV2.swift */,
@@ -1161,6 +1178,7 @@
 				55921DCD58DBE8640AF42118 /* SchemaV6.swift */,
 				4AC5F4A5AC050284B732E324 /* SchemaV7.swift */,
 				528CBFEE3F1CEF9256E5F74A /* SchemaV8.swift */,
+				AA41A001000000000000F901 /* SchemaV9.swift */,
 				AFF13531E1C84E1B6271EB29 /* StreakCounter.swift */,
 				29B56E873F82EA629BB4C40F /* StreakDomain.swift */,
 				12CFF9D4CAF217C0577FCF84 /* SwimSession.swift */,
@@ -1377,6 +1395,7 @@
 			files = (
 				237030E260483256E4AACAB1 /* AdaptiveNotificationTimingTests.swift in Sources */,
 				653CB3C33C6B2560D1F63C6A /* BasketballServiceTests.swift in Sources */,
+				AA41A001000000000000T101 /* ScheduleValidatorTests.swift in Sources */,
 				794B19FDB466608CD49D114C /* CharacterStateServiceTests.swift in Sources */,
 				50ED7CC8632D7C59B0DA5103 /* CoachMemoryServiceTests.swift in Sources */,
 				DFE8A50A55E73145CDF2482B /* CoachServiceTests.swift in Sources */,
@@ -1522,6 +1541,7 @@
 				BDAC256B37BC6C9052CED632 /* ScheduleEditorView.swift in Sources */,
 				BA5053AEB1922732900343B8 /* ScheduleSeed.swift in Sources */,
 				49CD1909348DFA4995F5963F /* ScheduleService.swift in Sources */,
+				AA41A001000000000000C901 /* ScheduleValidator.swift in Sources */,
 				67DBBB8238C4B35B86F64511 /* ScheduleSuggestion.swift in Sources */,
 				26292C2BAAB1EB1E9EF536CA /* ScheduleSuggestionInbox.swift in Sources */,
 				1AC22FD2939A1ED0F2BE4F6F /* ScheduleTemplateChooserView.swift in Sources */,
@@ -1533,6 +1553,8 @@
 				F413E847A915041CC88848EC /* SchemaV6.swift in Sources */,
 				95B83A9156DDCDA55F9B4A97 /* SchemaV7.swift in Sources */,
 				B60931973D2228B08EE21454 /* SchemaV8.swift in Sources */,
+				AA41A001000000000000A901 /* SchemaV9.swift in Sources */,
+				AA41A001000000000000B901 /* ScheduleGenerationRun.swift in Sources */,
 				5B82A388F1CB30D5A1BA8867 /* SessionLifecycleService.swift in Sources */,
 				9E3778818C6E6EB9782DBB0C /* SettingsView.swift in Sources */,
 				A4044AA4FFA030197C586BD3 /* StartCurrentBlockWorkoutIntent.swift in Sources */,
@@ -1605,6 +1627,7 @@
 				FBE012E8CC00A4B68F92A687 /* ScheduleConfig.swift in Sources */,
 				112CF695517D31A1E87892F7 /* ScheduleSeed.swift in Sources */,
 				497B2D2C8A6376B1BA12FDFE /* ScheduleService.swift in Sources */,
+				AA41A001000000000000C902 /* ScheduleValidator.swift in Sources */,
 				6655538FE52FEFDBD0002B44 /* ScheduleSuggestion.swift in Sources */,
 				DB80C72EEA7682E39EDA859B /* SchemaV1.swift in Sources */,
 				CEEBF7E2CEC5F3F45775EA8D /* SchemaV2.swift in Sources */,
@@ -1614,6 +1637,8 @@
 				821C7E7785DC12B4770D9BC8 /* SchemaV6.swift in Sources */,
 				4A077E323F56F15FB88CEA20 /* SchemaV7.swift in Sources */,
 				5142EAAD21FBF02CE89AEEB9 /* SchemaV8.swift in Sources */,
+				AA41A001000000000000A902 /* SchemaV9.swift in Sources */,
+				AA41A001000000000000B902 /* ScheduleGenerationRun.swift in Sources */,
 				AE2F534AABB0B37895EE60E3 /* StreakCounter.swift in Sources */,
 				6C76728BFC40EC9BAF5ED504 /* StreakDomain.swift in Sources */,
 				F4C542F098D6E20BA6AE251D /* SwimSession.swift in Sources */,
@@ -1681,6 +1706,7 @@
 				FB5CFE3EBCB20739974FAC5A /* ScheduleConfig.swift in Sources */,
 				2B950ADB27E765EFDD1276C8 /* ScheduleSeed.swift in Sources */,
 				4DFD64EAB6ECEF2BD7C66DC2 /* ScheduleService.swift in Sources */,
+				AA41A001000000000000C903 /* ScheduleValidator.swift in Sources */,
 				974EEFB0201288A2E56CA0FC /* ScheduleSuggestion.swift in Sources */,
 				0219D980D61AE2BF8658934C /* SchemaV1.swift in Sources */,
 				8AB4DABBC37A6DD2DDA76CCD /* SchemaV2.swift in Sources */,
@@ -1690,6 +1716,8 @@
 				4B5C25AC112619568CF84BC9 /* SchemaV6.swift in Sources */,
 				7ABED16059554CECA86A6AF7 /* SchemaV7.swift in Sources */,
 				0C2278932F310463E2197F40 /* SchemaV8.swift in Sources */,
+				AA41A001000000000000A903 /* SchemaV9.swift in Sources */,
+				AA41A001000000000000B903 /* ScheduleGenerationRun.swift in Sources */,
 				7284A0FBEA2EF743A00A3A9A /* SessionLifecycleService.swift in Sources */,
 				DF86AC64F316D1B1AA37632A /* StartCurrentBlockWorkoutIntent.swift in Sources */,
 				BCE9FA71DD9411E1368775AE /* QuickLogIntents.swift in Sources */,

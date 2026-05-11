@@ -36,14 +36,32 @@ final class ScheduleBlock {
     var overrideDate: Date?
     var isCustom: Bool = false
 
+    // M4.1 — Implementation-intention authoring. When set, the block is
+    // anchored to a user-declared trigger event ("after_kid_dropoff",
+    // "after_coffee", etc.). startTime/endTime remain authoritative for time
+    // math; anchorEvent is display-only at v1 ("Lift A — 30 min after
+    // drop-off") and a hint for adaptation prompts that this block prefers
+    // a trigger over a clock.
+    var anchorEvent: String?
+    var anchorOffsetMinutes: Int?
+
     var type: BlockType { BlockType(rawValue: typeRaw) ?? .other }
 
-    init(dayOfWeek: Int, startTime: String, endTime: String, activity: String, type: BlockType, module: String? = nil) {
+    init(dayOfWeek: Int,
+         startTime: String,
+         endTime: String,
+         activity: String,
+         type: BlockType,
+         module: String? = nil,
+         anchorEvent: String? = nil,
+         anchorOffsetMinutes: Int? = nil) {
         self.dayOfWeek = dayOfWeek
         self.startTime = startTime
         self.endTime = endTime
         self.activity = activity
         self.typeRaw = type.rawValue
         self.module = module
+        self.anchorEvent = anchorEvent
+        self.anchorOffsetMinutes = anchorOffsetMinutes
     }
 }

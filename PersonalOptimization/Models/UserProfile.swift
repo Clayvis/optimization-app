@@ -54,6 +54,22 @@ final class UserProfile {
     var lastRecoveryOverrideAt: Date?
     var recoveryOverrideCountThisMonth: Int = 0
 
+    // M4.1 — AI schedule generation. anchorEventsCSV holds user-declared
+    // trigger labels (after_kid_dropoff, after_coffee, after_dinner) the AI
+    // can ride blocks along. lastGeneratedAt powers the Settings cooldown
+    // and the "Last generated" surface.
+    var anchorEventsCSV: String = ""
+    var lastGeneratedAt: Date?
+
+    /// Parsed view of `anchorEventsCSV`. Empty CSV → empty array.
+    /// Trims whitespace, drops empty tokens.
+    var anchorEvents: [String] {
+        anchorEventsCSV
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
     init(name: String = "", dob: Date = .distantPast, sex: String = "male") {
         self.name = name
         self.dob = dob

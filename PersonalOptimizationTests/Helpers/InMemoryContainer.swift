@@ -4,7 +4,7 @@ import SwiftData
 
 enum InMemoryContainer {
     static func make() throws -> ModelContainer {
-        let schema = Schema(versionedSchema: SchemaV8.self)
+        let schema = Schema(versionedSchema: SchemaV9.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: true,
