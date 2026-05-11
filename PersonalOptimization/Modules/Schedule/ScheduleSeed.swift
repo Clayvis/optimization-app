@@ -119,6 +119,41 @@ enum ScheduleSeed {
         try loadScheduleFile(resourceName: "default_schedule", bundle: bundle)
     }
 
+    /// M4.1 apply path. Wipes all non-custom non-override ScheduleBlocks then
+    /// inserts the drafts. Preserves `isCustom == true` rows verbatim. Stamps
+    /// `userProfile.lastGeneratedAt` and persists the user's chosen anchor
+    /// events for future generations. Caller is responsible for marking the
+    /// associated ScheduleGenerationRun row as accepted.
+    static func applyDrafts(_ drafts: [ScheduleBlockDraft],
+                            anchorEvents: [String],
+                            modelContext: ModelContext,
+                            now: Date = Date()) throws {
+        let descriptor = FetchDescriptor<ScheduleBlock>(
+            predicate: #Predicate<ScheduleBlock> { $0.isCustom == false && $0.isOverride == false }
+        )
+        let toDelete = try modelContext.fetch(descriptor)
+        for block in toDelete {
+            modelContext.delete(block)
+        }
+        for draft in drafts {
+            modelContext.insert(draft.toScheduleBlock())
+        }
+
+        if let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first {
+            profile.lastGeneratedAt = now
+            let csv = anchorEvents
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+                .joined(separator: ",")
+            profile.anchorEventsCSV = csv
+        }
+
+        try modelContext.save()
+        Logger.schedule.info(
+            "Applied AI-generated drafts: removed \(toDelete.count, privacy: .public), inserted \(drafts.count, privacy: .public)"
+        )
+    }
+
     /// Generic loader for any bundled schedule JSON sharing the `DefaultScheduleFile`
     /// shape. Throws `resourceMissing` if the resource isn't in the bundle.
     static func loadScheduleFile(resourceName: String,

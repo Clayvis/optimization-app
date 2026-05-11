@@ -100,6 +100,63 @@ struct ClaudeAPIClient: Sendable {
     }
 }
 
+extension ClaudeAPIClient {
+    /// Strip common markdown fences ("```json … ```") and surrounding whitespace
+    /// from a Claude response and decode as JSON. Used by callers that asked
+    /// for structured output via prompt instructions (no constrained decoding).
+    ///
+    /// Failure modes Claude exhibits and this helper recovers from:
+    /// - Triple-backtick fences with or without a language tag.
+    /// - Leading prose before the JSON object.
+    /// - Trailing prose after the JSON object.
+    ///
+    /// Throws `ClaudeAPIError.decoding` when the response doesn't contain a
+    /// parseable JSON object.
+    static func decodeJSON<T: Decodable>(_ text: String, as: T.Type = T.self) throws -> T {
+        let cleaned = stripJSONFences(text)
+        guard let data = cleaned.data(using: .utf8) else {
+            throw ClaudeAPIError.decoding(NSError(
+                domain: "ClaudeAPIClient",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Response is not UTF-8."]
+            ))
+        }
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw ClaudeAPIError.decoding(error)
+        }
+    }
+
+    /// Returns the substring from the first `{` to the matching closing `}`
+    /// (or `[` ... `]`). Handles fenced output by ignoring everything outside
+    /// the brace span. Does NOT parse JSON; just finds boundaries.
+    static func stripJSONFences(_ text: String) -> String {
+        var trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Remove fenced wrappers like "```json\n...\n```" or "```\n...\n```".
+        if trimmed.hasPrefix("```") {
+            if let firstNewline = trimmed.firstIndex(of: "\n") {
+                trimmed = String(trimmed[trimmed.index(after: firstNewline)...])
+            }
+            if trimmed.hasSuffix("```") {
+                trimmed = String(trimmed.dropLast(3))
+            }
+            trimmed = trimmed.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        // Narrow to the outermost brace/bracket span. Useful when Claude
+        // emits a sentence of prose before or after the JSON.
+        let openCandidates: [Character] = ["{", "["]
+        if let openIdx = trimmed.firstIndex(where: { openCandidates.contains($0) }) {
+            let open = trimmed[openIdx]
+            let close: Character = (open == "{") ? "}" : "]"
+            if let closeIdx = trimmed.lastIndex(of: close), closeIdx > openIdx {
+                return String(trimmed[openIdx...closeIdx])
+            }
+        }
+        return trimmed
+    }
+}
+
 private struct MessagesRequest: Encodable {
     let model: String
     let maxTokens: Int

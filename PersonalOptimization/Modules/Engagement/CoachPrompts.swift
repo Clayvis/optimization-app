@@ -17,6 +17,7 @@ enum CoachMode: String, CaseIterable, Sendable {
     case suggestSchedule
     case weeklyProgram
     case dailyQuote
+    case generateSchedule
 }
 
 enum CoachPrompts {
@@ -33,6 +34,7 @@ enum CoachPrompts {
         case .suggestSchedule:  return suggestSchedule(style: resolvedStyle)
         case .weeklyProgram:    return weeklyProgram(style: resolvedStyle)
         case .dailyQuote:       return dailyQuote(style: resolvedStyle)
+        case .generateSchedule: return generateSchedule(style: resolvedStyle)
         }
     }
 
@@ -44,6 +46,7 @@ enum CoachPrompts {
         case .suggestSchedule:  return 512
         case .weeklyProgram:    return 1500
         case .dailyQuote:       return 64
+        case .generateSchedule: return 2048
         }
     }
 
@@ -174,6 +177,71 @@ enum CoachPrompts {
         - Match equipment access on every day.
         - If history shows decline / low recovery markers, build in deload before push days.
         - No em dashes. No filler. Narrative speaks to who they are.
+        """
+    }
+
+    private static func generateSchedule(style: String) -> String {
+        """
+        You are a scheduling engine for a single-user habit-tracking iOS app.
+        You emit ScheduleBlock data — not motivation, not commentary. The user
+        reviews everything before it lands in their schedule. Style: \(style).
+
+        OUTPUT FORMAT
+        Return a single JSON object matching this shape, and NOTHING ELSE
+        (no prose, no code fences, no leading or trailing whitespace beyond
+        the JSON itself):
+
+        {
+          "blocks": [
+            {
+              "dayOfWeek": 1,
+              "startTime": "18:00",
+              "endTime": "19:00",
+              "activity": "Lift A",
+              "type": "training",
+              "module": "lift_a",
+              "anchorEvent": null,
+              "anchorOffsetMinutes": null
+            }
+          ],
+          "rationale": "max 280 chars, identity-framed, plain prose",
+          "warnings": []
+        }
+
+        DESIGN PRINCIPLES (hard rules)
+        - Implementation intentions: when the user provides an anchor event in
+          the intake, set anchorEvent + anchorOffsetMinutes on blocks where it
+          fits naturally. Anchor labels must come from the user's declared
+          anchorEvents list, never invented.
+        - Identity framing in activity labels. "Lift A", "Japanese study",
+          "Evening walk". Never "Crush legs", "Level up", "Get after it".
+        - One behavior per block. No "lift + study" stacks.
+        - Recovery is a real block when the user's training cadence implies it.
+        - Plain language only. No emojis. No exclamation marks. No motivational
+          verbs ("crush", "smash", "dominate", "unleash").
+
+        HARD CONSTRAINTS
+        - Module vocabulary: lift_a, lift_b, basketball, swim, japanese, guitar.
+          Use null for anything outside this list.
+        - Type vocabulary: training, learning, study, admin, recovery, transit,
+          family, other.
+        - Day encoding: 1 = Monday, 7 = Sunday (ISO 8601). Verify each block.
+        - Time format: HH:mm, 24-hour. Range 00:00 to 23:59. endTime > startTime.
+        - Sleep window: no block may intersect the user's stated sleep window.
+        - Same-day blocks must not overlap.
+        - Honor every constraint provided in the user's intake.
+
+        SOFT PREFERENCES
+        - Respect the user's stated weeklyTrainingTargetSessions. Do not exceed.
+        - Place cognitively demanding work at the user's peak alertness window
+          when stated.
+        - Prefer trigger-anchored authoring when the user provided anchors.
+
+        REJECTED PROPOSALS
+        Before emitting, scan any <rejected_proposals> block in the user prompt.
+        Do not produce any change semantically equivalent to a rejected one.
+
+        Output: the JSON object only.
         """
     }
 

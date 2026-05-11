@@ -96,6 +96,12 @@
 		AA41A001000000000000C901 /* ScheduleValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F903 /* ScheduleValidator.swift */; };
 		AA41A001000000000000C902 /* ScheduleValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F903 /* ScheduleValidator.swift */; };
 		AA41A001000000000000C903 /* ScheduleValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000F903 /* ScheduleValidator.swift */; };
+		AA41A001000000000000D101 /* ScheduleGenerationDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FD01 /* ScheduleGenerationDTO.swift */; };
+		AA41A001000000000000D102 /* ScheduleGenerationDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FD01 /* ScheduleGenerationDTO.swift */; };
+		AA41A001000000000000D103 /* ScheduleGenerationDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FD01 /* ScheduleGenerationDTO.swift */; };
+		AA41A001000000000000E101 /* ScheduleAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FD02 /* ScheduleAIService.swift */; };
+		AA41A001000000000000E102 /* ScheduleAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FD02 /* ScheduleAIService.swift */; };
+		AA41A001000000000000E103 /* ScheduleAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41A001000000000000FD02 /* ScheduleAIService.swift */; };
 		4A077E323F56F15FB88CEA20 /* SchemaV7.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AC5F4A5AC050284B732E324 /* SchemaV7.swift */; };
 		4A2600F097C24352AED6AF0E /* DailyLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92DC0582F729F67ECB583C5E /* DailyLog.swift */; };
 		4A5BFE30794DFA3C373279E8 /* WeeklyProgram.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D1853B432177F68D4B8C3B /* WeeklyProgram.swift */; };
@@ -546,6 +552,8 @@
 		BB2BBBBBBBBBBBBBBBBBBB04 /* schedule_language_focused.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schedule_language_focused.json; sourceTree = "<group>"; };
 		823154A880207FCF1C483BA8 /* ScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleService.swift; sourceTree = "<group>"; };
 		AA41A001000000000000F903 /* ScheduleValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleValidator.swift; sourceTree = "<group>"; };
+		AA41A001000000000000FD01 /* ScheduleGenerationDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AI/ScheduleGenerationDTO.swift; sourceTree = "<group>"; };
+		AA41A001000000000000FD02 /* ScheduleAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AI/ScheduleAIService.swift; sourceTree = "<group>"; };
 		86D7C70A5FFD1546175FE70D /* WeeklyReflectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReflectionCard.swift; sourceTree = "<group>"; };
 		873E62A777CAB922DCCD5038 /* LearningReminderSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningReminderSchedulerTests.swift; sourceTree = "<group>"; };
 		898DC874ED5F88B3E0C36FE0 /* TrainingHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingHubView.swift; sourceTree = "<group>"; };
@@ -1036,6 +1044,8 @@
 				ED2D23DD34DD2309E97F4747 /* ScheduleSeed.swift */,
 				823154A880207FCF1C483BA8 /* ScheduleService.swift */,
 				AA41A001000000000000F903 /* ScheduleValidator.swift */,
+				AA41A001000000000000FD01 /* ScheduleGenerationDTO.swift */,
+				AA41A001000000000000FD02 /* ScheduleAIService.swift */,
 			);
 			name = SharedSchedule;
 			path = Schedule;
@@ -1542,6 +1552,8 @@
 				BA5053AEB1922732900343B8 /* ScheduleSeed.swift in Sources */,
 				49CD1909348DFA4995F5963F /* ScheduleService.swift in Sources */,
 				AA41A001000000000000C901 /* ScheduleValidator.swift in Sources */,
+				AA41A001000000000000D101 /* ScheduleGenerationDTO.swift in Sources */,
+				AA41A001000000000000E101 /* ScheduleAIService.swift in Sources */,
 				67DBBB8238C4B35B86F64511 /* ScheduleSuggestion.swift in Sources */,
 				26292C2BAAB1EB1E9EF536CA /* ScheduleSuggestionInbox.swift in Sources */,
 				1AC22FD2939A1ED0F2BE4F6F /* ScheduleTemplateChooserView.swift in Sources */,
@@ -1628,6 +1640,8 @@
 				112CF695517D31A1E87892F7 /* ScheduleSeed.swift in Sources */,
 				497B2D2C8A6376B1BA12FDFE /* ScheduleService.swift in Sources */,
 				AA41A001000000000000C902 /* ScheduleValidator.swift in Sources */,
+				AA41A001000000000000D102 /* ScheduleGenerationDTO.swift in Sources */,
+				AA41A001000000000000E102 /* ScheduleAIService.swift in Sources */,
 				6655538FE52FEFDBD0002B44 /* ScheduleSuggestion.swift in Sources */,
 				DB80C72EEA7682E39EDA859B /* SchemaV1.swift in Sources */,
 				CEEBF7E2CEC5F3F45775EA8D /* SchemaV2.swift in Sources */,
@@ -1707,6 +1721,8 @@
 				2B950ADB27E765EFDD1276C8 /* ScheduleSeed.swift in Sources */,
 				4DFD64EAB6ECEF2BD7C66DC2 /* ScheduleService.swift in Sources */,
 				AA41A001000000000000C903 /* ScheduleValidator.swift in Sources */,
+				AA41A001000000000000D103 /* ScheduleGenerationDTO.swift in Sources */,
+				AA41A001000000000000E103 /* ScheduleAIService.swift in Sources */,
 				974EEFB0201288A2E56CA0FC /* ScheduleSuggestion.swift in Sources */,
 				0219D980D61AE2BF8658934C /* SchemaV1.swift in Sources */,
 				8AB4DABBC37A6DD2DDA76CCD /* SchemaV2.swift in Sources */,
