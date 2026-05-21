@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import HealthKit
+import OSLog
 
 /// Settings -> Diagnostics. Surfaces persistence + integration health for the user
 /// (HK auth, recent HK failures, API key state, token usage today / this month, and
@@ -23,6 +24,11 @@ struct DiagnosticsView: View {
     @State private var apiKeyStoragePosture: KeyStoragePosture?
     @State private var apiKeyTestResult: String?
     @State private var testInFlight = false
+    @State private var hkSyncService: HealthKitSyncService?
+    @State private var rollupInFlight = false
+    @State private var rollupResult: String?
+    @State private var logExportURL: URL?
+    @State private var logExportInFlight = false
 
     enum APIKeyStatus { case unknown, set, missing }
 
@@ -34,10 +40,14 @@ struct DiagnosticsView: View {
             tokenUsageSection
             backgroundTasksSection
             failuresSection
+            exportLogsSection
         }
         .navigationTitle("Diagnostics")
         .onAppear {
             refresh()
+            if hkSyncService == nil {
+                hkSyncService = HealthKitSyncService(modelContext: modelContext)
+            }
             try? AchievementService(modelContext: modelContext).unlockImperative("diagnostics_clean")
         }
     }
@@ -108,6 +118,102 @@ struct DiagnosticsView: View {
         Section("HealthKit") {
             statusRow(label: "Workouts (write)", status: hkWorkoutAuth)
             statusRow(label: "Water (write)", status: hkWaterAuth)
+            if let svc = hkSyncService {
+                HStack {
+                    Text("Last sync")
+                    Spacer()
+                    if svc.isSyncing {
+                        ProgressView().controlSize(.small)
+                    } else if let when = svc.lastSyncedAt {
+                        Text(formatTimestamp(when))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("never")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if let ms = svc.lastSyncDurationMs {
+                    HStack {
+                        Text("Last duration")
+                        Spacer()
+                        Text("\(ms) ms").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                if let err = svc.lastSyncError {
+                    Text(err).font(.caption2).foregroundStyle(.red)
+                }
+            }
+            Button {
+                Task { await runRollupNow() }
+            } label: {
+                HStack {
+                    Label("Run rollup now", systemImage: "arrow.clockwise")
+                    if rollupInFlight {
+                        Spacer()
+                        ProgressView().controlSize(.small)
+                    }
+                }
+            }
+            .disabled(rollupInFlight)
+            if let rollupResult {
+                Text(rollupResult).font(.caption).foregroundStyle(rollupResult.hasPrefix("OK") ? .green : .red)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var exportLogsSection: some View {
+        Section("Logs") {
+            Button {
+                Task { await exportLogs() }
+            } label: {
+                HStack {
+                    Label("Export last 24h of logs", systemImage: "square.and.arrow.up")
+                    if logExportInFlight {
+                        Spacer()
+                        ProgressView().controlSize(.small)
+                    }
+                }
+            }
+            .disabled(logExportInFlight)
+            if let url = logExportURL {
+                ShareLink(item: url) {
+                    Label("Share \(url.lastPathComponent)", systemImage: "square.and.arrow.up.fill")
+                }
+            }
+        }
+    }
+
+    private func runRollupNow() async {
+        guard let svc = hkSyncService else { return }
+        rollupInFlight = true
+        defer { rollupInFlight = false }
+        await svc.syncRange(days: 7)
+        rollupResult = "OK · synced last 7 days"
+    }
+
+    private func exportLogs() async {
+        logExportInFlight = true
+        defer { logExportInFlight = false }
+        do {
+            let store = try OSLogStore(scope: .currentProcessIdentifier)
+            let oneDayAgo = store.position(date: Date().addingTimeInterval(-86_400))
+            let predicate = NSPredicate(format: "subsystem == %@", "com.rawlins.PersonalOptimization")
+            let entries = try store.getEntries(with: [], at: oneDayAgo, matching: predicate)
+            var lines: [String] = []
+            for case let entry as OSLogEntryLog in entries {
+                let ts = ISO8601DateFormatter().string(from: entry.date)
+                lines.append("\(ts) [\(entry.category)] \(entry.composedMessage)")
+            }
+            let body = lines.joined(separator: "\n")
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent("PersonalOptimization-logs-\(Int(Date().timeIntervalSince1970)).txt")
+            try body.data(using: .utf8)?.write(to: url)
+            logExportURL = url
+        } catch {
+            logExportURL = nil
         }
     }
 

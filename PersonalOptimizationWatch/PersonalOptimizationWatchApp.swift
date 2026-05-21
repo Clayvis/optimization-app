@@ -24,6 +24,16 @@ struct PersonalOptimizationWatchApp: App {
                     Logger.schedule.error("Watch seed failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
+            // Activate the WC session and consume events from the phone side.
+            // Each event posts userStateChanged so the watch's CharacterState
+            // and complications can react in real time (mirroring iOS).
+            WatchConnectivityService.shared.activateIfPossible()
+            Task { @MainActor in
+                for await event in WatchConnectivityService.shared.lastEventStream {
+                    NotificationCenter.default.post(name: .userStateChanged, object: event)
+                    _ = event
+                }
+            }
             return container
         } catch {
             Logger.persistence.fault("Watch ModelContainer init failed: \(error.localizedDescription, privacy: .public)")

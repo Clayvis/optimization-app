@@ -24,6 +24,13 @@ iOS 18 baseline gives access to: SwiftData with CloudKit sync, ActivityKit Live 
 - All `@Model` classes live in `Models/` directory, one file per model.
 - CloudKit sync via SwiftData's built-in CloudKit container support.
 - Schema versioning via `VersionedSchema` from day one. Migration plan for every schema change.
+- **Single source of truth for the schema**: `AppSchema.current` (in `Models/AppSchema.swift`). Every production `ModelContainer` MUST construct its `Schema` via `AppSchema.schema()`. Three targets share a CloudKit container (iOS app, Watch, Watch Complications); if any of them declares a different schema version, CloudKit will faithfully replicate records containing fields one target doesn't know about, and SwiftData has to decide what to do. The safe answer is "do not let that happen". Cross-cutting test CT-1 enforces this.
+- **Schema-bump-only-when-required rule** (metadata-blob-first):
+  - Bump the schema (new `SchemaVN`) ONLY for actual entity changes: new `@Model` classes, new relationships, type changes.
+  - Additive default-valued scalar attributes ride on `metadataBlob: Data?` instead of forcing a new schema version. Read via `metadata(_:as:)`, write via `setMetadata(_:value:)`. Pattern lives on `DailyLog` and `UserProfile` already; extend to other entities when an additive scalar field would otherwise require a new SchemaVN.
+  - Migrating a metadata-blob field into a first-class column is allowed on the next legitimate schema bump (consolidate at the next mandatory version).
+- **DailyLog writes** must go through `DailyLogStore.upsert(for:)` (in `Services/DailyLogStore.swift`). Direct `DailyLog(date:)` construction is forbidden outside `DailyLog.swift` itself, the store, and the JSON import path. SwiftData prohibits `@Attribute(.unique)` on CloudKit-mirrored models, so uniqueness is enforced application-side via the store plus a one-shot dedupe migration (`DailyLogDedupeOnce`).
+- **Calendar / time-zone resolution** for app logic (day boundaries, streak rollovers, schedule blocks, notification suppression) must go through `UserCalendar.current(modelContext:)` (in `Services/UserCalendar.swift`). It reads `UserProfile.timezone` by default; the user can opt into device-tz via `UserProfile.travelModeFollowsDevice`. Display formatters (`DateFormatter` for "now" labels) should stay on the device's `TimeZone.current`.
 
 ## Sync
 

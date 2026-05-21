@@ -6,6 +6,7 @@ struct TodayView: View {
     @Query private var profiles: [UserProfile]
     @State private var now: Date = Date()
     @State private var characterService = CharacterStateService.shared
+    @State private var hkSyncService: HealthKitSyncService?
     @State private var showingProtocolDetail = false
     @State private var quoteService = DailyQuoteService()
     @State private var dailyQuote: DailyQuote?
@@ -26,6 +27,25 @@ struct TodayView: View {
     var body: some View {
         NavigationStack {
             List {
+                if let svc = hkSyncService, svc.isSyncing {
+                    Section {
+                        HStack(spacing: 10) {
+                            ProgressView().controlSize(.small)
+                            Text("Catching up with Apple Health…")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 12)
+                        .background(Color(.tertiarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
+                    }
+                }
+
                 if let profile, profile.mascotEnabled {
                     Section {
                         CharacterView(service: characterService, size: 200)
@@ -204,12 +224,23 @@ struct TodayView: View {
             }
             .onAppear {
                 now = Date()
+                if hkSyncService == nil {
+                    hkSyncService = HealthKitSyncService(modelContext: modelContext)
+                }
                 characterService.start(modelContext: modelContext)
                 Task { await loadDailyQuote() }
                 refreshLapseAndMilestones()
             }
             .onDisappear {
                 characterService.stop()
+            }
+            // Pull to refresh runs a full HK sync and re-derives downstream
+            // state. The spinner above shows for the duration of the sync
+            // via the @Observable isSyncing flag.
+            .refreshable {
+                guard let svc = hkSyncService else { return }
+                await svc.syncToday()
+                NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
             }
             // SwiftUI-native ticker. The OS pauses the task when the view
             // leaves the screen and resumes it when it returns; no manual

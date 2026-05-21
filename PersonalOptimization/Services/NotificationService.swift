@@ -230,6 +230,9 @@ final class NotificationService {
     }
 
     /// Schedules a hydration reminder. Returns the request identifier or nil if suppressed.
+    /// Sleep window defaults are 22:00 -> 07:00. Production callers should
+    /// pass `profile.sleepWindowStartHHMM` + `profile.sleepWindowEndHHMM` so
+    /// the suppression matches the user's actual sleep schedule.
     @discardableResult
     func scheduleHydrationReminder(
         at date: Date,
@@ -237,10 +240,13 @@ final class NotificationService {
         targetMaxOz: Double,
         timezone: TimeZone,
         morningIntakeOz: Double,
-        cutoffTime: String = "21:00"
+        cutoffTime: String = "21:00",
+        sleepStartHHMM: String = "22:00",
+        sleepEndHHMM: String = "07:00"
     ) async throws -> String? {
         if NotificationSuppressionRules.shouldSuppressHydration(
-            at: date, timezone: timezone, morningIntakeOz: morningIntakeOz, cutoffTime: cutoffTime
+            at: date, timezone: timezone, morningIntakeOz: morningIntakeOz,
+            cutoffTime: cutoffTime, sleepStartHHMM: sleepStartHHMM, sleepEndHHMM: sleepEndHHMM
         ) {
             logger.info("Suppressed hydration reminder at \(date, privacy: .public)")
             return nil

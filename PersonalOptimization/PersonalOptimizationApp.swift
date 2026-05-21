@@ -80,6 +80,11 @@ struct PersonalOptimizationApp: App {
             Task { @MainActor in
                 await HealthKitObserverService.shared.startObserving(modelContainer: container)
             }
+            // Subscribe to dailyLogsRecomputed so late-arriving samples
+            // refresh persistent StreakCounter rows. CharacterStateService
+            // already subscribes for its own state; this covers the rollup
+            // that doesn't have an in-memory observable surface.
+            ReactiveRecomputeService.shared.start(modelContainer: container)
             return container
         } catch {
             Logger.persistence.fault("ModelContainer init failed: \(error.localizedDescription, privacy: .public)")
