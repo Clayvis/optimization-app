@@ -7,7 +7,7 @@ import os
 /// local SwiftData store and rely entirely on CloudKit to reconcile, leaving
 /// the complication one CloudKit cycle behind the watch app it sits next to.
 enum AppGroupContainer {
-    static let identifier = "group.com.rawlins.PersonalOptimization"
+    static let identifier = BuildConfig.appGroupID
 
     /// Shared store URL. nil if the App Group is not entitled for the running
     /// process (in that case callers should fall back to the default sandbox

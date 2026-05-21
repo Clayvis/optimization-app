@@ -28,6 +28,10 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     WATCHOS_DEPLOYMENT_TARGET: "11.0"
+    # Centralized app-identity prefix. Override once and every target (App
+    # Group, CloudKit container, keychain service id, OS Log subsystem, BG
+    # task id) picks it up via BuildConfig.swift + Info.plist TeamBundlePrefix.
+    TEAM_BUNDLE_PREFIX: com.rawlins.PersonalOptimization
   configs:
     Debug:
       SWIFT_OPTIMIZATION_LEVEL: -Onone
@@ -65,6 +69,7 @@ targets:
         CFBundleDisplayName: Optimization
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        TeamBundlePrefix: $(TEAM_BUNDLE_PREFIX)
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:
           UIColorName: AccentColor
@@ -158,6 +163,7 @@ targets:
         name: SharedEngagement
       - path: PersonalOptimization/Modules/Engagement/SessionLifecycleService.swift
         name: SharedEngagement
+      - path: PersonalOptimization/Services/BuildConfig.swift
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/HealthKitService.swift
       - path: PersonalOptimization/Services/WatchConnectivityService.swift
@@ -178,6 +184,7 @@ targets:
         CFBundleDisplayName: Optimization
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        TeamBundlePrefix: $(TEAM_BUNDLE_PREFIX)
         WKApplication: true
         WKWatchOnly: false
         WKCompanionAppBundleIdentifier: com.rawlins.PersonalOptimization
@@ -267,6 +274,7 @@ targets:
         name: SharedEngagement
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/ProfileService.swift
+      - path: PersonalOptimization/Services/BuildConfig.swift
       - path: PersonalOptimization/Services/AppGroupContainer.swift
       - path: PersonalOptimization/Services/AppNotifications.swift
       - path: PersonalOptimization/Services/UserCalendar.swift

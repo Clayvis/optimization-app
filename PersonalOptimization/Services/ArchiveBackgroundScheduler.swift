@@ -15,7 +15,7 @@ import BackgroundTasks
 /// `BGTaskSchedulerPermittedIdentifiers` (added via project.yml).
 @MainActor
 enum ArchiveBackgroundScheduler {
-    static let taskIdentifier = "com.rawlins.PersonalOptimization.archiveRollup"
+    static let taskIdentifier = BuildConfig.bgArchiveTaskID
     private static let logger = Logger.coach
 
     /// Call from `application(_:didFinishLaunchingWithOptions:)` or the SwiftUI

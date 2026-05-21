@@ -24,7 +24,7 @@ final class WatchConnectivityService: NSObject, @unchecked Sendable {
     /// Public stream — views subscribe with `for await event in lastEventStream`.
     let lastEventStream: AsyncStream<WatchConnectivityEvent>
 
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "wc")
+    private let logger = Logger.wc
 
     override init() {
         var localContinuation: AsyncStream<WatchConnectivityEvent>.Continuation!

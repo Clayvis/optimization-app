@@ -1,7 +1,7 @@
 import os
 
 extension Logger {
-    private static let subsystem = "com.rawlins.PersonalOptimization"
+    private static let subsystem = BuildConfig.loggingSubsystem
 
     static let app = Logger(subsystem: subsystem, category: "app")
     static let schedule = Logger(subsystem: subsystem, category: "schedule")
@@ -13,4 +13,5 @@ extension Logger {
     static let keychain = Logger(subsystem: subsystem, category: "keychain")
     static let persistence = Logger(subsystem: subsystem, category: "persistence")
     static let coach = Logger(subsystem: subsystem, category: "coach")
+    static let wc = Logger(subsystem: subsystem, category: "wc")
 }

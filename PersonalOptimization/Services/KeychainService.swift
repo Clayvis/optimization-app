@@ -20,7 +20,7 @@ final class KeychainService: Sendable {
     static let shared = KeychainService()
 
     private let logger = Logger.keychain
-    private let service = "com.rawlins.PersonalOptimization"
+    private let service = BuildConfig.keychainServiceID
 
     private init() {}
 

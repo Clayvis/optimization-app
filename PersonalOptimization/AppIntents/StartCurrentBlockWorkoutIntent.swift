@@ -40,7 +40,7 @@ final class ModelContainerWrapper {
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
+            cloudKitDatabase: .private(BuildConfig.cloudKitContainer)
         )
         do {
             self.container = try ModelContainer(

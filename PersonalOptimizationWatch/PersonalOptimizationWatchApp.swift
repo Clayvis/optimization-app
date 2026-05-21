@@ -9,7 +9,7 @@ struct PersonalOptimizationWatchApp: App {
         let config = ModelConfiguration(
             schema: schema,
             url: AppGroupContainer.storeURL() ?? URL.applicationSupportDirectory.appending(path: "default.store"),
-            cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
+            cloudKitDatabase: .private(BuildConfig.cloudKitContainer)
         )
         do {
             let container = try ModelContainer(
