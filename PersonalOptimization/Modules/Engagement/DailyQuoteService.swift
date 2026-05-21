@@ -96,7 +96,7 @@ final class DailyQuoteService {
 
     private func dayKey(now: Date) -> String {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let comps = cal.dateComponents([.year, .month, .day], from: now)
         return "\(comps.year ?? 0)-\(comps.month ?? 0)-\(comps.day ?? 0)"
     }

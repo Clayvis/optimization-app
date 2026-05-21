@@ -19,7 +19,7 @@ enum AdaptiveNotificationTiming {
         domain: StreakDomain,
         history: [CompletionHistory],
         asOf: Date,
-        timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        timezone: TimeZone = TimeZone.current
     ) -> Date? {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
@@ -45,7 +45,7 @@ enum AdaptiveNotificationTiming {
         domain: StreakDomain,
         history: [CompletionHistory],
         asOf: Date,
-        timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        timezone: TimeZone = TimeZone.current
     ) -> Bool {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone

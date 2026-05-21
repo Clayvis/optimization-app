@@ -169,7 +169,7 @@ private struct InProgressSessionsSection: View {
 
     private func formatTime(_ date: Date) -> String {
         let f = DateFormatter()
-        f.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        f.timeZone = TimeZone.current
         f.dateFormat = "HH:mm"
         return f.string(from: date)
     }

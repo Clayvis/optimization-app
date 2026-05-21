@@ -94,16 +94,8 @@ struct LearningWatchView: View {
 
     private func addMinutes(_ minutes: Int, into key: String) {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
-        let day = cal.startOfDay(for: Date())
-        let descriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
-        )
-        let log: DailyLog = (try? modelContext.fetch(descriptor))?.first ?? {
-            let new = DailyLog(date: day)
-            modelContext.insert(new)
-            return new
-        }()
+        cal.timeZone = UserCalendar.timezone(modelContext: modelContext)
+        let log = DailyLogStore(modelContext: modelContext, calendar: cal).upsertToday()
         switch key {
         case "japanese":   log.japaneseMinutes += minutes
         case "guitar":     log.guitarMinutes += minutes
@@ -118,7 +110,7 @@ struct LearningWatchView: View {
 
     private func todayLog() -> DailyLog? {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let day = cal.startOfDay(for: Date())
         let descriptor = FetchDescriptor<DailyLog>(
             predicate: #Predicate<DailyLog> { $0.date == day }

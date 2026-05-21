@@ -14,7 +14,7 @@ final class CustomActivityService {
     private let logger = Logger.app
 
     init(modelContext: ModelContext,
-         timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current) {
+         timezone: TimeZone = TimeZone.current) {
         self.modelContext = modelContext
         self.timezone = timezone
     }

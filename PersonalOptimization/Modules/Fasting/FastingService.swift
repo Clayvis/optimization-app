@@ -32,7 +32,7 @@ final class FastingService {
     private let defaults: FastingDefaults
     private let logger = Logger.app
 
-    init(modelContext: ModelContext, timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current, defaults: FastingDefaults) {
+    init(modelContext: ModelContext, timezone: TimeZone = TimeZone.current, defaults: FastingDefaults) {
         self.modelContext = modelContext
         self.timezone = timezone
         self.defaults = defaults
@@ -262,17 +262,7 @@ final class FastingService {
     private func upsertDailyLog(for date: Date) -> DailyLog {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
-        let day = cal.startOfDay(for: date)
-
-        let descriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
-        )
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
-            return existing
-        }
-        let log = DailyLog(date: day)
-        modelContext.insert(log)
-        return log
+        return DailyLogStore(modelContext: modelContext, calendar: cal).upsert(for: date)
     }
 
     private func isoWeekday(for date: Date) -> Int {

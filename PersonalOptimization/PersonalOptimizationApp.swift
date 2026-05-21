@@ -5,16 +5,16 @@ import os
 @main
 struct PersonalOptimizationApp: App {
     let container: ModelContainer = {
-        let schema = Schema(versionedSchema: SchemaV9.self)
+        let schema = AppSchema.schema()
         let config = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false,
+            url: AppGroupContainer.storeURL() ?? URL.applicationSupportDirectory.appending(path: "default.store"),
             cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
         )
         do {
             let container = try ModelContainer(
                 for: schema,
-                migrationPlan: AppMigrationPlan.self,
+                migrationPlan: AppSchema.migrationPlan,
                 configurations: [config]
             )
             // M4.2 T0a: Gate the bundled-schedule seed. New users (no profile
@@ -27,15 +27,19 @@ struct PersonalOptimizationApp: App {
                 let context = container.mainContext
                 let profile = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first
                 let onboardingComplete = profile?.onboardingCompleted ?? false
-                guard onboardingComplete else {
+                if onboardingComplete {
+                    do {
+                        try ScheduleSeed.seedIfNeeded(modelContext: context)
+                    } catch {
+                        Logger.schedule.error("Seed failed: \(error.localizedDescription, privacy: .public)")
+                    }
+                } else {
                     Logger.schedule.info("Skipping auto-seed: new install awaits onboarding choice")
-                    return
                 }
-                do {
-                    try ScheduleSeed.seedIfNeeded(modelContext: context)
-                } catch {
-                    Logger.schedule.error("Seed failed: \(error.localizedDescription, privacy: .public)")
-                }
+                // One-shot dedupe to repair any DailyLog rows accidentally
+                // created with inconsistent timezone keys before DailyLogStore
+                // landed. UserDefaults-gated, no-op on subsequent launches.
+                DailyLogDedupeOnce.runIfNeeded(modelContext: context)
             }
             DevSecretsBootstrap.bootstrapIfNeeded()
             FirstLaunchTracker.shared.recordIfNeeded()
@@ -55,6 +59,27 @@ struct PersonalOptimizationApp: App {
             // back in real time. Cheap: the WC session activates async and is
             // a no-op on devices without a paired Watch.
             WatchConnectivityService.shared.activateIfPossible()
+            // Consume the WC event stream. Each event fans out into a
+            // `userStateChanged` notification (mascot + UI rederive). Workout
+            // events also kick a HealthKit sync so today's DailyLog reflects
+            // what the watch just finished.
+            Task { @MainActor in
+                for await event in WatchConnectivityService.shared.lastEventStream {
+                    NotificationCenter.default.post(name: .userStateChanged, object: event)
+                    switch event.kind {
+                    case .workoutStarted, .workoutEnded:
+                        await HealthKitSyncService(modelContext: container.mainContext).syncToday()
+                    default:
+                        break
+                    }
+                }
+            }
+            // Wire HealthKit observer queries + background delivery so late-
+            // arriving samples (Garmin, Strava, Withings) retroactively
+            // update past DailyLogs and recompute streaks/character state.
+            Task { @MainActor in
+                await HealthKitObserverService.shared.startObserving(modelContainer: container)
+            }
             return container
         } catch {
             Logger.persistence.fault("ModelContainer init failed: \(error.localizedDescription, privacy: .public)")

@@ -48,7 +48,36 @@ final class DailyLog {
     /// repeated pulls and surface "last refreshed" in the UI.
     var healthKitSyncedAt: Date?
 
-    init(date: Date) {
-        self.date = Calendar.current.startOfDay(for: date)
+    /// JSON-encoded bag of fields that aren't queried but need to evolve.
+    /// Read with `metadata(_:as:)`, write with `setMetadata(_:value:)`.
+    /// Pattern lets us add fields without bumping the SwiftData schema.
+    var metadataBlob: Data?
+
+    init(date: Date, calendar: Calendar = .current) {
+        self.date = calendar.startOfDay(for: date)
+    }
+
+    func metadata<T: Decodable>(_ key: String, as type: T.Type) -> T? {
+        guard let blob = metadataBlob,
+              let dict = try? JSONSerialization.jsonObject(with: blob) as? [String: Any],
+              let raw = dict[key] else { return nil }
+        guard let data = try? JSONSerialization.data(withJSONObject: raw) else { return nil }
+        return try? JSONDecoder().decode(T.self, from: data)
+    }
+
+    func setMetadata<T: Encodable>(_ key: String, value: T?) {
+        var dict: [String: Any] = [:]
+        if let blob = metadataBlob,
+           let existing = try? JSONSerialization.jsonObject(with: blob) as? [String: Any] {
+            dict = existing
+        }
+        if let value {
+            guard let data = try? JSONEncoder().encode(value),
+                  let any = try? JSONSerialization.jsonObject(with: data) else { return }
+            dict[key] = any
+        } else {
+            dict.removeValue(forKey: key)
+        }
+        metadataBlob = try? JSONSerialization.data(withJSONObject: dict)
     }
 }

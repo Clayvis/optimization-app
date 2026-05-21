@@ -161,6 +161,10 @@ targets:
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/HealthKitService.swift
       - path: PersonalOptimization/Services/WatchConnectivityService.swift
+      - path: PersonalOptimization/Services/AppGroupContainer.swift
+      - path: PersonalOptimization/Services/AppNotifications.swift
+      - path: PersonalOptimization/Services/UserCalendar.swift
+      - path: PersonalOptimization/Services/DailyLogStore.swift
       - path: PersonalOptimization/AppIntents
         name: SharedAppIntents
     resources:
@@ -263,6 +267,10 @@ targets:
         name: SharedEngagement
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/ProfileService.swift
+      - path: PersonalOptimization/Services/AppGroupContainer.swift
+      - path: PersonalOptimization/Services/AppNotifications.swift
+      - path: PersonalOptimization/Services/UserCalendar.swift
+      - path: PersonalOptimization/Services/DailyLogStore.swift
     resources:
       - path: PersonalOptimization/Resources
         name: SharedResources

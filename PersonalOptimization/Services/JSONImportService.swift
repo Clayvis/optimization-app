@@ -202,8 +202,8 @@ enum JSONImportService {
         return b
     }
 
-    private static func makeDailyLog(from d: DailyLogDTO) -> DailyLog {
-        let l = DailyLog(date: d.date)
+    private static func makeDailyLog(from d: DailyLogDTO, calendar: Calendar = .current) -> DailyLog {
+        let l = DailyLog(date: d.date, calendar: calendar)
         l.fastStart = d.fastStart
         l.fastEnd = d.fastEnd
         l.fastBrokeEarly = d.fastBrokeEarly

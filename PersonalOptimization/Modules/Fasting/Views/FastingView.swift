@@ -214,7 +214,7 @@ struct FastingView: View {
 
     private func format(date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        formatter.timeZone = TimeZone.current
         formatter.dateFormat = "EEE HH:mm"
         return formatter.string(from: date)
     }
@@ -316,7 +316,7 @@ private struct EarlyBreakSheet: View {
 }
 
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV8.self)
+    let schema = AppSchema.schema()
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     let profile = UserProfile(name: "Clay", dob: Date(timeIntervalSince1970: 764985600), sex: "male")

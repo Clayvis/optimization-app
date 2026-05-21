@@ -5,7 +5,6 @@ struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
     @State private var now: Date = Date()
-    @State private var tickTimer: Timer?
     @State private var characterService = CharacterStateService.shared
     @State private var showingProtocolDetail = false
     @State private var quoteService = DailyQuoteService()
@@ -205,14 +204,21 @@ struct TodayView: View {
             }
             .onAppear {
                 now = Date()
-                startTicking()
                 characterService.start(modelContext: modelContext)
                 Task { await loadDailyQuote() }
                 refreshLapseAndMilestones()
             }
             .onDisappear {
-                stopTicking()
                 characterService.stop()
+            }
+            // SwiftUI-native ticker. The OS pauses the task when the view
+            // leaves the screen and resumes it when it returns; no manual
+            // Timer lifecycle to manage and no battery cost while idle.
+            .task(id: "todayview.tick") {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(60))
+                    now = Date()
+                }
             }
             .sheet(item: $pendingCelebration) { unlock in
                 MilestoneCelebrationSheet(unlock: unlock)
@@ -508,7 +514,7 @@ struct TodayView: View {
 
     private var weekdayTitle: String {
         let formatter = DateFormatter()
-        formatter.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        formatter.timeZone = TimeZone.current
         formatter.dateFormat = "EEEE, MMM d"
         return formatter.string(from: now)
     }
@@ -521,20 +527,9 @@ struct TodayView: View {
         return formatter.string(from: interval) ?? "—"
     }
 
-    private func startTicking() {
-        tickTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
-            Task { @MainActor in self.now = Date() }
-        }
-    }
-
-    private func stopTicking() {
-        tickTimer?.invalidate()
-        tickTimer = nil
-    }
-
     private var isSunday: Bool {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let raw = cal.component(.weekday, from: now)
         let iso = raw == 1 ? 7 : raw - 1
         return iso == 7
@@ -554,7 +549,7 @@ struct TodayView: View {
 }
 
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV8.self)
+    let schema = AppSchema.schema()
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)

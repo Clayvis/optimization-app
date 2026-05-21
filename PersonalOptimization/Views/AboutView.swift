@@ -19,7 +19,7 @@ struct AboutView: View {
     }
 
     private var schemaVersion: String {
-        let v = SchemaV8.versionIdentifier
+        let v = AppSchema.current.versionIdentifier
         return "\(v.major).\(v.minor).\(v.patch)"
     }
 

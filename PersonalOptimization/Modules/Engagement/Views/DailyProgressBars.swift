@@ -21,7 +21,7 @@ struct DailyProgressBars: View {
 
     private var todayLog: DailyLog? {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let day = cal.startOfDay(for: Date())
         return logs.first(where: { cal.isDate($0.date, inSameDayAs: day) })
     }
@@ -42,7 +42,7 @@ struct DailyProgressBars: View {
     private var caloriesBurned: Double {
         var total: Double = 0
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let day = cal.startOfDay(for: Date())
 
         // Lift: rough estimate from volume × 0.04 kcal/lb (compound lifts).
@@ -189,7 +189,7 @@ struct DailyProgressBars: View {
 
     private func isoWeekday(for date: Date) -> Int {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let raw = cal.component(.weekday, from: date)
         return raw == 1 ? 7 : raw - 1
     }

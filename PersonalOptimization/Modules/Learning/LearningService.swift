@@ -8,7 +8,7 @@ final class LearningService {
     private let timezone: TimeZone
     private let logger = Logger.app
 
-    init(modelContext: ModelContext, timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current) {
+    init(modelContext: ModelContext, timezone: TimeZone = TimeZone.current) {
         self.modelContext = modelContext
         self.timezone = timezone
     }
@@ -66,17 +66,7 @@ final class LearningService {
     private func upsertDailyLog(for date: Date) -> DailyLog {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
-        let day = cal.startOfDay(for: date)
-
-        let descriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
-        )
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
-            return existing
-        }
-        let log = DailyLog(date: day)
-        modelContext.insert(log)
-        return log
+        return DailyLogStore(modelContext: modelContext, calendar: cal).upsert(for: date)
     }
 
     private func upsertStreak(module: LearningModule) -> LearningStreak {

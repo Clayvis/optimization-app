@@ -24,7 +24,7 @@ final class LapseDetectionService {
     private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "lapse")
 
     init(modelContext: ModelContext,
-         timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current) {
+         timezone: TimeZone = TimeZone.current) {
         self.modelContext = modelContext
         self.timezone = timezone
     }

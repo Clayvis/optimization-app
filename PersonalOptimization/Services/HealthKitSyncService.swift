@@ -9,11 +9,22 @@ import os
 ///   - App launch (after onboarding-gate check)
 ///   - TodayView `.refreshable {}` (pull-to-refresh)
 ///   - Settings → Data → "Refresh from HealthKit"
+///   - HealthKitObserverService when a background sample lands
 ///
 /// Failure mode: a single fetch failure logs a warning but does NOT abort the
 /// rest of the sync. The user gets whatever HealthKit was willing to share.
+///
+/// Observable state (`isSyncing`, `lastSyncedAt`, `lastSyncDurationMs`,
+/// `lastSyncError`) lets the UI show a "catching up..." spinner and surfaces
+/// failures in Diagnostics.
 @MainActor
+@Observable
 final class HealthKitSyncService {
+    private(set) var isSyncing: Bool = false
+    private(set) var lastSyncedAt: Date?
+    private(set) var lastSyncDurationMs: Int?
+    private(set) var lastSyncError: String?
+
     private let modelContext: ModelContext
     private let healthKit: HealthKitServiceProtocol
     private let logger = Logger.healthkit
@@ -31,7 +42,21 @@ final class HealthKitSyncService {
     /// row written to so callers can introspect what landed.
     @discardableResult
     func syncToday() async -> DailyLog {
-        let date = now()
+        await sync(for: now())
+    }
+
+    /// Pulls HealthKit data for a specific day into its DailyLog row.
+    /// Powers retroactive recompute when late-arriving samples (Garmin,
+    /// Strava, Withings) land for a day in the past.
+    @discardableResult
+    func sync(for date: Date) async -> DailyLog {
+        let started = Date()
+        isSyncing = true
+        defer {
+            isSyncing = false
+            lastSyncedAt = Date()
+            lastSyncDurationMs = Int(Date().timeIntervalSince(started) * 1000)
+        }
         let log = ensureLog(for: date)
 
         // Latest single-sample readings.
@@ -123,26 +148,36 @@ final class HealthKitSyncService {
         log.healthKitSyncedAt = now()
         do {
             try modelContext.save()
+            lastSyncError = nil
         } catch {
             logger.error("HealthKit sync save failed: \(error.localizedDescription, privacy: .public)")
+            lastSyncError = error.localizedDescription
         }
         logger.info("HealthKit sync ran for \(date.description(with: nil), privacy: .public)")
         return log
     }
 
+    /// Pulls HealthKit data for the last `days` days. Used by the observer
+    /// pipeline so a late-arriving sample reconstructs the affected past days,
+    /// not just today. Posts `dailyLogsRecomputed` once after the batch so
+    /// downstream listeners (StreakService, CharacterStateService,
+    /// TrendAnalyticsService) can rederive in one pass.
+    func syncRange(days: Int = 7) async {
+        let calendar = UserCalendar.current(modelContext: modelContext)
+        let today = calendar.startOfDay(for: now())
+        for offset in 0..<max(1, days) {
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { continue }
+            _ = await sync(for: day)
+        }
+        NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
+    }
+
     // MARK: - Internals
 
+    /// Funnels through DailyLogStore so the user-calendar day boundary is
+    /// the single source of truth — preventing JST/PST splits during travel.
     private func ensureLog(for date: Date) -> DailyLog {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = .current
-        let day = cal.startOfDay(for: date)
-        let existing = (try? modelContext.fetch(FetchDescriptor<DailyLog>()))?.first {
-            cal.isDate($0.date, inSameDayAs: day)
-        }
-        if let existing { return existing }
-        let new = DailyLog(date: day)
-        modelContext.insert(new)
-        return new
+        DailyLogStore.forUser(modelContext: modelContext).upsert(for: date)
     }
 
     private func tryFetchLatest(_ id: HKQuantityTypeIdentifier,

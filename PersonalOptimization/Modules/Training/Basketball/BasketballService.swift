@@ -42,20 +42,10 @@ final class BasketballService {
         session.achillesPostScore = achillesPostScore
         session.hydrationOz = hydrationOz
 
-        let dayStart = Calendar.current.startOfDay(for: session.date)
-        let descriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == dayStart }
-        )
-        let dailyLog: DailyLog
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
-            dailyLog = existing
-        } else {
-            dailyLog = DailyLog(date: session.date)
-            modelContext.insert(dailyLog)
-        }
-        if let achillesPostScore { dailyLog.achillesPain = achillesPostScore }
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = UserCalendar.timezone(modelContext: modelContext)
+        let dailyLog = DailyLogStore(modelContext: modelContext, calendar: cal).upsert(for: session.date)
+        if let achillesPostScore { dailyLog.achillesPain = achillesPostScore }
         let day = cal.startOfDay(for: session.date)
         modelContext.insert(WorkoutEvent(date: day, completed: true, source: .basketball))
 

@@ -83,7 +83,7 @@ final class LiftService {
         session.avgHR = avgHR
         try modelContext.save()
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let day = cal.startOfDay(for: session.date)
         modelContext.insert(WorkoutEvent(date: day, completed: true, source: .lift))
         try modelContext.save()

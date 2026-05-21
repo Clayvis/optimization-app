@@ -7,7 +7,7 @@ final class ScheduleService {
     private let modelContext: ModelContext
     private let timezone: TimeZone
 
-    init(modelContext: ModelContext, timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current) {
+    init(modelContext: ModelContext, timezone: TimeZone = TimeZone.current) {
         self.modelContext = modelContext
         self.timezone = timezone
     }

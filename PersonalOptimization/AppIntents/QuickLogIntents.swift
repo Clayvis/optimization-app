@@ -147,16 +147,8 @@ struct LogLearningIntent: AppIntent {
         }
         let context = wrapper.mainContext
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
-        let day = cal.startOfDay(for: Date())
-        let descriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
-        )
-        let log: DailyLog = (try? context.fetch(descriptor))?.first ?? {
-            let new = DailyLog(date: day)
-            context.insert(new)
-            return new
-        }()
+        cal.timeZone = UserCalendar.timezone(modelContext: context)
+        let log = DailyLogStore(modelContext: context, calendar: cal).upsertToday()
         switch module {
         case .japanese:    log.japaneseMinutes += minutes
         case .guitar:      log.guitarMinutes += minutes

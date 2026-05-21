@@ -39,7 +39,7 @@ final class DailySummaryService {
     private let logger = Logger.app
 
     init(modelContext: ModelContext,
-         timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current,
+         timezone: TimeZone = TimeZone.current,
          hydrationTargets: HydrationTargetsOz? = nil) {
         self.modelContext = modelContext
         self.timezone = timezone

@@ -15,7 +15,7 @@ struct JourneyView: View {
     @Query(sort: [SortDescriptor(\ActivityArchive.date, order: .forward)])
     private var archives: [ActivityArchive]
 
-    private let timezone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+    private let timezone = TimeZone.current
 
     var body: some View {
         NavigationStack {

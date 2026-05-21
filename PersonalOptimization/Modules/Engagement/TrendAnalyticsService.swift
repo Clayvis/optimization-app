@@ -17,7 +17,7 @@ struct DateRange: Sendable, Equatable {
     let start: Date
     let end: Date
 
-    static func lastNDays(_ n: Int, asOf: Date = Date(), timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current) -> DateRange {
+    static func lastNDays(_ n: Int, asOf: Date = Date(), timezone: TimeZone = TimeZone.current) -> DateRange {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
         let endDay = cal.startOfDay(for: asOf)
@@ -81,7 +81,7 @@ final class TrendAnalyticsService {
     private let logger = Logger.coach
 
     init(modelContext: ModelContext,
-         timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current,
+         timezone: TimeZone = TimeZone.current,
          hydrationTargets: HydrationTargetsOz? = nil) {
         self.modelContext = modelContext
         self.timezone = timezone

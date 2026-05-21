@@ -305,7 +305,7 @@ struct IdleHomeWatchView: View {
 
     private func jstCalendar() -> Calendar {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         return cal
     }
 

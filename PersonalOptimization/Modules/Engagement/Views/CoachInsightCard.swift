@@ -261,9 +261,14 @@ private struct CoachInsightDetailSheet: View {
 
 struct APIKeyEntrySheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Query private var profiles: [UserProfile]
     @State private var apiKey: String = ""
     @State private var error: String?
     let onSaved: (String) -> Void
+
+    private var iCloudSync: Bool {
+        profiles.first?.apiKeyICloudSync ?? true
+    }
 
     var body: some View {
         NavigationStack {
@@ -279,7 +284,9 @@ struct APIKeyEntrySheet: View {
                     }
                 }
                 Section {
-                    Text("Stored in iOS Keychain on this device only. Never synced.")
+                    Text(iCloudSync
+                        ? "Stored in iOS Keychain and synced via iCloud Keychain to your other Apple devices."
+                        : "Stored in iOS Keychain on this device only. Never synced.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -302,7 +309,7 @@ struct APIKeyEntrySheet: View {
     private func save() {
         let trimmed = apiKey.trimmingCharacters(in: .whitespaces)
         do {
-            try KeychainService.shared.setApiKey(trimmed)
+            try KeychainService.shared.setApiKey(trimmed, iCloudSync: iCloudSync)
             onSaved(trimmed)
             dismiss()
         } catch {

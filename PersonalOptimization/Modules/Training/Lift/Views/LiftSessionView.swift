@@ -364,7 +364,7 @@ struct LiftSessionView: View {
     /// Used to resume a workout the user navigated away from.
     private func inProgressSession(for templateName: String) -> LiftSession? {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let today = cal.startOfDay(for: Date())
         let descriptor = FetchDescriptor<LiftSession>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]

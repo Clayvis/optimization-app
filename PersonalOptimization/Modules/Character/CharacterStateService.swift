@@ -55,34 +55,59 @@ final class CharacterStateService {
     private(set) var triggerReason: String = "default"
 
     private var modelContext: ModelContext?
-    private var timer: Timer?
-    private var timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+    private var timezone: TimeZone = TimeZone.current
     private let logger = Logger.character
     private var lastTransitionAt: Date?
+    /// Cache window. Repeated `recompute()` calls within this window return
+    /// the prior result unless `force` is passed.
+    private let cacheWindow: TimeInterval = 60
+    private var lastRecomputeAt: Date?
+    private var observers: [NSObjectProtocol] = []
 
     private init() {}
 
     func start(modelContext: ModelContext, timezone: TimeZone? = nil) {
         self.modelContext = modelContext
         if let tz = timezone { self.timezone = tz }
-        recompute()
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.recompute() }
-        }
+        recompute(force: true)
+        // Subscribe to state-change events instead of polling. Workflows
+        // posting `userStateChanged` (water logged, fast ended, etc.) and
+        // HealthKitSyncService posting `dailyLogsRecomputed` after late
+        // samples land both bypass the cache window so the mascot reacts
+        // immediately.
+        observers.removeAll()
+        observers.append(NotificationCenter.default.addObserver(
+            forName: .userStateChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.recompute(force: true) }
+        })
+        observers.append(NotificationCenter.default.addObserver(
+            forName: .dailyLogsRecomputed, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.recompute(force: true) }
+        })
     }
 
     func stop() {
-        timer?.invalidate()
-        timer = nil
+        for token in observers {
+            NotificationCenter.default.removeObserver(token)
+        }
+        observers.removeAll()
         modelContext = nil
     }
 
     /// Recompute now using live SwiftData. No-op if `start` hasn't been called.
-    func recompute() {
+    /// Returns the cached value if called within `cacheWindow` of the prior
+    /// call unless `force` is set.
+    func recompute(force: Bool = false) {
         guard let ctx = modelContext else { return }
+        if !force, let last = lastRecomputeAt,
+           Date().timeIntervalSince(last) < cacheWindow {
+            return
+        }
         let inputs = Self.gatherInputs(modelContext: ctx, timezone: timezone)
         let resolved = Self.resolve(inputs: inputs)
+        lastRecomputeAt = inputs.now
         if resolved.state != currentState || resolved.reason != triggerReason {
             logger.info("Character state \(self.currentState.rawValue, privacy: .public) -> \(resolved.state.rawValue, privacy: .public) reason=\(resolved.reason, privacy: .public)")
             let log = CharacterStateLog(timestamp: inputs.now, state: resolved.state, triggerReason: resolved.reason)
@@ -189,7 +214,12 @@ final class CharacterStateService {
         let day = cal.startOfDay(for: now)
 
         let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first
-        let todayLog = (try? modelContext.fetch(FetchDescriptor<DailyLog>()))?.first { cal.isDate($0.date, inSameDayAs: day) }
+        // Scoped fetch: predicate on date == day so we only pull the one row
+        // instead of streaming the entire DailyLog table every recompute.
+        let todayLogDescriptor = FetchDescriptor<DailyLog>(
+            predicate: #Predicate<DailyLog> { $0.date == day }
+        )
+        let todayLog = (try? modelContext.fetch(todayLogDescriptor))?.first
         let scheduleService = ScheduleService(modelContext: modelContext, timezone: timezone)
         let currentBlock = scheduleService.currentBlock(at: now)
         let nextBlock = scheduleService.nextBlock(after: now)
@@ -216,15 +246,31 @@ final class CharacterStateService {
             return c.currentStreak == 0 && cal.isDate(last, inSameDayAs: yesterday)
         }
 
-        // Lift PR check: simple heuristic — today's session totalVolumeLbs > all prior.
-        let liftSessions = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
-        let todaysLifts = liftSessions.filter { cal.isDate($0.date, inSameDayAs: day) }
-        let priorMaxLiftVolume = liftSessions.filter { !cal.isDate($0.date, inSameDayAs: day) }.map { $0.totalVolumeLbs }.max() ?? 0
+        // Lift PR check: bounded fetches. Today's sessions plus a separate
+        // descending fetch of the all-time max volume row (1 fetch each).
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: day) ?? day
+        let todaysLiftsDescriptor = FetchDescriptor<LiftSession>(
+            predicate: #Predicate<LiftSession> { $0.date >= day && $0.date < tomorrow }
+        )
+        let todaysLifts = (try? modelContext.fetch(todaysLiftsDescriptor)) ?? []
+        var priorLiftsDescriptor = FetchDescriptor<LiftSession>(
+            predicate: #Predicate<LiftSession> { $0.date < day },
+            sortBy: [SortDescriptor(\.totalVolumeLbs, order: .reverse)]
+        )
+        priorLiftsDescriptor.fetchLimit = 1
+        let priorMaxLiftVolume = (try? modelContext.fetch(priorLiftsDescriptor))?.first?.totalVolumeLbs ?? 0
         let liftPR = !todaysLifts.isEmpty && (todaysLifts.map { $0.totalVolumeLbs }.max() ?? 0) > priorMaxLiftVolume && priorMaxLiftVolume > 0
 
-        let swimSessions = (try? modelContext.fetch(FetchDescriptor<SwimSession>())) ?? []
-        let todaysSwims = swimSessions.filter { cal.isDate($0.date, inSameDayAs: day) }
-        let priorMaxSwimDist = swimSessions.filter { !cal.isDate($0.date, inSameDayAs: day) }.map { $0.totalMeters }.max() ?? 0
+        let todaysSwimsDescriptor = FetchDescriptor<SwimSession>(
+            predicate: #Predicate<SwimSession> { $0.date >= day && $0.date < tomorrow }
+        )
+        let todaysSwims = (try? modelContext.fetch(todaysSwimsDescriptor)) ?? []
+        var priorSwimsDescriptor = FetchDescriptor<SwimSession>(
+            predicate: #Predicate<SwimSession> { $0.date < day },
+            sortBy: [SortDescriptor(\.totalMeters, order: .reverse)]
+        )
+        priorSwimsDescriptor.fetchLimit = 1
+        let priorMaxSwimDist = (try? modelContext.fetch(priorSwimsDescriptor))?.first?.totalMeters ?? 0
         let swimPR = !todaysSwims.isEmpty && (todaysSwims.map { $0.totalMeters }.max() ?? 0) > priorMaxSwimDist && priorMaxSwimDist > 0
 
         let achillesHigh = (todayLog?.achillesPain ?? 0) >= 6
@@ -268,7 +314,7 @@ final class CharacterStateService {
 
     private static func hydrationFarBehindEvening(inputs: CharacterStateInputs) -> Bool {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let hour = cal.component(.hour, from: inputs.now)
         guard hour >= 18 else { return false }
         guard let log = inputs.todayLog else { return false }

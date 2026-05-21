@@ -351,7 +351,7 @@ struct HydrationView: View {
 
     private var timeFormatter: DateFormatter {
         let f = DateFormatter()
-        f.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        f.timeZone = TimeZone.current
         f.dateFormat = "HH:mm"
         return f
     }
@@ -364,7 +364,7 @@ struct HydrationView: View {
 
     private func currentDayFraction(now: Date) -> Double {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let comps = cal.dateComponents([.hour, .minute], from: now)
         let minutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
         // Active waking window 06:00 - 22:00 = 16h = 960 min.
@@ -377,7 +377,7 @@ struct HydrationView: View {
 
     private func currentJSTHour(_ date: Date) -> Double {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let comps = cal.dateComponents([.hour, .minute], from: date)
         return Double(comps.hour ?? 0) + Double(comps.minute ?? 0) / 60
     }
@@ -476,7 +476,7 @@ private struct HydrationEntryEditSheet: View {
 }
 
 #Preview {
-    let schema = Schema(versionedSchema: SchemaV8.self)
+    let schema = AppSchema.schema()
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return HydrationView().modelContainer(container)

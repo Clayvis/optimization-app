@@ -70,7 +70,7 @@ final class SwimService {
         }
         try modelContext.save()
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let day = cal.startOfDay(for: session.date)
         modelContext.insert(WorkoutEvent(date: day, completed: true, source: .swim))
         try modelContext.save()

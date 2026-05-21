@@ -36,7 +36,7 @@ final class ModelContainerWrapper {
     let container: ModelContainer
 
     private init?() {
-        let schema = Schema(versionedSchema: SchemaV8.self)
+        let schema = AppSchema.schema()
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
@@ -45,7 +45,7 @@ final class ModelContainerWrapper {
         do {
             self.container = try ModelContainer(
                 for: schema,
-                migrationPlan: AppMigrationPlan.self,
+                migrationPlan: AppSchema.migrationPlan,
                 configurations: [config]
             )
         } catch {

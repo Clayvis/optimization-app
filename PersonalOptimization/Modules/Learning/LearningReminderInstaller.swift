@@ -9,7 +9,7 @@ enum LearningReminderInstaller {
     static func scheduleNext7Days(notification: NotificationService,
                                   scheduleFile: DefaultScheduleFile,
                                   asOf: Date = Date(),
-                                  timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current) async throws -> [String] {
+                                  timezone: TimeZone = TimeZone.current) async throws -> [String] {
         let times = LearningReminderScheduler.plannedTimes(scheduleFile: scheduleFile)
         let upcoming = LearningReminderScheduler.upcomingDates(from: times, startingFrom: asOf, timezone: timezone)
         var ids: [String] = []

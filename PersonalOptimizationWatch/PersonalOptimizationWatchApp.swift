@@ -5,16 +5,16 @@ import os
 @main
 struct PersonalOptimizationWatchApp: App {
     let container: ModelContainer = {
-        let schema = Schema(versionedSchema: SchemaV3.self)
+        let schema = AppSchema.schema()
         let config = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false,
+            url: AppGroupContainer.storeURL() ?? URL.applicationSupportDirectory.appending(path: "default.store"),
             cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
         )
         do {
             let container = try ModelContainer(
                 for: schema,
-                migrationPlan: AppMigrationPlan.self,
+                migrationPlan: AppSchema.migrationPlan,
                 configurations: [config]
             )
             Task { @MainActor in

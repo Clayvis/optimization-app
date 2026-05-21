@@ -39,8 +39,8 @@ final class CoachInsight {
 
     /// Raw value of `CoachInsightInteraction`. M3.7a additive field.
     /// Default "ignored" so existing rows migrate cleanly without backfill.
-    /// Rides on the live SchemaV8 — additive default-value fields don't need
-    /// a schema bump (SwiftData lightweight migration handles them in place).
+    /// SwiftData lightweight migration handles additive default-value fields
+    /// in place; see AppSchema.swift for the rule.
     var userInteractionRaw: String = CoachInsightInteraction.ignored.rawValue
 
     var userInteraction: CoachInsightInteraction {

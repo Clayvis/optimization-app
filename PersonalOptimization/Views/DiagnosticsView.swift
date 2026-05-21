@@ -14,10 +14,13 @@ struct DiagnosticsView: View {
     @Query(sort: [SortDescriptor(\CoachInsight.generatedAt, order: .reverse)])
     private var insights: [CoachInsight]
     @Query private var profiles: [UserProfile]
+    @Query(sort: [SortDescriptor(\BackgroundTaskLog.startedAt, order: .reverse)])
+    private var backgroundTasks: [BackgroundTaskLog]
 
     @State private var hkWorkoutAuth: HKAuthorizationStatus = .notDetermined
     @State private var hkWaterAuth: HKAuthorizationStatus = .notDetermined
     @State private var apiKeyStatus: APIKeyStatus = .unknown
+    @State private var apiKeyStoragePosture: KeyStoragePosture?
     @State private var apiKeyTestResult: String?
     @State private var testInFlight = false
 
@@ -25,15 +28,78 @@ struct DiagnosticsView: View {
 
     var body: some View {
         Form {
+            schemaSection
             healthKitSection
             apiKeySection
             tokenUsageSection
+            backgroundTasksSection
             failuresSection
         }
         .navigationTitle("Diagnostics")
         .onAppear {
             refresh()
             try? AchievementService(modelContext: modelContext).unlockImperative("diagnostics_clean")
+        }
+    }
+
+    @ViewBuilder
+    private var schemaSection: some View {
+        Section("Persistence") {
+            let v = AppSchema.current.versionIdentifier
+            HStack {
+                Text("Schema version")
+                Spacer()
+                Text("\(v.major).\(v.minor).\(v.patch)").monospacedDigit().font(.caption)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var backgroundTasksSection: some View {
+        Section("Background tasks") {
+            let recent = backgroundTasks.prefix(5)
+            if recent.isEmpty {
+                Text("No background tasks recorded yet.")
+                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+            } else {
+                let failureCount = backgroundTasks.prefix(30).filter { $0.status == "failure" || $0.status == "expired" }.count
+                if failureCount > 0 {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                        Text("\(failureCount) failed runs in the last 30 logged")
+                            .font(.footnote.weight(.medium))
+                    }
+                }
+                ForEach(Array(recent), id: \.persistentModelID) { task in
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            Text(formatTimestamp(task.startedAt))
+                                .font(.caption.weight(.medium))
+                            Spacer()
+                            Text(task.status)
+                                .font(.caption)
+                                .foregroundStyle(taskStatusColor(task.status))
+                        }
+                        if let summary = task.summary {
+                            Text(summary).font(.caption2).foregroundStyle(.secondary)
+                        }
+                        if let err = task.errorMessage {
+                            Text(err).font(.caption2).foregroundStyle(.red)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+    }
+
+    private func taskStatusColor(_ status: String) -> Color {
+        switch status {
+        case "success": return .green
+        case "failure", "expired": return .red
+        case "running": return .orange
+        default: return .secondary
         }
     }
 
@@ -86,6 +152,15 @@ struct DiagnosticsView: View {
                     .font(.caption)
                     .foregroundStyle(apiKeyStatus == .set ? .green : .red)
             }
+            if let posture = apiKeyStoragePosture {
+                HStack {
+                    Text("Storage")
+                    Spacer()
+                    Text(posture.displayLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             if let lastInsight = insights.first {
                 HStack {
                     Text("Last successful call")
@@ -118,12 +193,22 @@ struct DiagnosticsView: View {
     @ViewBuilder
     private var tokenUsageSection: some View {
         Section("Token usage") {
-            let today = tokenSum(within: .startOfToday)
-            let month = tokenSum(within: .startOfMonth)
+            let budget = TokenBudgetService.forUser(modelContext: modelContext)
+            let today = budget.spentToday()
+            let month = budget.spentThisMonth()
+            let dailyCap = budget.dailyBudget
             HStack {
                 Text("Today")
                 Spacer()
-                Text("\(today)").monospacedDigit()
+                if dailyCap > 0 {
+                    Text("\(today) / \(dailyCap)").monospacedDigit()
+                } else {
+                    Text("AI disabled").foregroundStyle(.secondary).font(.caption)
+                }
+            }
+            if dailyCap > 0 {
+                ProgressView(value: Double(min(today, dailyCap)), total: Double(dailyCap))
+                    .tint(today >= dailyCap ? .red : (today > dailyCap * 80 / 100 ? .orange : .green))
             }
             HStack {
                 Text("This month")
@@ -181,6 +266,7 @@ struct DiagnosticsView: View {
         } catch {
             apiKeyStatus = .missing
         }
+        apiKeyStoragePosture = KeychainService.shared.apiKeySyncPosture()
     }
 
     private func testKey() async {
@@ -206,7 +292,7 @@ struct DiagnosticsView: View {
 
     private func tokenSum(within range: TimeRange) -> Int {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let now = Date()
         let cutoff: Date = {
             switch range {
@@ -221,7 +307,7 @@ struct DiagnosticsView: View {
 
     private func formatTimestamp(_ d: Date) -> String {
         let f = DateFormatter()
-        f.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        f.timeZone = TimeZone.current
         f.dateFormat = "MMM d HH:mm"
         return f.string(from: d)
     }

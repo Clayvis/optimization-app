@@ -114,7 +114,7 @@ final class CoachService {
     private let cacheTTL: TimeInterval = 24 * 60 * 60
 
     init(modelContext: ModelContext,
-         timezone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current,
+         timezone: TimeZone = TimeZone.current,
          api: CoachAPIInvoking = LiveCoachAPI(),
          now: @escaping () -> Date = Date.init) {
         self.modelContext = modelContext

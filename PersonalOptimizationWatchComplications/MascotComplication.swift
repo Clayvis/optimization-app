@@ -59,7 +59,7 @@ struct MascotTimelineProvider: TimelineProvider {
 
     @MainActor
     private static func sharedContainer() -> ModelContainer? {
-        let schema = Schema(versionedSchema: SchemaV8.self)
+        let schema = AppSchema.schema()
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
@@ -67,7 +67,7 @@ struct MascotTimelineProvider: TimelineProvider {
         )
         return try? ModelContainer(
             for: schema,
-            migrationPlan: AppMigrationPlan.self,
+            migrationPlan: AppSchema.migrationPlan,
             configurations: [config]
         )
     }

@@ -22,7 +22,7 @@ struct PrescribedWorkoutCard: View {
 
     private var todays: PrescribedWorkout? {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let day = cal.startOfDay(for: Date())
         return prescriptions.first(where: { cal.isDate($0.forDate, inSameDayAs: day) })
     }

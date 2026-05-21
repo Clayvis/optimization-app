@@ -97,7 +97,7 @@ struct ScheduleWatchView: View {
 
     private var weekdayShort: String {
         let formatter = DateFormatter()
-        formatter.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        formatter.timeZone = TimeZone.current
         formatter.dateFormat = "EEE d"
         return formatter.string(from: now)
     }

@@ -16,7 +16,7 @@ struct WeeklyProgramCard: View {
 
     private var current: WeeklyProgram? {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        cal.timeZone = TimeZone.current
         let today = cal.startOfDay(for: Date())
         let raw = cal.component(.weekday, from: today)
         let iso = raw == 1 ? 7 : raw - 1

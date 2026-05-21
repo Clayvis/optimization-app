@@ -51,10 +51,14 @@ enum ArchiveBackgroundScheduler {
 
     /// Synchronous-immediate path used on launch/foreground when BG slots are
     /// unreliable. Catches up archives over the last 30 days, then schedules
-    /// the next BG slot.
+    /// the next BG slot. Persists a BackgroundTaskLog row for Diagnostics.
     static func runRollupNow(modelContainer: ModelContainer) {
         Task { @MainActor in
             let context = modelContainer.mainContext
+            let log = BackgroundTaskLog(taskId: "\(taskIdentifier).foreground")
+            context.insert(log)
+            try? context.save()
+
             let targets = try? ScheduleConfigLoader.load().hydrationTargetsOz
             let service = ActivityArchiveService(
                 modelContext: context,
@@ -62,10 +66,16 @@ enum ArchiveBackgroundScheduler {
             )
             do {
                 let written = try service.backfill(maxDays: 30)
+                log.status = "success"
+                log.summary = "wrote \(written) archive rows"
                 logger.info("Foreground rollup wrote \(written, privacy: .public) archive rows")
             } catch {
+                log.status = "failure"
+                log.errorMessage = error.localizedDescription
                 logger.error("Foreground rollup failed: \(error.localizedDescription, privacy: .public)")
             }
+            log.endedAt = Date()
+            try? context.save()
             schedule()
         }
     }
@@ -74,8 +84,18 @@ enum ArchiveBackgroundScheduler {
     private static func handle(task: BGTask, modelContainer: ModelContainer) {
         // Always reschedule next slot even if this run is killed early.
         schedule()
+        let taskLog = BackgroundTaskLog(taskId: taskIdentifier)
+        Task { @MainActor in
+            modelContainer.mainContext.insert(taskLog)
+            try? modelContainer.mainContext.save()
+        }
         task.expirationHandler = {
             logger.warning("BG archive task expired before completion")
+            Task { @MainActor in
+                taskLog.status = "expired"
+                taskLog.endedAt = Date()
+                try? modelContainer.mainContext.save()
+            }
             task.setTaskCompleted(success: false)
         }
         Task { @MainActor in
@@ -87,12 +107,18 @@ enum ArchiveBackgroundScheduler {
             )
             do {
                 let written = try service.backfill(maxDays: 7)
+                taskLog.status = "success"
+                taskLog.summary = "wrote \(written) archive rows"
                 logger.info("BG archive wrote \(written, privacy: .public) rows")
                 task.setTaskCompleted(success: true)
             } catch {
+                taskLog.status = "failure"
+                taskLog.errorMessage = error.localizedDescription
                 logger.error("BG archive failed: \(error.localizedDescription, privacy: .public)")
                 task.setTaskCompleted(success: false)
             }
+            taskLog.endedAt = Date()
+            try? context.save()
         }
     }
     #endif

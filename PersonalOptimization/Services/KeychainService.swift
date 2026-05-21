@@ -24,8 +24,23 @@ final class KeychainService: Sendable {
 
     private init() {}
 
+    /// Default-iCloud-sync overload preserved for back-compat. New code
+    /// should use the explicit-posture overload below and read the user's
+    /// preference from UserProfile.apiKeyICloudSync.
     func setApiKey(_ key: String) throws {
-        try set(key: "anthropic_api_key", value: key)
+        try setApiKey(key, iCloudSync: true)
+    }
+
+    /// Writes the API key with the requested sync posture.
+    /// - `iCloudSync: true` → `kSecAttrSynchronizable` so the key follows the
+    ///   user across their Apple devices via iCloud Keychain (M4.2 default).
+    /// - `iCloudSync: false` → `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`
+    ///   so the key never leaves this device (stronger security posture).
+    /// Both variants are cleaned up first so toggling never leaves stale items.
+    func setApiKey(_ key: String, iCloudSync: Bool) throws {
+        try? delete(key: "anthropic_api_key", synchronizableSpecific: true)
+        try? delete(key: "anthropic_api_key", synchronizableSpecific: false)
+        try set(key: "anthropic_api_key", value: key, iCloudSync: iCloudSync)
     }
 
     func getApiKey() throws -> String {
@@ -34,6 +49,19 @@ final class KeychainService: Sendable {
 
     func deleteApiKey() throws {
         try delete(key: "anthropic_api_key")
+    }
+
+    /// Returns the current storage posture of the API key, or nil if no key
+    /// is stored at all. Used by Diagnostics + Settings to surface
+    /// "Stored on this device only" vs "Synced via iCloud Keychain".
+    func apiKeySyncPosture() -> KeyStoragePosture? {
+        if (try? getSpecific(key: "anthropic_api_key", synchronizable: true)) != nil {
+            return .iCloudSynced
+        }
+        if (try? getSpecific(key: "anthropic_api_key", synchronizable: false)) != nil {
+            return .thisDeviceOnly
+        }
+        return nil
     }
 
     /// M4.2: one-time migration from the legacy `ThisDeviceOnly` keychain
@@ -75,21 +103,27 @@ final class KeychainService: Sendable {
         logger.info("Keychain migrated API key to iCloud-synced item")
     }
 
-    private func set(key: String, value: String) throws {
+    private func set(key: String, value: String, iCloudSync: Bool = true) throws {
         guard let data = value.data(using: .utf8) else {
             throw KeychainError.unexpectedStatus(errSecParam)
         }
-        // M4.2: API key now persists across uninstall AND syncs to other Apple
-        // devices via iCloud Keychain. The user is the sole owner of the key
-        // and their iCloud; no threat-model change vs. SwiftData CloudKit.
-        let query: [String: Any] = [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
-            kSecAttrSynchronizable as String: kCFBooleanTrue as Any
+            kSecValueData as String: data
         ]
+        if iCloudSync {
+            // M4.2: API key persists across uninstall AND syncs to other Apple
+            // devices via iCloud Keychain.
+            query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+            query[kSecAttrSynchronizable as String] = kCFBooleanTrue as Any
+        } else {
+            // ThisDeviceOnly posture: stronger security; key never leaves
+            // this device. Surface via Settings opt-out toggle.
+            query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            query[kSecAttrSynchronizable as String] = kCFBooleanFalse as Any
+        }
         SecItemDelete(query as CFDictionary)
         let status = SecItemAdd(query as CFDictionary, nil)
         guard status == errSecSuccess else {
@@ -122,6 +156,31 @@ final class KeychainService: Sendable {
         return value
     }
 
+    /// Fetch only the variant matching `synchronizable`. Distinct from `get`
+    /// which finds either variant. Used by `apiKeySyncPosture()` to discover
+    /// which posture is currently active.
+    private func getSpecific(key: String, synchronizable: Bool) throws -> String {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+            kSecAttrSynchronizable as String: (synchronizable ? kCFBooleanTrue : kCFBooleanFalse) as Any,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let value = String(data: data, encoding: .utf8) else {
+            if status == errSecItemNotFound {
+                throw KeychainError.itemNotFound
+            }
+            throw KeychainError.unexpectedStatus(status)
+        }
+        return value
+    }
+
     private func delete(key: String) throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -132,6 +191,33 @@ final class KeychainService: Sendable {
         let status = SecItemDelete(query as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError.unexpectedStatus(status)
+        }
+    }
+
+    /// Variant-scoped delete used by `setApiKey(_:iCloudSync:)` to cleanly
+    /// purge the opposite posture before writing.
+    private func delete(key: String, synchronizableSpecific: Bool) throws {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+            kSecAttrSynchronizable as String: (synchronizableSpecific ? kCFBooleanTrue : kCFBooleanFalse) as Any
+        ]
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainError.unexpectedStatus(status)
+        }
+    }
+}
+
+enum KeyStoragePosture: String, Sendable {
+    case thisDeviceOnly
+    case iCloudSynced
+
+    var displayLabel: String {
+        switch self {
+        case .thisDeviceOnly: return "Stored on this device only"
+        case .iCloudSynced: return "Synced via iCloud Keychain"
         }
     }
 }

@@ -23,18 +23,25 @@ enum NotificationSuppressionRules {
 
     /// Returns true if a hydration ping at `time` should be suppressed.
     /// Pure function: sleep window check, hydration cutoff, morning intake bypass.
+    /// Sleep window comes from UserProfile (defaults 22:00 -> 07:00 if not set)
+    /// so users who shift their schedule don't get nagged at the wrong hours.
+    /// Handles cross-midnight bands (start > end) and same-day bands alike.
     static func shouldSuppressHydration(
         at time: Date,
         timezone: TimeZone,
         morningIntakeOz: Double,
-        cutoffTime: String = "21:00"
+        cutoffTime: String = "21:00",
+        sleepStartHHMM: String = "22:00",
+        sleepEndHHMM: String = "07:00"
     ) -> Bool {
         let minutes = minutesFromMidnight(time, timezone: timezone)
+        let sleepStart = parseTimeMinutes(sleepStartHHMM) ?? (22 * 60)
+        let sleepEnd = parseTimeMinutes(sleepEndHHMM) ?? (7 * 60)
 
-        // Sleep window: 22:00 (1320) through next day 07:00 (420).
-        // The window wraps midnight: minutes >= 1320 OR minutes < 420.
-        if minutes >= 22 * 60 || minutes < 7 * 60 {
-            return true
+        if sleepStart > sleepEnd {
+            if minutes >= sleepStart || minutes < sleepEnd { return true }
+        } else {
+            if minutes >= sleepStart && minutes < sleepEnd { return true }
         }
 
         // Hydration cutoff (default 21:00).

@@ -75,6 +75,27 @@ final class UserProfile {
     /// fired. Used by the 30-day cadence gate in TodayView.
     var lastFocusPromptAt: Date?
 
+    // Pre-TestFlight P0/P1 pass — single-source-of-truth knobs and resilience.
+    /// When true, app logic uses the device timezone instead of the pinned
+    /// `timezone` field. Lets the user travel without splitting calendar days.
+    /// Default false (pinned-to-profile behavior).
+    var travelModeFollowsDevice: Bool = false
+    /// Hydration / notification quiet hours start (HH:mm, user-tz).
+    var sleepWindowStartHHMM: String = "22:00"
+    /// Hydration / notification quiet hours end (HH:mm, user-tz).
+    var sleepWindowEndHHMM: String = "07:00"
+    /// Daily AI token budget. 0 disables Claude calls entirely (local-only).
+    var dailyTokenBudget: Int = 50_000
+    /// True when the user opts in to syncing the Anthropic key across their
+    /// Apple devices via iCloud Keychain. M4.2 set this to true by default
+    /// via a forced migration; users can opt out by flipping this to false
+    /// in Settings (the key is re-written with `ThisDeviceOnly` posture).
+    var apiKeyICloudSync: Bool = true
+    /// Free-form metadata blob for additive, non-queried fields. Lets future
+    /// milestones evolve UserProfile without bumping the SwiftData schema.
+    /// See AppSchema.swift for the rule.
+    var metadataBlob: Data?
+
     /// Parsed view of `anchorEventsCSV`. Empty CSV → empty array.
     /// Trims whitespace, drops empty tokens.
     var anchorEvents: [String] {

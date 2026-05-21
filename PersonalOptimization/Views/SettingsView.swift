@@ -295,6 +295,26 @@ struct SettingsView: View {
 
             Section("Time zone") {
                 LabeledContent("IANA identifier", value: profile.timezone)
+                Toggle("Travel mode: follow device", isOn: $profile.travelModeFollowsDevice)
+                Text("When on, day boundaries follow the device's time zone instead of your pinned profile time zone.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Quiet hours") {
+                LabeledContent("Sleep starts") {
+                    TextField("22:00", text: $profile.sleepWindowStartHHMM)
+                        .multilineTextAlignment(.trailing)
+                        .autocapitalization(.none)
+                }
+                LabeledContent("Sleep ends") {
+                    TextField("07:00", text: $profile.sleepWindowEndHHMM)
+                        .multilineTextAlignment(.trailing)
+                        .autocapitalization(.none)
+                }
+                Text("Hydration and other check-in notifications are suppressed during this window.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Fasting window") {
@@ -386,6 +406,25 @@ struct SettingsView: View {
                     Text("Opus 4.7").tag("claude-opus-4-7")
                     Text("Haiku 4.5").tag("claude-haiku-4-5-20251001")
                 }
+                Stepper(value: $profile.dailyTokenBudget, in: 0...500_000, step: 5_000) {
+                    Text("Daily token budget: \(profile.dailyTokenBudget == 0 ? "Off" : "\(profile.dailyTokenBudget)")")
+                }
+                Text("0 disables Claude calls. Coach falls back to curated content.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Toggle("Sync API key across my Apple devices", isOn: $profile.apiKeyICloudSync)
+                    .onChange(of: profile.apiKeyICloudSync) { _, newValue in
+                        // Re-write the key with the requested posture so the
+                        // stored item matches the user's preference immediately.
+                        if let existing = try? KeychainService.shared.getApiKey(), !existing.isEmpty {
+                            try? KeychainService.shared.setApiKey(existing, iCloudSync: newValue)
+                        }
+                    }
+                Text(profile.apiKeyICloudSync
+                    ? "Convenient: survives reinstall and reaches every Apple device on your iCloud account."
+                    : "Stored on this device only. Stronger security posture.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 HStack {
                     Text("API key")
                     Spacer()
@@ -572,7 +611,7 @@ struct ExportFile: Transferable {
 }
 
 #Preview("Settings") {
-    let schema = Schema(versionedSchema: SchemaV8.self)
+    let schema = AppSchema.schema()
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
     return SettingsView().modelContainer(container)
