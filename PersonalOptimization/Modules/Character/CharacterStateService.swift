@@ -63,10 +63,24 @@ final class CharacterStateService {
     private let cacheWindow: TimeInterval = 60
     private var lastRecomputeAt: Date?
     private var observers: [NSObjectProtocol] = []
+    /// Test-only counter incremented on every recompute call. Lets tests
+    /// assert that observer-driven recomputes don't stack from accidental
+    /// double-start. Not exposed in Release builds.
+    #if DEBUG
+    private(set) var debugRecomputeCount: Int = 0
+    #endif
 
     private init() {}
 
     func start(modelContext: ModelContext, timezone: TimeZone? = nil) {
+        // Defensive teardown so repeated start() calls do not stack
+        // observers or leak prior model-context references. Without this
+        // a model-context swap or app re-entry would silently double the
+        // recompute fan-out on every event.
+        if !observers.isEmpty {
+            logger.info("CharacterStateService.start called twice; resetting observers")
+            stop()
+        }
         self.modelContext = modelContext
         if let tz = timezone { self.timezone = tz }
         recompute(force: true)
@@ -75,7 +89,6 @@ final class CharacterStateService {
         // HealthKitSyncService posting `dailyLogsRecomputed` after late
         // samples land both bypass the cache window so the mascot reacts
         // immediately.
-        observers.removeAll()
         observers.append(NotificationCenter.default.addObserver(
             forName: .userStateChanged, object: nil, queue: .main
         ) { [weak self] _ in
@@ -105,6 +118,9 @@ final class CharacterStateService {
            Date().timeIntervalSince(last) < cacheWindow {
             return
         }
+        #if DEBUG
+        debugRecomputeCount += 1
+        #endif
         let inputs = Self.gatherInputs(modelContext: ctx, timezone: timezone)
         let resolved = Self.resolve(inputs: inputs)
         lastRecomputeAt = inputs.now

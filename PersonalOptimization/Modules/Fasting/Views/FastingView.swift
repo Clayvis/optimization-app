@@ -205,7 +205,7 @@ struct FastingView: View {
 
     private func loadService() async {
         do {
-            let config = try ScheduleConfigLoader.load()
+            let config = try ScheduleConfigLoader.loadCached()
             service = FastingService(modelContext: modelContext, defaults: config.fastingDefaults)
         } catch {
             loadError = error.localizedDescription

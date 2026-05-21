@@ -52,20 +52,35 @@ final class DailySummaryService {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
         let day = cal.startOfDay(for: asOf)
-
-        let blocks = (try? modelContext.fetch(FetchDescriptor<ScheduleBlock>())) ?? []
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: day) ?? day
         let weekday = isoWeekday(for: asOf)
-        let blocksToday = blocks.filter { $0.dayOfWeek == weekday && !$0.isOverride }
+
+        // ScheduleBlock has no date column (weekly recurring), so the
+        // unbounded fetch is unavoidable; push the day-of-week filter into
+        // the predicate so SwiftData only loads matching rows.
+        let blocksDescriptor = FetchDescriptor<ScheduleBlock>(
+            predicate: #Predicate<ScheduleBlock> {
+                $0.dayOfWeek == weekday && $0.isOverride == false
+            }
+        )
+        let blocksToday = (try? modelContext.fetch(blocksDescriptor)) ?? []
         let workoutScheduled = blocksToday.contains { $0.type == .training && $0.module != nil }
 
-        let log = (try? modelContext.fetch(FetchDescriptor<DailyLog>()))?.first {
-            cal.isDate($0.date, inSameDayAs: day)
-        }
+        // DailyLog: one row for the day. Predicate keyed on equality so
+        // SwiftData hits exactly one record instead of streaming the table.
+        let logDescriptor = FetchDescriptor<DailyLog>(
+            predicate: #Predicate<DailyLog> { $0.date == day }
+        )
+        let log = (try? modelContext.fetch(logDescriptor))?.first
 
-        let workoutEvents = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
-        let workoutCompleted = workoutEvents.contains {
-            cal.isDate($0.date, inSameDayAs: day) && $0.completed
-        }
+        // WorkoutEvent: scoped to today's range with the completed flag.
+        let workoutEventsDescriptor = FetchDescriptor<WorkoutEvent>(
+            predicate: #Predicate<WorkoutEvent> {
+                $0.date >= day && $0.date < tomorrow && $0.completed
+            }
+        )
+        let workoutEvents = (try? modelContext.fetch(workoutEventsDescriptor)) ?? []
+        let workoutCompleted = !workoutEvents.isEmpty
 
         let fastingDone = log?.fastEnd != nil
         let waterOz = log?.waterOz ?? 0
@@ -145,34 +160,55 @@ final class DailySummaryService {
     private func todaysWorkoutSnippet(for day: Date) -> String? {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
-        let isToday: (Date) -> Bool = { cal.isDate($0, inSameDayAs: day) }
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: day) ?? day
 
         // Most-recent CustomActivitySession beats lift/sport sessions since
-        // cardio is the M4.2 focus. templateName is denormalized at log time.
-        let customs = (try? modelContext.fetch(FetchDescriptor<CustomActivitySession>())) ?? []
-        if let custom = customs
-            .filter({ isToday($0.date) && $0.durationMinutes > 0 })
-            .max(by: { $0.date < $1.date }) {
+        // cardio is the M4.2 focus. Predicate pushes the date range and
+        // minimum-duration check into SwiftData; fetchLimit = 1 stops at
+        // the first row in the descending order.
+        var customsDescriptor = FetchDescriptor<CustomActivitySession>(
+            predicate: #Predicate<CustomActivitySession> {
+                $0.date >= day && $0.date < tomorrow && $0.durationMinutes > 0
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        customsDescriptor.fetchLimit = 1
+        if let custom = (try? modelContext.fetch(customsDescriptor))?.first {
             let name = custom.templateName.isEmpty ? "Cardio" : custom.templateName
             return "\(name) · \(custom.durationMinutes) min"
         }
 
-        let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
-        if let lift = lifts.filter({ isToday($0.date) && $0.durationMinutes > 0 })
-            .max(by: { $0.date < $1.date }) {
+        var liftsDescriptor = FetchDescriptor<LiftSession>(
+            predicate: #Predicate<LiftSession> {
+                $0.date >= day && $0.date < tomorrow && $0.durationMinutes > 0
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        liftsDescriptor.fetchLimit = 1
+        if let lift = (try? modelContext.fetch(liftsDescriptor))?.first {
             return "\(lift.template) · \(lift.durationMinutes) min"
         }
 
-        let bball = (try? modelContext.fetch(FetchDescriptor<BasketballSession>())) ?? []
-        if let game = bball.filter({ isToday($0.date) && $0.endTime > $0.startTime })
-            .max(by: { $0.startTime < $1.startTime }) {
+        var bballDescriptor = FetchDescriptor<BasketballSession>(
+            predicate: #Predicate<BasketballSession> {
+                $0.startTime >= day && $0.startTime < tomorrow
+            },
+            sortBy: [SortDescriptor(\.startTime, order: .reverse)]
+        )
+        bballDescriptor.fetchLimit = 1
+        if let game = (try? modelContext.fetch(bballDescriptor))?.first, game.endTime > game.startTime {
             let minutes = max(1, Int(game.endTime.timeIntervalSince(game.startTime) / 60))
             return "Basketball · \(minutes) min"
         }
 
-        let swims = (try? modelContext.fetch(FetchDescriptor<SwimSession>())) ?? []
-        if let swim = swims.filter({ isToday($0.date) && $0.durationMinutes > 0 })
-            .max(by: { $0.date < $1.date }) {
+        var swimsDescriptor = FetchDescriptor<SwimSession>(
+            predicate: #Predicate<SwimSession> {
+                $0.date >= day && $0.date < tomorrow && $0.durationMinutes > 0
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        swimsDescriptor.fetchLimit = 1
+        if let swim = (try? modelContext.fetch(swimsDescriptor))?.first {
             return "Swim · \(swim.durationMinutes) min · \(Int(swim.totalMeters))m"
         }
 

@@ -59,7 +59,7 @@ enum ArchiveBackgroundScheduler {
             context.insert(log)
             try? context.save()
 
-            let targets = try? ScheduleConfigLoader.load().hydrationTargetsOz
+            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
             let service = ActivityArchiveService(
                 modelContext: context,
                 hydrationTargets: targets
@@ -100,7 +100,7 @@ enum ArchiveBackgroundScheduler {
         }
         Task { @MainActor in
             let context = modelContainer.mainContext
-            let targets = try? ScheduleConfigLoader.load().hydrationTargetsOz
+            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
             let service = ActivityArchiveService(
                 modelContext: context,
                 hydrationTargets: targets

@@ -384,7 +384,7 @@ struct HydrationView: View {
 
     private func loadService() async {
         do {
-            let config = try ScheduleConfigLoader.load()
+            let config = try ScheduleConfigLoader.loadCached()
             service = HydrationService(modelContext: modelContext, targets: config.hydrationTargetsOz)
         } catch {
             loadError = error.localizedDescription

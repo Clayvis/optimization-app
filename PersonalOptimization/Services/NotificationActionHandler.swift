@@ -85,7 +85,7 @@ final class NotificationActionHandler: NSObject, UNUserNotificationCenterDelegat
         // MARK: - try? justified because ScheduleConfig is a bundled resource;
         // a parse failure leaves `targets` nil and HydrationService still
         // logs the entry against today's DailyLog using its built-in defaults.
-        let targets = try? ScheduleConfigLoader.load().hydrationTargetsOz
+        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
         let service = HydrationService(modelContext: context, targets: targets ?? .placeholder)
         do {
             _ = try service.logBottle(oz: oz)

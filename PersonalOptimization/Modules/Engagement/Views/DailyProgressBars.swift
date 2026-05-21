@@ -170,7 +170,7 @@ struct DailyProgressBars: View {
         // Best-effort: pull the day's minimum from ScheduleConfigLoader. On
         // failure leave the 64oz default in place rather than show a broken bar.
         do {
-            let config = try ScheduleConfigLoader.load()
+            let config = try ScheduleConfigLoader.loadCached()
             let weekday = isoWeekday(for: Date())
             let targets = config.hydrationTargetsOz
             if targets.basketball.appliesTo.contains(weekday) {

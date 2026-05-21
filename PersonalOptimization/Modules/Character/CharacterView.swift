@@ -6,7 +6,11 @@ import SwiftData
 /// Honors the system reduce-motion setting and the user's `mascotVariant` choice.
 struct CharacterView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Bindable var service = CharacterStateService.shared
+    // CharacterStateService is @Observable so SwiftUI tracks its property
+    // reads without needing @Bindable. The view only reads from the
+    // service — no two-way binding required. Default to the shared
+    // instance for production callers; tests inject a fixture.
+    let service: CharacterStateService
     @Query private var profiles: [UserProfile]
 
     var size: CGFloat = 200
@@ -15,6 +19,12 @@ struct CharacterView: View {
     @State private var breathing = false
     @State private var pulseScale: CGFloat = 1.0
     @State private var lastAlertState: CharacterState?
+
+    init(service: CharacterStateService = .shared, size: CGFloat = 200, showsReason: Bool = true) {
+        self.service = service
+        self.size = size
+        self.showsReason = showsReason
+    }
 
     private var variant: String {
         profiles.first?.mascotVariant ?? "ninja_male"
@@ -85,7 +95,15 @@ struct CharacterView: View {
         withAnimation(.spring(response: 0.25, dampingFraction: 0.55)) {
             pulseScale = 1.1
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+        // Use a Task with Task.sleep instead of DispatchQueue.main.asyncAfter
+        // per CLAUDE.md's "async/await everywhere" rule. Task automatically
+        // captures @MainActor isolation and cancels cleanly if the view
+        // leaves the hierarchy.
+        Task { @MainActor in
+            // MARK: - try? justified because Task.sleep only throws on
+            // cancellation; if the view cancels, we want the animation
+            // settle to skip silently.
+            try? await Task.sleep(for: .milliseconds(250))
             withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
                 pulseScale = 1.0
             }

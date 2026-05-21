@@ -52,7 +52,7 @@ final class ReactiveRecomputeService {
 
         // Recompute every streak domain so a late-arriving HK workout, sleep,
         // or weight sample updates the persistent counter the UI reads from.
-        let targets = try? ScheduleConfigLoader.load().hydrationTargetsOz
+        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
         let streakService = StreakService(
             modelContext: context,
             hydrationTargets: targets

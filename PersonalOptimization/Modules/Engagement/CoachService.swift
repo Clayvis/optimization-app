@@ -144,7 +144,7 @@ final class CoachService {
         let trends = TrendAnalyticsService(
             modelContext: modelContext,
             timezone: timezone,
-            hydrationTargets: try? ScheduleConfigLoader.load().hydrationTargetsOz
+            hydrationTargets: try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
         )
         let historical = trends.summaryForCoach(over: range)
 
@@ -294,7 +294,7 @@ final class CoachService {
         let trends = TrendAnalyticsService(
             modelContext: modelContext,
             timezone: timezone,
-            hydrationTargets: try? ScheduleConfigLoader.load().hydrationTargetsOz
+            hydrationTargets: try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
         )
         let patterns = trends.patternsDetected(over: range, minConfidence: 0.5)
         guard !patterns.isEmpty else {
@@ -730,7 +730,7 @@ final class CoachService {
         let mascotState = CharacterStateService.shared.currentState.rawValue
 
         // Hydration target floor for today.
-        let hydrationTargetMin: Double = (try? ScheduleConfigLoader.load().hydrationTargetsOz)
+        let hydrationTargetMin: Double = (try? ScheduleConfigLoader.loadCached().hydrationTargetsOz)
             .map { targets in
                 let weekday: Int = {
                     let raw = cal.component(.weekday, from: asOf)

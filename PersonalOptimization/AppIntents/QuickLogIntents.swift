@@ -31,7 +31,7 @@ struct LogHydrationIntent: AppIntent {
             return .result(dialog: "Couldn't open the database.")
         }
         do {
-            let config = try ScheduleConfigLoader.load()
+            let config = try ScheduleConfigLoader.loadCached()
             let service = HydrationService(modelContext: wrapper.mainContext,
                                            targets: config.hydrationTargetsOz)
             _ = try service.logBeverage(amountOz: amountOz, beverageType: beverage.toBeverageType())
@@ -81,7 +81,7 @@ struct StartFastIntent: AppIntent {
             return .result(dialog: "No profile yet.")
         }
         do {
-            let config = try ScheduleConfigLoader.load()
+            let config = try ScheduleConfigLoader.loadCached()
             let service = FastingService(modelContext: context, defaults: config.fastingDefaults)
             _ = try service.startManualFast(profile: profile)
             return .result(dialog: "Fast started.")
@@ -111,7 +111,7 @@ struct EndFastIntent: AppIntent {
         }
         let context = wrapper.mainContext
         do {
-            let config = try ScheduleConfigLoader.load()
+            let config = try ScheduleConfigLoader.loadCached()
             let service = FastingService(modelContext: context, defaults: config.fastingDefaults)
             let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
             _ = try service.endManualFast(reason: trimmed.isEmpty ? nil : trimmed)

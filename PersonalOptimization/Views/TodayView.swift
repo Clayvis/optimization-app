@@ -18,7 +18,7 @@ struct TodayView: View {
     }
 
     private var summaryService: DailySummaryService {
-        let targets = try? ScheduleConfigLoader.load().hydrationTargetsOz
+        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
         return DailySummaryService(modelContext: modelContext, hydrationTargets: targets)
     }
 

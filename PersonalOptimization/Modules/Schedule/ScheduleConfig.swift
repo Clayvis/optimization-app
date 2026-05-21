@@ -75,4 +75,28 @@ enum ScheduleConfigLoader {
             throw ScheduleConfigError.decodingFailed(error)
         }
     }
+
+    /// Process-lifetime cached accessor. The bundled JSON never changes at
+    /// runtime, so re-parsing it from every TodayView body evaluation or
+    /// every Coach prompt construction is pure overhead. First call parses;
+    /// subsequent calls return the in-memory ScheduleConfig.
+    /// MainActor-isolated since the most common callers (Views, Coach)
+    /// already live there; background tasks should explicitly await the
+    /// hop or use `load(bundle:)` directly.
+    @MainActor private static var mainActorCache: ScheduleConfig?
+
+    @MainActor
+    static func loadCached(bundle: Bundle = .main) throws -> ScheduleConfig {
+        if let mainActorCache { return mainActorCache }
+        let config = try load(bundle: bundle)
+        mainActorCache = config
+        return config
+    }
+
+    /// Invalidates the cached config. Tests use this in setUp() to force a
+    /// re-parse so they can swap the bundle.
+    @MainActor
+    static func resetCache() {
+        mainActorCache = nil
+    }
 }
