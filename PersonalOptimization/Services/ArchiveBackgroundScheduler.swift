@@ -89,6 +89,9 @@ enum ArchiveBackgroundScheduler {
             modelContainer.mainContext.insert(taskLog)
             try? modelContainer.mainContext.save()
         }
+        // iOS gives BG app-refresh tasks ~30s. Leave a 5s safety margin so
+        // we mark "partial" and persist the log row before the OS yanks us.
+        let expirationDeadline = Date().addingTimeInterval(25)
         task.expirationHandler = {
             logger.warning("BG archive task expired before completion")
             Task { @MainActor in
@@ -106,11 +109,13 @@ enum ArchiveBackgroundScheduler {
                 hydrationTargets: targets
             )
             do {
-                let written = try service.backfill(maxDays: 7)
-                taskLog.status = "success"
-                taskLog.summary = "wrote \(written) archive rows"
-                logger.info("BG archive wrote \(written, privacy: .public) rows")
-                task.setTaskCompleted(success: true)
+                let result = try service.backfillChunked(maxDays: 7) {
+                    Date() < expirationDeadline
+                }
+                taskLog.status = result.completed ? "success" : "partial"
+                taskLog.summary = "wrote \(result.written) archive rows, completed=\(result.completed)"
+                logger.info("BG archive wrote \(result.written, privacy: .public) rows complete=\(result.completed, privacy: .public)")
+                task.setTaskCompleted(success: result.completed)
             } catch {
                 taskLog.status = "failure"
                 taskLog.errorMessage = error.localizedDescription

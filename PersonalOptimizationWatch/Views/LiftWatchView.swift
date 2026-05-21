@@ -5,6 +5,10 @@ import WatchKit
 struct LiftWatchView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    /// Apple Watch always-on mode. When true, dim the UI and reduce
+    /// refresh frequency to preserve battery during multi-hour sessions
+    /// on LTPO displays. CLAUDE.md battery posture rule.
+    @Environment(\.isLuminanceReduced) private var dimmed
     let templateName: String
 
     @State private var session: LiftSession?
@@ -24,6 +28,8 @@ struct LiftWatchView: View {
             }
         }
         .navigationTitle(templateName)
+        .foregroundStyle(dimmed ? .secondary : .primary)
+        .animation(.easeInOut(duration: 0.5), value: dimmed)
     }
 
     @ViewBuilder

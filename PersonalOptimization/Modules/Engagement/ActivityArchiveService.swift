@@ -38,6 +38,19 @@ final class ActivityArchiveService {
     /// window; pass nil for unbounded.
     @discardableResult
     func backfill(maxDays: Int? = 30, asOf: Date = Date()) throws -> Int {
+        let result = try backfillChunked(maxDays: maxDays, asOf: asOf, shouldContinue: { true })
+        return result.written
+    }
+
+    /// Same as backfill but checks `shouldContinue()` between days so a BG
+    /// task can stop early when iOS is about to expire its budget. Returns
+    /// both the count written and whether the loop completed naturally; a
+    /// `partial` result is the BG task signaling "ran out of time, will
+    /// pick up where it left off next scheduled slot".
+    @discardableResult
+    func backfillChunked(maxDays: Int? = 30,
+                         asOf: Date = Date(),
+                         shouldContinue: () -> Bool) throws -> (written: Int, completed: Bool) {
         let earliestSource = earliestSourceDataDate() ?? startOfDay(for: asOf)
         let today = startOfDay(for: asOf)
         let lower: Date = {
@@ -48,13 +61,17 @@ final class ActivityArchiveService {
         var cursor = lower
         var written = 0
         while cursor <= today {
+            guard shouldContinue() else {
+                logger.warning("backfillChunked interrupted at \(cursor, privacy: .public) after writing \(written, privacy: .public) rows")
+                return (written, false)
+            }
             _ = try rollupDay(cursor)
             written += 1
             guard let next = calendar().date(byAdding: .day, value: 1, to: cursor) else { break }
             cursor = next
         }
         logger.info("Backfilled \(written, privacy: .public) archive rows from \(lower, privacy: .public) to \(today, privacy: .public)")
-        return written
+        return (written, true)
     }
 
     /// Single-day rollup. Builds the row from current SwiftData state.

@@ -5,6 +5,7 @@ import WatchKit
 struct SwimWatchView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.isLuminanceReduced) private var dimmed
 
     @State private var session: SwimSession?
     @State private var service: SwimService?
@@ -20,6 +21,8 @@ struct SwimWatchView: View {
             }
         }
         .navigationTitle("Swim")
+        .foregroundStyle(dimmed ? .secondary : .primary)
+        .animation(.easeInOut(duration: 0.5), value: dimmed)
     }
 
     @ViewBuilder

@@ -11,6 +11,7 @@ import HealthKit
 struct CustomActivityWatchView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.isLuminanceReduced) private var dimmed
     let template: CustomActivityTemplate
 
     @State private var session: CustomActivitySession?
@@ -29,6 +30,8 @@ struct CustomActivityWatchView: View {
             }
         }
         .navigationTitle(template.name)
+        .foregroundStyle(dimmed ? .secondary : .primary)
+        .animation(.easeInOut(duration: 0.5), value: dimmed)
     }
 
     @ViewBuilder

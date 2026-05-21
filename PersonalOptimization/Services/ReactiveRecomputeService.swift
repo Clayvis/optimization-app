@@ -21,8 +21,13 @@ final class ReactiveRecomputeService {
     private var observers: [NSObjectProtocol] = []
     private let logger = Logger.persistence
     /// Throttle: ignore back-to-back fires within this window. HK observers
-    /// can fan out; we don't need to spend the CPU twice in 5 seconds.
-    private let throttleWindow: TimeInterval = 5
+    /// can fan out heavily — a single Garmin sync delivers samples in a
+    /// burst that triggers dailyLogsRecomputed up to a dozen times within
+    /// seconds. 15s window keeps the main actor free between bursts. The
+    /// recompute itself runs synchronously on main because StreakService is
+    /// @MainActor and the heavy fetches are already predicate-bounded
+    /// after Item 5, so per-domain runtime is bounded.
+    private let throttleWindow: TimeInterval = 15
     private var lastRunAt: Date?
 
     private init() {}
