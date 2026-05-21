@@ -84,18 +84,33 @@ struct HydrationWatchView: View {
     }
 
     private func log(oz: Double, service: HydrationService) {
-        // try? justified because: SwiftData write to in-process container,
-        // failure path is unrecoverable corruption rather than a recoverable
-        // user error; we surface a haptic regardless.
+        // MARK: - try? justified because SwiftData write to in-process
+        // container, failure path is unrecoverable corruption rather than a
+        // recoverable user error; the haptic still fires to confirm tap.
         _ = try? service.logBottle(oz: oz)
         WKInterfaceDevice.current().play(.success)
+        // Real-time signal to the phone so the iOS UI updates within seconds
+        // instead of waiting on CloudKit propagation. Persisted SwiftData
+        // row + CloudKit sync remain the source of truth.
+        WatchConnectivityService.shared.send(
+            WatchConnectivityEvent(
+                kind: .waterLogged,
+                payload: ["oz": "\(Int(oz))"]
+            )
+        )
         refreshTrigger += 1
     }
 
     private func logElectrolyte(service: HydrationService) {
-        // try? justified: same as logBottle.
+        // MARK: - try? justified because the failure path mirrors logBottle.
         _ = try? service.logElectrolyte()
         WKInterfaceDevice.current().play(.success)
+        WatchConnectivityService.shared.send(
+            WatchConnectivityEvent(
+                kind: .waterLogged,
+                payload: ["type": "electrolyte"]
+            )
+        )
         refreshTrigger += 1
     }
 

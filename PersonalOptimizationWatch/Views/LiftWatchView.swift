@@ -40,13 +40,18 @@ struct LiftWatchView: View {
                     Text("\(sets.count) sets logged").font(.caption2).foregroundStyle(.secondary)
 
                     Button {
-                        // try? justified: SwiftData local write.
+                        // MARK: - try? justified because SwiftData local
+                        // write to in-process container; failure is
+                        // unrecoverable corruption rather than a recoverable
+                        // user error. Haptic still fires on tap.
                         _ = try? service.logSet(in: session, exerciseName: active.name, weightLbs: 135, reps: 5, restSeconds: 90)
                         WKInterfaceDevice.current().play(.success)
                     } label: {
                         Label("+ Set 135x5", systemImage: "plus")
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityLabel(String(localized: "Log a set of 135 pounds for 5 reps"))
+                    .accessibilityHint(String(localized: "Records a new set on the active exercise"))
                 }
 
                 HStack {
@@ -55,14 +60,17 @@ struct LiftWatchView: View {
                     } label: {
                         Image(systemName: "chevron.left")
                     }
+                    .accessibilityLabel(String(localized: "Previous exercise"))
                     Spacer()
                     Text("\(currentExerciseIndex + 1) / \(exercises.count)").font(.caption2)
+                        .accessibilityLabel(String(localized: "Exercise \(currentExerciseIndex + 1) of \(exercises.count)"))
                     Spacer()
                     Button {
                         if currentExerciseIndex < exercises.count - 1 { currentExerciseIndex += 1 }
                     } label: {
                         Image(systemName: "chevron.right")
                     }
+                    .accessibilityLabel(String(localized: "Next exercise"))
                 }
 
                 Button(role: .destructive) {
@@ -70,6 +78,8 @@ struct LiftWatchView: View {
                 } label: {
                     Label("End", systemImage: "stop.circle")
                 }
+                .accessibilityLabel(String(localized: "End workout"))
+                .accessibilityHint(String(localized: "Saves the session and returns to the watch home screen"))
             }
             .padding(.horizontal, 4)
         }
@@ -86,19 +96,26 @@ struct LiftWatchView: View {
                 Label("\(Int(live.heartRate))", systemImage: "heart.fill")
                     .foregroundStyle(.red)
                     .font(.caption2.monospacedDigit())
+                    .accessibilityHidden(true)
                 Spacer()
                 Label("\(Int(live.activeCaloriesKcal))", systemImage: "flame.fill")
                     .foregroundStyle(.orange)
                     .font(.caption2.monospacedDigit())
+                    .accessibilityHidden(true)
                 Spacer()
                 Text(formatDuration(live.elapsedSeconds))
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 4)
             .padding(.vertical, 4)
             .background(Color.gray.opacity(0.18))
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(String(localized:
+                "Heart rate \(Int(live.heartRate)), \(Int(live.activeCaloriesKcal)) calories burned, elapsed \(formatDuration(live.elapsedSeconds))"
+            ))
         }
     }
 

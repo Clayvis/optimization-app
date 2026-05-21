@@ -40,21 +40,29 @@ struct CustomActivityWatchView: View {
                         Label("\(Int(live.heartRate))", systemImage: "heart.fill")
                             .foregroundStyle(.red)
                             .font(.caption2.monospacedDigit())
+                            .accessibilityHidden(true)
                         Spacer()
                         Label("\(Int(live.activeCaloriesKcal))", systemImage: "flame.fill")
                             .foregroundStyle(.orange)
                             .font(.caption2.monospacedDigit())
+                            .accessibilityHidden(true)
                     }
                     .padding(.horizontal, 4)
                     .padding(.vertical, 4)
                     .background(Color.gray.opacity(0.18))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(String(localized:
+                        "Heart rate \(Int(live.heartRate)), \(Int(live.activeCaloriesKcal)) calories burned"
+                    ))
                 }
 
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(formatDuration(context.date.timeIntervalSince(startedAt)))
                         .font(.title3.weight(.semibold))
                         .monospacedDigit()
+                        .accessibilityLabel(String(localized: "Elapsed time"))
+                        .accessibilityValue(formatDuration(context.date.timeIntervalSince(startedAt)))
                 }
 
                 if template.trackDistance {
@@ -62,6 +70,8 @@ struct CustomActivityWatchView: View {
                         Text("\(Int(live.distanceMeters)) m")
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(.secondary)
+                            .accessibilityLabel(String(localized: "Distance"))
+                            .accessibilityValue(String(localized: "\(Int(live.distanceMeters)) meters"))
                         Spacer()
                     }
                 }
@@ -73,12 +83,16 @@ struct CustomActivityWatchView: View {
                 }
                 .pickerStyle(.navigationLink)
                 .font(.caption2)
+                .accessibilityLabel(String(localized: "Workout intensity"))
+                .accessibilityValue(intensity)
 
                 Button(role: .destructive) {
                     Task { await end(service: service, session: session) }
                 } label: {
                     Label("End", systemImage: "stop.circle")
                 }
+                .accessibilityLabel(String(localized: "End \(template.name) session"))
+                .accessibilityHint(String(localized: "Saves the session and returns home"))
             }
             .padding(.horizontal, 4)
         }

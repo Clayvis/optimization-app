@@ -83,7 +83,8 @@ struct LearningWatchView: View {
                             .frame(maxWidth: .infinity, minHeight: 30)
                     }
                     .buttonStyle(.bordered)
-                    .accessibilityLabel("Add \(inc) minutes of \(label)")
+                    .accessibilityLabel(String(localized: "Add \(inc) minutes of \(label)"))
+                    .accessibilityHint(String(localized: "Records \(inc) minutes of practice for \(label)"))
                 }
             }
         }

@@ -38,6 +38,11 @@ final class KeychainService: Sendable {
     ///   so the key never leaves this device (stronger security posture).
     /// Both variants are cleaned up first so toggling never leaves stale items.
     func setApiKey(_ key: String, iCloudSync: Bool) throws {
+        // MARK: - try? justified because variant-cleanup is best-effort. The
+        // new write below targets a specific posture; pre-deleting the
+        // opposite posture prevents stale Keychain items, and its failure
+        // (typically errSecItemNotFound) must not block the primary set
+        // operation, which has its own error path.
         try? delete(key: "anthropic_api_key", synchronizableSpecific: true)
         try? delete(key: "anthropic_api_key", synchronizableSpecific: false)
         try set(key: "anthropic_api_key", value: key, iCloudSync: iCloudSync)

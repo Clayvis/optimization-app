@@ -31,15 +31,21 @@ struct SwimWatchView: View {
                         Label("\(Int(live.heartRate))", systemImage: "heart.fill")
                             .foregroundStyle(.red)
                             .font(.caption2.monospacedDigit())
+                            .accessibilityHidden(true)
                         Spacer()
                         Label("\(Int(live.activeCaloriesKcal))", systemImage: "flame.fill")
                             .foregroundStyle(.orange)
                             .font(.caption2.monospacedDigit())
+                            .accessibilityHidden(true)
                     }
                     .padding(.horizontal, 4)
                     .padding(.vertical, 4)
                     .background(Color.gray.opacity(0.18))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(String(localized:
+                        "Heart rate \(Int(live.heartRate)), \(Int(live.activeCaloriesKcal)) calories burned"
+                    ))
                 }
 
                 TimelineView(.periodic(from: .now, by: 1)) { context in
@@ -51,22 +57,32 @@ struct SwimWatchView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(String(localized:
+                        "Elapsed \(formatDuration(context.date.timeIntervalSince(startedAt))), \(session.laps) laps, \(Int(session.totalMeters)) meters"
+                    ))
                 }
 
                 Button {
-                    // try? justified: SwiftData local write.
+                    // MARK: - try? justified because SwiftData local write;
+                    // failure path is unrecoverable corruption rather than a
+                    // user error. Haptic still confirms the tap.
                     _ = try? service.logLap(in: session, count: 1)
                     WKInterfaceDevice.current().play(.success)
                 } label: {
                     Label("+1 lap", systemImage: "plus.circle.fill")
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityLabel(String(localized: "Add one lap"))
+                .accessibilityHint(String(localized: "Increments lap count by one"))
 
                 Button(role: .destructive) {
                     Task { await end(service: service, session: session) }
                 } label: {
                     Label("End", systemImage: "stop.circle")
                 }
+                .accessibilityLabel(String(localized: "End swim session"))
+                .accessibilityHint(String(localized: "Saves the session and returns home"))
             }
             .padding(.horizontal, 4)
         }

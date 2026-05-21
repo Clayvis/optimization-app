@@ -112,6 +112,10 @@ final class CharacterStateService {
             logger.info("Character state \(self.currentState.rawValue, privacy: .public) -> \(resolved.state.rawValue, privacy: .public) reason=\(resolved.reason, privacy: .public)")
             let log = CharacterStateLog(timestamp: inputs.now, state: resolved.state, triggerReason: resolved.reason)
             ctx.insert(log)
+            // MARK: - try? justified because CharacterStateLog is non-critical
+            // analytic data. A save failure surfaces in os_log elsewhere; the
+            // in-memory `currentState` still updates so the UI reflects the
+            // change even if persistence transiently fails.
             try? ctx.save()
             currentState = resolved.state
             triggerReason = resolved.reason

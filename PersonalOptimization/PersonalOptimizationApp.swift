@@ -77,6 +77,18 @@ struct PersonalOptimizationApp: App {
                 let service = HealthKitSyncService(modelContext: container.mainContext)
                 _ = await service.syncToday()
             }
+            // Wire the notification action handler + register categories
+            // so the hydration quick-action buttons (8 / 16 / 24 / 32 oz,
+            // Skip) actually surface on the lock screen and route taps into
+            // HydrationService instead of silently dismissing.
+            NotificationActionHandler.shared.attach(modelContainer: container)
+            Task { @MainActor in
+                do {
+                    _ = try await NotificationService.shared.register()
+                } catch {
+                    Logger.app.warning("Notification register failed: \(error.localizedDescription, privacy: .public)")
+                }
+            }
             // Activate phone↔watch bridge so the watch can push session events
             // back in real time. Cheap: the WC session activates async and is
             // a no-op on devices without a paired Watch.
@@ -90,6 +102,12 @@ struct PersonalOptimizationApp: App {
                     NotificationCenter.default.post(name: .userStateChanged, object: event)
                     switch event.kind {
                     case .workoutStarted, .workoutEnded:
+                        await HealthKitSyncService(modelContext: container.mainContext).syncToday()
+                    case .waterLogged:
+                        // Force a HK sync so the daily aggregate refreshes
+                        // with whatever the watch added. SwiftData rows
+                        // arrive via CloudKit; this accelerates the visible
+                        // state on the phone.
                         await HealthKitSyncService(modelContext: container.mainContext).syncToday()
                     default:
                         break
