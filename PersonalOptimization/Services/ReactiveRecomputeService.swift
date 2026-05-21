@@ -47,6 +47,14 @@ final class ReactiveRecomputeService {
         observers.removeAll()
     }
 
+    /// Test-only hook: clears the throttle state so a subsequent fire is
+    /// not silently swallowed by the 15s window. Not exposed in Release.
+    #if DEBUG
+    func resetThrottleForTesting() {
+        lastRunAt = nil
+    }
+    #endif
+
     private func runIfNotThrottled() {
         if let last = lastRunAt, Date().timeIntervalSince(last) < throttleWindow {
             return

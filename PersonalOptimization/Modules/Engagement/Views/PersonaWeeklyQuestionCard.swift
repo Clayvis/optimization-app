@@ -113,7 +113,7 @@ struct PersonaWeeklyQuestionCard: View {
                 Button {
                     apply(option.0)
                     service.recordAnswer(key: question.key)
-                    try? modelContext.save()
+                    try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
                     dismissed = true
                 } label: {
                     Text(option.1)

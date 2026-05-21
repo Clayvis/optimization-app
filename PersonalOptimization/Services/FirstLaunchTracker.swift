@@ -8,7 +8,7 @@ import Foundation
 final class FirstLaunchTracker: @unchecked Sendable {
     static let shared = FirstLaunchTracker()
 
-    private let key = "com.rawlins.PersonalOptimization.firstLaunchAt"
+    private let key = "\(BuildConfig.bundlePrefix).firstLaunchAt"
 
     var firstLaunchAt: Date {
         if let stored = UserDefaults.standard.object(forKey: key) as? Date {

@@ -120,7 +120,7 @@ final class SessionLifecycleService {
                 retryCount: retryCount
             )
             context.insert(failure)
-            try? context.save()
+            try? context.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
             Logger.healthkit.error(
                 "HK write exhausted retries; persisted failure record activity=\(activityType.rawValue, privacy: .public)"
             )

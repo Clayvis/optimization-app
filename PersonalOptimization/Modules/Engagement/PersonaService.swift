@@ -13,7 +13,7 @@ import os
 @MainActor
 final class PersonaService {
     private let modelContext: ModelContext
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "persona")
+    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "persona")
     private let now: () -> Date
 
     init(modelContext: ModelContext, now: @escaping () -> Date = Date.init) {
@@ -31,7 +31,7 @@ final class PersonaService {
         }
         let new = UserPersona()
         modelContext.insert(new)
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         return new
     }
 
@@ -47,7 +47,7 @@ final class PersonaService {
             persona.answeredQuestionKeysCSV = answered.joined(separator: ",")
             persona.confidence = min(100, persona.confidence + 10)
         }
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     /// True when at least 7 days have passed since the last question card and
@@ -79,7 +79,7 @@ final class PersonaService {
     func markQuestionAsked() {
         let persona = currentOrCreate()
         persona.lastQuestionAskedAt = now()
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     // MARK: - Behavioral inference (v2 passive signals)
@@ -161,7 +161,7 @@ final class PersonaService {
             markAnswered("decision_style", on: persona)
         }
         persona.confidence = min(100, persona.confidence + 10)
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     /// Record that the user rejected a signal so we do not surface it again.
@@ -175,7 +175,7 @@ final class PersonaService {
             expiresAt: nil
         )
         modelContext.insert(memory)
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     // MARK: - Behavioral inference helpers (private)

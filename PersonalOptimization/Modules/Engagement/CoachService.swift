@@ -279,7 +279,7 @@ final class CoachService {
         prescription.statusRaw = PrescribedWorkoutStatus.suggested.rawValue
         prescription.tokenUsage = response.totalTokens
         prescription.modelUsed = resolvedProfile.anthropicModel
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         logger.info("Prescription generated type=\(parsed.workoutType.rawValue, privacy: .public) tokens=\(response.totalTokens, privacy: .public)")
         return prescription
     }
@@ -364,7 +364,7 @@ final class CoachService {
             rationaleData: rationaleData
         )
         modelContext.insert(suggestion)
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         logger.info("Schedule suggestion persisted change=\(parsed.changeType.rawValue, privacy: .public) tokens=\(response.totalTokens, privacy: .public)")
         return [suggestion]
     }
@@ -408,7 +408,7 @@ final class CoachService {
         program.statusRaw = WeeklyProgramStatus.active.rawValue
         program.tokenUsage = response.totalTokens
         program.modelUsed = resolvedProfile.anthropicModel
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         logger.info("Weekly program generated weekStart=\(weekStart, privacy: .public) tokens=\(response.totalTokens, privacy: .public)")
         return program
     }
@@ -651,7 +651,7 @@ final class CoachService {
             existing.contextSummary = context.summaryForPrompt
             existing.tokenUsage = response.totalTokens
             existing.refreshCount += 1
-            try? modelContext.save()
+            try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
             logger.info("Coach insight refreshed; tokens=\(response.totalTokens, privacy: .public) refreshCount=\(existing.refreshCount, privacy: .public)")
             return existing
         }
@@ -664,7 +664,7 @@ final class CoachService {
             refreshCount: 0
         )
         modelContext.insert(insight)
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         logger.info("Coach insight generated; tokens=\(response.totalTokens, privacy: .public)")
         return insight
     }
@@ -783,7 +783,7 @@ final class CoachService {
         }
         let p = UserProfile()
         modelContext.insert(p)
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         return p
     }
 

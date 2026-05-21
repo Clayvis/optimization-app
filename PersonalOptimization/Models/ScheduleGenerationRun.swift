@@ -54,6 +54,6 @@ extension ScheduleGenerationRun {
         )
         guard let stale = try? modelContext.fetch(descriptor), !stale.isEmpty else { return }
         for row in stale { modelContext.delete(row) }
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 }

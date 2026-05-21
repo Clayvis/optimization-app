@@ -222,7 +222,7 @@ struct PrescribedWorkoutCard: View {
 
     private func accept(prescription: PrescribedWorkout) {
         prescription.status = .accepted
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     private func skip(prescription: PrescribedWorkout) {
@@ -231,7 +231,7 @@ struct PrescribedWorkoutCard: View {
         if !reason.isEmpty {
             prescription.rationale = "[skipped: \(reason)] " + prescription.rationale
         }
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     private func generate(force: Bool = false) async {

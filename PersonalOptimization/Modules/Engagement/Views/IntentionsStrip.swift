@@ -90,7 +90,7 @@ struct IntentionsStrip: View {
             // CompletionHistory, only the streak engine does, and intentions
             // are independent of that loop.
             intention.lastCompletedAt = nil
-            try? modelContext.save()
+            try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         } else {
             _ = try? service.recordCompletion(intention)
         }

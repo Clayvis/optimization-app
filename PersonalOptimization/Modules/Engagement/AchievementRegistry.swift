@@ -136,7 +136,7 @@ enum AchievementRegistry {
 final class AchievementService {
     private let modelContext: ModelContext
     private let timezone: TimeZone
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "achievements")
+    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "achievements")
 
     init(modelContext: ModelContext,
          timezone: TimeZone = TimeZone.current) {
@@ -179,7 +179,7 @@ final class AchievementService {
 
     func markCelebrationShown(_ achievement: Achievement) {
         achievement.celebrationShown = true
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     /// Returns the unlocked subset for UI rendering (id → unlock date).

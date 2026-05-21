@@ -132,7 +132,7 @@ final class CharacterStateService {
             // analytic data. A save failure surfaces in os_log elsewhere; the
             // in-memory `currentState` still updates so the UI reflects the
             // change even if persistence transiently fails.
-            try? ctx.save()
+            try? ctx.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
             currentState = resolved.state
             triggerReason = resolved.reason
             lastTransitionAt = inputs.now

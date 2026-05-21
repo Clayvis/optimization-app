@@ -200,7 +200,7 @@ struct DiagnosticsView: View {
         do {
             let store = try OSLogStore(scope: .currentProcessIdentifier)
             let oneDayAgo = store.position(date: Date().addingTimeInterval(-86_400))
-            let predicate = NSPredicate(format: "subsystem == %@", "com.rawlins.PersonalOptimization")
+            let predicate = NSPredicate(format: "subsystem == %@", BuildConfig.loggingSubsystem)
             let entries = try store.getEntries(with: [], at: oneDayAgo, matching: predicate)
             var lines: [String] = []
             for case let entry as OSLogEntryLog in entries {

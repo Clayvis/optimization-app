@@ -166,7 +166,7 @@ struct SettingsView: View {
         lastSyncDate = mostRecentSync
 
         // iCloud account status — cheap call to CKContainer.
-        let container = CKContainer(identifier: "iCloud.com.rawlins.PersonalOptimization")
+        let container = CKContainer(identifier: BuildConfig.cloudKitContainer)
         if let status = try? await container.accountStatus() {
             iCloudAccountStatus = status
         }

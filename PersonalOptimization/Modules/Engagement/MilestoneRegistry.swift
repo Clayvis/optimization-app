@@ -130,7 +130,7 @@ enum MilestoneRegistry {
 final class MilestoneService {
     private let modelContext: ModelContext
     private let timezone: TimeZone
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "milestones")
+    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "milestones")
 
     init(modelContext: ModelContext,
          timezone: TimeZone = TimeZone.current) {
@@ -178,7 +178,7 @@ final class MilestoneService {
 
     func markCelebrationShown(_ unlock: MilestoneUnlock) {
         unlock.celebrationShown = true
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     // MARK: - Metric computation

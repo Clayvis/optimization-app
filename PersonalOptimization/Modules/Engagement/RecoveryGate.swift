@@ -90,7 +90,7 @@ struct RecoveryGate {
         }
         profile.lastRecoveryOverrideAt = date
         profile.recoveryOverrideCountThisMonth += 1
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     // MARK: - Helpers

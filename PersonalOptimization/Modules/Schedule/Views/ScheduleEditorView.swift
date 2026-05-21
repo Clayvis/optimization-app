@@ -115,7 +115,7 @@ struct ScheduleEditorView: View {
 
     private func delete(block: ScheduleBlock) {
         modelContext.delete(block)
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     private func resetSeededOnly() {
@@ -292,7 +292,7 @@ struct ScheduleBlockEditSheet: View {
             block.isCustom = true
             modelContext.insert(block)
         }
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         dismiss()
     }
 

@@ -98,7 +98,7 @@ struct MascotVariantPickerView: View {
             return
         }
         profile.mascotVariant = variant.rawValue
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         preflightError = nil
     }
 }

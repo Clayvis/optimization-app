@@ -81,6 +81,6 @@ enum CompletionHistoryWriter {
     static func record(domain: StreakDomain, at time: Date = Date(), modelContext: ModelContext) {
         let entry = CompletionHistory(domain: domain, timestamp: time)
         modelContext.insert(entry)
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 }

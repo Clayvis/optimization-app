@@ -32,7 +32,7 @@ final class LiveWorkoutSessionService: NSObject, HKWorkoutSessionDelegate, HKLiv
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
     private var elapsedTimer: Timer?
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "live-workout")
+    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "live-workout")
 
     private override init() { super.init() }
 

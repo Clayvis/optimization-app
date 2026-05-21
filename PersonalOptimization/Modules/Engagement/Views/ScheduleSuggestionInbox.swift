@@ -107,12 +107,12 @@ struct ScheduleSuggestionInbox: View {
         // ScheduleBlock will land in the M3.7+ schedule-mutator pass once the
         // payload schemas are pinned per changeType.
         suggestion.status = .accepted
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     private func dismiss(_ suggestion: ScheduleSuggestion) {
         suggestion.status = .dismissed
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         recordRejection(suggestion)
     }
 

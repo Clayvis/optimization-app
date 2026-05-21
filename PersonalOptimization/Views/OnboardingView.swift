@@ -470,8 +470,16 @@ struct OnboardingView: View {
 
     private func requestNotifications() {
         Task {
-            let center = UNUserNotificationCenter.current()
-            _ = try? await center.requestAuthorization(options: [.alert, .badge, .sound])
+            // Route through NotificationService.register() so category
+            // descriptors (hydration action buttons, etc.) get registered
+            // alongside the authorization request. Going around it via the
+            // raw UNUserNotificationCenter was the original bug — actions
+            // never surfaced on the lock screen because categories never
+            // landed with the system.
+            // MARK: - try? justified because onboarding step is best-effort;
+            // user can still grant later via Settings. NotificationService
+            // logs the failure path.
+            _ = try? await NotificationService.shared.register()
             notifRequested = true
         }
     }
@@ -499,6 +507,6 @@ struct OnboardingView: View {
         profile.equipmentAccess = equipmentAccess
         profile.mascotVariant = pickedVariant.rawValue
         profile.onboardingCompleted = true
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 }

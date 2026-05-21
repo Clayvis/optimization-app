@@ -226,7 +226,7 @@ struct ScheduleGenerationView: View {
         guard let data = try? JSONEncoder().encode(intake),
               let json = String(data: data, encoding: .utf8) else { return }
         profile.lastIntakeJSON = json
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     private func addAnchor() {

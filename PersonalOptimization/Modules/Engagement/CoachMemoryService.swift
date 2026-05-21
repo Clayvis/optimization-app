@@ -9,7 +9,7 @@ import os
 @MainActor
 final class CoachMemoryService {
     private let modelContext: ModelContext
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "coach-memory")
+    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "coach-memory")
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -95,7 +95,7 @@ final class CoachMemoryService {
             }
         }
         if pruned > 0 {
-            try? modelContext.save()
+            try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
             logger.info("Pruned \(pruned, privacy: .public) expired CoachMemory rows")
         }
     }

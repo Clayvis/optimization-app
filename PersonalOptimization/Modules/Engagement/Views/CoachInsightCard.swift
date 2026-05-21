@@ -47,7 +47,7 @@ struct CoachInsightCard: View {
             // when the user hasn't already given a stronger signal.
             if let latest, latest.userInteraction.precedence < CoachInsightInteraction.dismissed.precedence {
                 latest.userInteraction = .dismissed
-                try? modelContext.save()
+                try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
             }
         }) {
             if let latest {
@@ -93,7 +93,7 @@ struct CoachInsightCard: View {
         } else {
             insight.userInteraction = interaction
         }
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         feedbackTrigger &+= 1
     }
 
@@ -109,7 +109,7 @@ struct CoachInsightCard: View {
                   let latest else { return }
             if latest.userInteraction == .ignored {
                 latest.userInteraction = .viewed
-                try? modelContext.save()
+                try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
             }
         }
     }

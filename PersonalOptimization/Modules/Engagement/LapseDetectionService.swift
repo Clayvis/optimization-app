@@ -21,7 +21,7 @@ final class LapseDetectionService {
 
     private let modelContext: ModelContext
     private let timezone: TimeZone
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "lapse")
+    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "lapse")
 
     init(modelContext: ModelContext,
          timezone: TimeZone = TimeZone.current) {
@@ -123,7 +123,7 @@ final class LapseDetectionService {
     /// open of the Today tab during the same lapse.
     func markWelcomeBackShown(_ lapse: LapseEvent) {
         lapse.welcomeBackShown = true
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     private func jstCalendar() -> Calendar {

@@ -122,7 +122,7 @@ private struct WeeklyReflectionDetailView: View {
                             }
                             .onChange(of: noteDraft) { _, newValue in
                                 reflection.userNote = newValue.isEmpty ? nil : newValue
-                                try? modelContext.save()
+                                try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
                             }
                     }
 

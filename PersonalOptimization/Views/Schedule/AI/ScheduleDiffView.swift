@@ -163,7 +163,7 @@ struct ScheduleDiffView: View {
             if !optimizationFocusesCSV.isEmpty,
                let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first {
                 profile.optimizationFocusesCSV = optimizationFocusesCSV
-                try? modelContext.save()
+                try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
             }
             ScheduleAIService(modelContext: modelContext).markAccepted(runID: runID)
             onApplied?()

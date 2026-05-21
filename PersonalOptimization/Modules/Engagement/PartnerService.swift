@@ -15,7 +15,7 @@ import os
 @MainActor
 final class PartnerService {
     private let modelContext: ModelContext
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "partner")
+    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "partner")
 
     /// Pairing codes expire 24h after generation per V1 opp 1 spec.
     static let pairingCodeTTL: TimeInterval = 24 * 60 * 60

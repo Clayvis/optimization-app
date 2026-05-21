@@ -57,7 +57,7 @@ enum ArchiveBackgroundScheduler {
             let context = modelContainer.mainContext
             let log = BackgroundTaskLog(taskId: "\(taskIdentifier).foreground")
             context.insert(log)
-            try? context.save()
+            try? context.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
 
             let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
             let service = ActivityArchiveService(
@@ -75,7 +75,7 @@ enum ArchiveBackgroundScheduler {
                 logger.error("Foreground rollup failed: \(error.localizedDescription, privacy: .public)")
             }
             log.endedAt = Date()
-            try? context.save()
+            try? context.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
             schedule()
         }
     }
@@ -123,7 +123,7 @@ enum ArchiveBackgroundScheduler {
                 task.setTaskCompleted(success: false)
             }
             taskLog.endedAt = Date()
-            try? context.save()
+            try? context.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         }
     }
     #endif

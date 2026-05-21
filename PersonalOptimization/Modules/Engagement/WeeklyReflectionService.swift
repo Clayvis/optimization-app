@@ -10,7 +10,7 @@ import os
 final class WeeklyReflectionService {
     private let modelContext: ModelContext
     private let timezone: TimeZone
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "weekly")
+    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "weekly")
 
     init(modelContext: ModelContext,
          timezone: TimeZone = TimeZone.current) {

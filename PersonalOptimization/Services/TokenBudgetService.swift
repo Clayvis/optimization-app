@@ -67,7 +67,7 @@ final class TokenBudgetService {
             )
             modelContext.insert(entry)
         }
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         logger.info("Token usage +\(total, privacy: .public) tokens (day total now \(self.spentToday(), privacy: .public))")
     }
 

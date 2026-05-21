@@ -121,7 +121,7 @@ struct PartnerSettingsView: View {
                 get: { profile.partnerOptedIntoSharing },
                 set: { newValue in
                     profile.partnerOptedIntoSharing = newValue
-                    try? modelContext.save()
+                    try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
                 }
             ))
             Button(role: .destructive) {

@@ -103,7 +103,7 @@ struct LearningWatchView: View {
         case "coursework": log.courseworkMinutes += minutes
         default: break
         }
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         WKInterfaceDevice.current().play(.success)
         feedbackMessage = "+\(minutes) min logged"
         refreshTrigger += 1

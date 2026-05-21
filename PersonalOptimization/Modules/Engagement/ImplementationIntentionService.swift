@@ -7,7 +7,7 @@ import os
 @MainActor
 final class ImplementationIntentionService {
     private let modelContext: ModelContext
-    private let logger = Logger(subsystem: "com.rawlins.PersonalOptimization", category: "intentions")
+    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "intentions")
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext

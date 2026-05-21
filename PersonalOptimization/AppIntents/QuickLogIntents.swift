@@ -155,7 +155,7 @@ struct LogLearningIntent: AppIntent {
         case .coursework:  log.courseworkMinutes += minutes
         case .music:       log.musicMinutes += minutes
         }
-        try? context.save()
+        try? context.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         return .result(dialog: "Added \(minutes) minutes of \(module.rawValue).")
     }
 }

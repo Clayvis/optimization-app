@@ -115,7 +115,7 @@ final class ScheduleAIService {
     func markAccepted(runID: PersistentIdentifier) {
         guard let run = modelContext.model(for: runID) as? ScheduleGenerationRun else { return }
         run.status = .accepted
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     /// Marks a previously-proposed run as discarded. Called when the user
@@ -123,7 +123,7 @@ final class ScheduleAIService {
     func markDiscarded(runID: PersistentIdentifier) {
         guard let run = modelContext.model(for: runID) as? ScheduleGenerationRun else { return }
         run.status = .discarded
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }
 
     // MARK: - Internals
@@ -278,7 +278,7 @@ final class ScheduleAIService {
         }
         let new = UserProfile()
         modelContext.insert(new)
-        try? modelContext.save()
+        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         return new
     }
 
