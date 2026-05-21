@@ -15,6 +15,28 @@ struct RootView: View {
             }
         }
         .onAppear { checkTravelPrompt() }
+        // Handoff receiver. When the paired watch starts a workout it
+        // publishes an NSUserActivity via HandoffService; tapping the
+        // continuation banner on the iPhone lock screen brings the app to
+        // the foreground and fires onContinueUserActivity with the same
+        // activity type. We rebroadcast as a Notification so downstream
+        // tabs (Training, Learning) can route the user to the matching
+        // session screen with the template pre-filled.
+        .onContinueUserActivity(HandoffActivityType.lift.rawValue) { activity in
+            postHandoffNotification(activity: activity)
+        }
+        .onContinueUserActivity(HandoffActivityType.basketball.rawValue) { activity in
+            postHandoffNotification(activity: activity)
+        }
+        .onContinueUserActivity(HandoffActivityType.swim.rawValue) { activity in
+            postHandoffNotification(activity: activity)
+        }
+        .onContinueUserActivity(HandoffActivityType.customActivity.rawValue) { activity in
+            postHandoffNotification(activity: activity)
+        }
+        .onContinueUserActivity(HandoffActivityType.learning.rawValue) { activity in
+            postHandoffNotification(activity: activity)
+        }
         .alert("Travel mode?", isPresented: $showTravelPrompt, presenting: profiles.first) { profile in
             Button("Follow my device") {
                 profile.travelModeFollowsDevice = true
@@ -27,6 +49,11 @@ struct RootView: View {
         } message: { profile in
             Text("You're not in \(profile.timezone) right now. Should the app follow your device's time zone for day boundaries and streak rollovers? You can change this anytime in Settings.")
         }
+    }
+
+    private func postHandoffNotification(activity: NSUserActivity) {
+        guard let payload = HandoffPayload(activityType: activity.activityType, userInfo: activity.userInfo) else { return }
+        NotificationCenter.default.post(name: .handoffActivityContinued, object: payload)
     }
 
     @ViewBuilder

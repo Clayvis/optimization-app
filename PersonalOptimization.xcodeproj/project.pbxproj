@@ -199,8 +199,10 @@
 		819FF06C908089F663E029A5 /* LiftSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177EF30368767AF7EBD3F9D1 /* LiftSession.swift */; };
 		81C4F39DE3BE103351879422 /* SchemaV4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D082A46276FE47429C48D8 /* SchemaV4.swift */; };
 		81D0F29D44B34A0DCC617BFE /* HydrationEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A58FDE761FD415973D33B2 /* HydrationEntry.swift */; };
+		82082086900D7DA033787E62 /* HandoffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4974834FAD6CC2D925CB5C13 /* HandoffService.swift */; };
 		821C7E7785DC12B4770D9BC8 /* SchemaV6.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55921DCD58DBE8640AF42118 /* SchemaV6.swift */; };
 		82CED799C08A2A19FDA0D1C5 /* AdminTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961232791C8824387CFFBCE /* AdminTask.swift */; };
+		847D1AF8A4548B50E794DEF8 /* HandoffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4974834FAD6CC2D925CB5C13 /* HandoffService.swift */; };
 		86067350BA1F20E19A896AE1 /* PrescribedWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F855A3A3402581056CD01C9 /* PrescribedWorkout.swift */; };
 		86CE01A81BD8C89A0F0920B6 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3E8E2C56CA679596E1AC22 /* RootView.swift */; };
 		87E8CBF9DD79E0753919553C /* WorkoutEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CADA8B9C2AAA96402E53588 /* WorkoutEvent.swift */; };
@@ -276,6 +278,7 @@
 		AE2F534AABB0B37895EE60E3 /* StreakCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF13531E1C84E1B6271EB29 /* StreakCounter.swift */; };
 		AED04D2DB0528ED047D50834 /* ActivityArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2AF00868B5A4EEB46CEE823 /* ActivityArchive.swift */; };
 		AF02DB40855E1C6D5719104A /* RecoveryGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EFF0733536CD0A979649998 /* RecoveryGateTests.swift */; };
+		AF4EF1CF810D8BF1E03CAA07 /* HandoffServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4535AFC7CB534F90C185DC3 /* HandoffServiceTests.swift */; };
 		AF5CB4194A6298B8884DB7D9 /* DevSecretsBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8F222D2CE0A22931521B4A6 /* DevSecretsBootstrap.swift */; };
 		AF935854038A55D81F2AF555 /* UserCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0412E4614AB05A94BDCA6C6C /* UserCalendar.swift */; };
 		B03C2BA23FD92471FF04F367 /* ScheduleGenerationDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3D29578D146C90C17C05C3 /* ScheduleGenerationDTO.swift */; };
@@ -574,6 +577,7 @@
 		45B10FAC14B0FE5A66B6567D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		476F48D9D87CCC605C712ABE /* HydrationWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationWatchView.swift; sourceTree = "<group>"; };
 		4802E896C8352210A8A52524 /* ScheduleServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleServiceTests.swift; sourceTree = "<group>"; };
+		4974834FAD6CC2D925CB5C13 /* HandoffService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandoffService.swift; sourceTree = "<group>"; };
 		4A14D7CDDD90CC1F2E608509 /* CurrentBlockTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentBlockTimelineProvider.swift; sourceTree = "<group>"; };
 		4A4485BD775F87B682EA483E /* lift_templates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = lift_templates.json; sourceTree = "<group>"; };
 		4A978B10DB6D2FDF4FDEE48D /* LearningWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningWatchView.swift; sourceTree = "<group>"; };
@@ -662,6 +666,7 @@
 		A17FB8A4BB496CEA2762528C /* PartnerSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartnerSettingsView.swift; sourceTree = "<group>"; };
 		A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WearableEntry.swift; sourceTree = "<group>"; };
 		A3E9897C0A7723B5B1CDAFCC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A4535AFC7CB534F90C185DC3 /* HandoffServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandoffServiceTests.swift; sourceTree = "<group>"; };
 		A72C1D5E3B84432188471411 /* LapseDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LapseDetectionService.swift; sourceTree = "<group>"; };
 		A7DBF8E5A0C6205D17EDF9A9 /* ScheduleEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleEditorView.swift; sourceTree = "<group>"; };
 		A8FEC052CD852E3744F42807 /* TokenBudgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenBudgetService.swift; sourceTree = "<group>"; };
@@ -1144,6 +1149,7 @@
 			isa = PBXGroup;
 			children = (
 				AFC968E36E24AFF44D49F5FD /* ClaudeAPIClientRetryTests.swift */,
+				A4535AFC7CB534F90C185DC3 /* HandoffServiceTests.swift */,
 				739A739617F5FA401FAD616A /* HealthKitServiceTests.swift */,
 				AAFBD30EE98B4C356DAD8AA8 /* HealthKitSyncServiceTests.swift */,
 				F8784746AB1A5E716335FC51 /* JSONExportImportTests.swift */,
@@ -1169,6 +1175,7 @@
 				59DFC3D084F8FF47CEF4B344 /* DailyLogStore.swift */,
 				C8F222D2CE0A22931521B4A6 /* DevSecretsBootstrap.swift */,
 				92EA6E4D5AA02DC732D3CD0B /* FirstLaunchTracker.swift */,
+				4974834FAD6CC2D925CB5C13 /* HandoffService.swift */,
 				7129D3FF70F397E22425C269 /* HealthKitObserverService.swift */,
 				0CE13FE68863483CD8470256 /* HealthKitService.swift */,
 				1BAE6A190D5FEF0B97FEE578 /* HealthKitSyncService.swift */,
@@ -1602,6 +1609,7 @@
 				E97B0310AD2A45BFF11E41BF /* EngagementIntegrationTests.swift in Sources */,
 				A311E18C454729D3983D3EFA /* FastingServiceTests.swift in Sources */,
 				8F39087818A8C2118DC323A4 /* HandoffCorrectnessTests.swift in Sources */,
+				AF4EF1CF810D8BF1E03CAA07 /* HandoffServiceTests.swift in Sources */,
 				B43806562D0556DFBC94FF88 /* HealthKitServiceTests.swift in Sources */,
 				BDA586F0D9FF51E267C31377 /* HealthKitSyncServiceTests.swift in Sources */,
 				681FF9C78398598E657BB6E1 /* HydrationServiceTests.swift in Sources */,
@@ -1702,6 +1710,7 @@
 				B2590EA43AA467BA42CD498F /* FastingView.swift in Sources */,
 				40D483DE501A628326355F35 /* FirstLaunchTracker.swift in Sources */,
 				EE12EA7B688C0A40D08AA22D /* FreezeApplication.swift in Sources */,
+				847D1AF8A4548B50E794DEF8 /* HandoffService.swift in Sources */,
 				EF95056ECE29FCAE68D5DED0 /* HealthKitObserverService.swift in Sources */,
 				956FDCF1B79C09CFF8407918 /* HealthKitService.swift in Sources */,
 				A6A6C7A07D960439269354ED /* HealthKitSyncService.swift in Sources */,
@@ -1928,6 +1937,7 @@
 				BD9EDFC84956AA9CB67AEBE7 /* DetectedPattern.swift in Sources */,
 				FC164E4A639AE36B6499265D /* FastingService.swift in Sources */,
 				CC72E0AC0A58B671E376E8EF /* FreezeApplication.swift in Sources */,
+				82082086900D7DA033787E62 /* HandoffService.swift in Sources */,
 				74DC1BAD844A842C65F760B2 /* HealthKitService.swift in Sources */,
 				0A3B2BE2821874C02AE2CB97 /* HealthKitWriteFailure.swift in Sources */,
 				81D0F29D44B34A0DCC617BFE /* HydrationEntry.swift in Sources */,

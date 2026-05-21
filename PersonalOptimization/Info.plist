@@ -4,7 +4,7 @@
 <dict>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.rawlins.PersonalOptimization.archiveRollup</string>
+		<string>$(TEAM_BUNDLE_PREFIX).archiveRollup</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
@@ -32,6 +32,14 @@
 	<string>Logs workouts and water intake to Apple Health for cross-app integration.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>$(TEAM_BUNDLE_PREFIX).activity.lift</string>
+		<string>$(TEAM_BUNDLE_PREFIX).activity.basketball</string>
+		<string>$(TEAM_BUNDLE_PREFIX).activity.swim</string>
+		<string>$(TEAM_BUNDLE_PREFIX).activity.custom</string>
+		<string>$(TEAM_BUNDLE_PREFIX).activity.learning</string>
+	</array>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>Sends reminders for hydration, fast transitions, and scheduled blocks.</string>
 	<key>TeamBundlePrefix</key>

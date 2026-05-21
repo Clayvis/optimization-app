@@ -90,7 +90,13 @@ targets:
         NSUserNotificationUsageDescription: Sends reminders for hydration, fast transitions, and scheduled blocks.
         NSSupportsLiveActivities: true
         BGTaskSchedulerPermittedIdentifiers:
-          - com.rawlins.PersonalOptimization.archiveRollup
+          - $(TEAM_BUNDLE_PREFIX).archiveRollup
+        NSUserActivityTypes:
+          - $(TEAM_BUNDLE_PREFIX).activity.lift
+          - $(TEAM_BUNDLE_PREFIX).activity.basketball
+          - $(TEAM_BUNDLE_PREFIX).activity.swim
+          - $(TEAM_BUNDLE_PREFIX).activity.custom
+          - $(TEAM_BUNDLE_PREFIX).activity.learning
         UIBackgroundModes:
           - processing
           - fetch
@@ -171,6 +177,7 @@ targets:
       - path: PersonalOptimization/Services/AppNotifications.swift
       - path: PersonalOptimization/Services/UserCalendar.swift
       - path: PersonalOptimization/Services/DailyLogStore.swift
+      - path: PersonalOptimization/Services/HandoffService.swift
       - path: PersonalOptimization/AppIntents
         name: SharedAppIntents
     resources:

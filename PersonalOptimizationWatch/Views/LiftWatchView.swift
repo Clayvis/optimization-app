@@ -140,7 +140,17 @@ struct LiftWatchView: View {
             // Best-effort: start the live HK session for HR + kcal. Failure
             // here doesn't block the lift session — SwiftData remains the
             // truth (M3.6 architecture) and HK is secondary.
+            // MARK: - try? justified because HK live session is secondary;
+            // a denied HK auth state must not block the SwiftData session.
             try? live.start(activityType: .functionalStrengthTraining)
+            // Register an NSUserActivity so the paired iPhone surfaces a
+            // Handoff banner ("Continue Lift: <template>") on its Lock
+            // Screen. iOS routes the activity on tap via RootView's
+            // onContinueUserActivity hook. SessionID intentionally omitted
+            // — LiftSession's identity is its SwiftData persistent ID which
+            // can't cross the WC boundary; template + start-time are the
+            // recovery key the phone uses on continue.
+            _ = HandoffService.startActivity(type: .lift, template: templateName)
             WatchConnectivityService.shared.send(
                 WatchConnectivityEvent(kind: .workoutStarted,
                                        payload: ["type": "lift", "template": templateName])

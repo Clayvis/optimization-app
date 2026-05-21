@@ -4,6 +4,36 @@ import os
 import WatchConnectivity
 #endif
 
+/// Protocol seam over WCSession so the service-level decisions (drop when
+/// unreachable, drop when not activated, log on error) can be tested without
+/// a paired Watch + WCSession.activate roundtrip. Production code uses
+/// LiveWCSessionTransport; tests use a FakeWCSessionTransport.
+protocol WCSessionTransport: AnyObject, Sendable {
+    var isActivated: Bool { get }
+    var isReachable: Bool { get }
+    func sendMessage(_ message: [String: Any],
+                     replyHandler: (([String: Any]) -> Void)?,
+                     errorHandler: ((Error) -> Void)?)
+}
+
+#if canImport(WatchConnectivity)
+/// Production transport adapter. WCSession itself can't conform directly
+/// because activationState exposes the WCSessionActivationState enum which
+/// is platform-gated; the adapter normalizes the surface.
+final class LiveWCSessionTransport: WCSessionTransport, @unchecked Sendable {
+    static let shared = LiveWCSessionTransport()
+    private init() {}
+
+    var isActivated: Bool { WCSession.default.activationState == .activated }
+    var isReachable: Bool { WCSession.default.isReachable }
+    func sendMessage(_ message: [String: Any],
+                     replyHandler: (([String: Any]) -> Void)?,
+                     errorHandler: ((Error) -> Void)?) {
+        WCSession.default.sendMessage(message, replyHandler: replyHandler, errorHandler: errorHandler)
+    }
+}
+#endif
+
 /// Phone↔watch real-time bridge. Two-way: phone pushes profile/state to the
 /// watch on demand; watch pushes session events back as soon as they happen.
 ///
@@ -25,6 +55,32 @@ final class WatchConnectivityService: NSObject, @unchecked Sendable {
     let lastEventStream: AsyncStream<WatchConnectivityEvent>
 
     private let logger = Logger.wc
+
+    /// Replaced by tests via `setTransportForTesting` to inject a fake.
+    /// Production reads `LiveWCSessionTransport.shared` lazily so unit tests
+    /// can swap it before the first send().
+    private var transportOverride: WCSessionTransport?
+    private var transport: WCSessionTransport? {
+        if let transportOverride { return transportOverride }
+        #if canImport(WatchConnectivity)
+        return LiveWCSessionTransport.shared
+        #else
+        return nil
+        #endif
+    }
+
+    #if DEBUG
+    func setTransportForTesting(_ transport: WCSessionTransport?) {
+        self.transportOverride = transport
+    }
+
+    /// Push an event directly into the lastEventStream as if it had been
+    /// received via WCSession. Lets tests verify the consumer chain
+    /// without a live peer.
+    func injectIncomingEventForTesting(_ event: WatchConnectivityEvent) {
+        continuation?.yield(event)
+    }
+    #endif
 
     override init() {
         var localContinuation: AsyncStream<WatchConnectivityEvent>.Continuation!
@@ -53,24 +109,21 @@ final class WatchConnectivityService: NSObject, @unchecked Sendable {
     /// reachable; CloudKit will reconcile the underlying SwiftData rows when
     /// the peer comes back online.
     func send(_ event: WatchConnectivityEvent) {
-        #if canImport(WatchConnectivity)
-        guard WCSession.isSupported() else { return }
-        let session = WCSession.default
-        guard session.activationState == .activated else { return }
-        guard session.isReachable else {
+        guard let transport else { return }
+        guard transport.isActivated else { return }
+        guard transport.isReachable else {
             logger.info("Peer unreachable; skipping event \(event.kind.rawValue, privacy: .public)")
             return
         }
         do {
             let payload = try JSONEncoder().encode(event)
             guard let dict = try JSONSerialization.jsonObject(with: payload) as? [String: Any] else { return }
-            session.sendMessage(dict, replyHandler: nil) { [weak self] error in
+            transport.sendMessage(dict, replyHandler: nil) { [weak self] error in
                 self?.logger.warning("sendMessage error: \(error.localizedDescription, privacy: .public)")
             }
         } catch {
             logger.warning("Encoding event failed: \(error.localizedDescription, privacy: .public)")
         }
-        #endif
     }
 }
 
