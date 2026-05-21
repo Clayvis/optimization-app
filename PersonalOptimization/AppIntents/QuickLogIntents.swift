@@ -174,6 +174,10 @@ enum LearningModuleOption: String, AppEnum {
 
 // MARK: - Coach memory ("tell my coach...")
 
+// iOS-only intent. The Coach memory module isn't built into the watch
+// target, so this intent compiles only for the phone. The watch surface
+// for "tell my coach" lives in the watch app's text-entry view instead.
+#if os(iOS)
 struct TellCoachIntent: AppIntent {
     static let title: LocalizedStringResource = "Tell my coach"
     static let description = IntentDescription("Saves a free-text note the Coach will reference for the next 7 days.")
@@ -199,3 +203,4 @@ struct TellCoachIntent: AppIntent {
         }
     }
 }
+#endif

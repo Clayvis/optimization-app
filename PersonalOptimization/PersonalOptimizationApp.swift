@@ -4,19 +4,41 @@ import os
 
 @main
 struct PersonalOptimizationApp: App {
+    /// True when the process is hosted by the XCTest runner. Set so app
+    /// launch can skip CloudKit, HealthKit, BG-task registration, and watch
+    /// bridge initialization — those modules touch system-services that fail
+    /// or stall under XCTest and the unit tests stub their dependencies
+    /// directly anyway.
+    private static let isRunningTests: Bool =
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
     let container: ModelContainer = {
         let schema = AppSchema.schema()
-        let config = ModelConfiguration(
-            schema: schema,
-            url: AppGroupContainer.storeURL() ?? URL.applicationSupportDirectory.appending(path: "default.store"),
-            cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
-        )
+        let config: ModelConfiguration = {
+            if PersonalOptimizationApp.isRunningTests {
+                return ModelConfiguration(
+                    schema: schema,
+                    isStoredInMemoryOnly: true,
+                    cloudKitDatabase: .none
+                )
+            }
+            return ModelConfiguration(
+                schema: schema,
+                url: AppGroupContainer.storeURL() ?? URL.applicationSupportDirectory.appending(path: "default.store"),
+                cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
+            )
+        }()
         do {
             let container = try ModelContainer(
                 for: schema,
                 migrationPlan: AppSchema.migrationPlan,
                 configurations: [config]
             )
+            // Bail out of the rest of the launch sequence in tests. The unit
+            // tests construct their own services with InMemoryContainer.
+            if PersonalOptimizationApp.isRunningTests {
+                return container
+            }
             // M4.2 T0a: Gate the bundled-schedule seed. New users (no profile
             // yet, or onboardingCompleted == false) should NOT get Clay's
             // bundled default_schedule.json — onboarding picks their schedule.

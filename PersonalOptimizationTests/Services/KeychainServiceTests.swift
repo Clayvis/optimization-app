@@ -4,8 +4,28 @@ import XCTest
 final class KeychainServiceTests: XCTestCase {
     private let service = KeychainService.shared
 
+    /// True when the host process isn't signed with the `keychain-access-groups`
+    /// entitlement. `CODE_SIGNING_ALLOWED=NO` builds and CI without a real
+    /// dev team land here. The keychain SDK returns -34018
+    /// (errSecMissingEntitlement) in that mode.
+    private var keychainAvailable: Bool {
+        // Probe by writing a transient value. If the OS denies access we
+        // assume the entitlement isn't embedded and skip the suite.
+        let probeKey = "__probe__"
+        do {
+            try service.setApiKey(probeKey)
+            try service.deleteApiKey()
+            return true
+        } catch {
+            return false
+        }
+    }
+
     override func setUp() async throws {
         try await super.setUp()
+        guard keychainAvailable else {
+            throw XCTSkip("Keychain access denied (errSecMissingEntitlement). Run with code signing enabled to exercise these tests.")
+        }
         try? service.deleteApiKey()
     }
 

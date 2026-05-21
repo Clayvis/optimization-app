@@ -268,6 +268,6 @@ final class StubGenerateAPI: CoachAPIInvoking {
             lastUserPrompt = userPrompt
             return t
         }
-        return ClaudeAPIClient.Response(text: nextText, inputTokens: 100, outputTokens: 200)
+        return ClaudeAPIClient.Response(text: nextText, inputTokens: 100, outputTokens: 200, modelUsed: .sonnet46)
     }
 }

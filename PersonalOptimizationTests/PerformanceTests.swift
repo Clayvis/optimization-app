@@ -136,6 +136,6 @@ private final class NoopAPI: CoachAPIInvoking {
                               systemPrompt: String,
                               userPrompt: String,
                               maxTokens: Int) async throws -> ClaudeAPIClient.Response {
-        ClaudeAPIClient.Response(text: "noop", inputTokens: 0, outputTokens: 0)
+        ClaudeAPIClient.Response(text: "noop", inputTokens: 0, outputTokens: 0, modelUsed: .sonnet46)
     }
 }

@@ -97,10 +97,14 @@ struct ClaudeAPIClient: Sendable {
                   budget: TokenBudgetService? = nil) async throws -> Response {
         if let budget {
             let estimate = Self.estimateTokens(systemPrompt: systemPrompt, userPrompt: userPrompt, maxTokens: maxTokens)
-            if budget.wouldExceed(estimatedTokens: estimate) {
+            // TokenBudgetService is MainActor-isolated; hop to read.
+            let exceedInfo: (exceeded: Bool, spent: Int, cap: Int) = await MainActor.run {
+                (budget.wouldExceed(estimatedTokens: estimate), budget.spentToday(), budget.dailyBudget)
+            }
+            if exceedInfo.exceeded {
                 throw ClaudeAPIError.budgetExceeded(
-                    spentToday: budget.spentToday(),
-                    dailyBudget: budget.dailyBudget,
+                    spentToday: exceedInfo.spent,
+                    dailyBudget: exceedInfo.cap,
                     estimated: estimate
                 )
             }
@@ -115,7 +119,11 @@ struct ClaudeAPIClient: Sendable {
                     userPrompt: userPrompt,
                     maxTokens: maxTokens
                 )
-                budget?.record(inputTokens: response.inputTokens, outputTokens: response.outputTokens)
+                if let budget {
+                    await MainActor.run {
+                        budget.record(inputTokens: response.inputTokens, outputTokens: response.outputTokens)
+                    }
+                }
                 return response
             } catch let error as ClaudeAPIError {
                 guard allowFallback, let fallback = currentModel.fallback, Self.shouldFallback(error: error) else {
@@ -244,6 +252,35 @@ struct ClaudeAPIClient: Sendable {
     static func estimateTokens(systemPrompt: String, userPrompt: String, maxTokens: Int) -> Int {
         let inputChars = systemPrompt.count + userPrompt.count
         return (inputChars / 4) + maxTokens
+    }
+
+    /// Decodes a model's text output as JSON. Tolerates the common Claude
+    /// quirk of wrapping JSON in a ```json ... ``` fence by stripping the
+    /// fence before decoding. Throws ClaudeAPIError.decoding on syntax error.
+    static func decodeJSON<T: Decodable>(_ text: String, as type: T.Type) throws -> T {
+        let cleaned = stripCodeFence(from: text)
+        guard let data = cleaned.data(using: .utf8) else {
+            throw ClaudeAPIError.decoding(NSError(domain: "ClaudeAPIClient", code: -1,
+                                                  userInfo: [NSLocalizedDescriptionKey: "Empty UTF-8 conversion"]))
+        }
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw ClaudeAPIError.decoding(error)
+        }
+    }
+
+    private static func stripCodeFence(from text: String) -> String {
+        var s = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.hasPrefix("```") {
+            if let firstNewline = s.firstIndex(of: "\n") {
+                s = String(s[s.index(after: firstNewline)...])
+            }
+        }
+        if s.hasSuffix("```") {
+            s = String(s.dropLast(3))
+        }
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

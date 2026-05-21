@@ -22,7 +22,7 @@
 	</array>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>com.rawlins.PersonalOptimization</string>
+		<string>$(AppIdentifierPrefix)com.rawlins.PersonalOptimization</string>
 	</array>
 </dict>
 </plist>

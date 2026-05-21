@@ -107,6 +107,6 @@ private final class TestAPI: CoachAPIInvoking {
                               maxTokens: Int) async throws -> ClaudeAPIClient.Response {
         callCount += 1
         if let error { throw error }
-        return ClaudeAPIClient.Response(text: text, inputTokens: 10, outputTokens: 5)
+        return ClaudeAPIClient.Response(text: text, inputTokens: 10, outputTokens: 5, modelUsed: .sonnet46)
     }
 }

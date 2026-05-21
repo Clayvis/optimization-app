@@ -49,6 +49,7 @@ struct PersonalOptimizationShortcuts: AppShortcutsProvider {
             shortTitle: "Log Learning",
             systemImageName: "book.fill"
         )
+        #if os(iOS)
         AppShortcut(
             intent: TellCoachIntent(),
             phrases: [
@@ -58,5 +59,6 @@ struct PersonalOptimizationShortcuts: AppShortcutsProvider {
             shortTitle: "Tell Coach",
             systemImageName: "text.bubble.fill"
         )
+        #endif
     }
 }

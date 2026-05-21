@@ -48,18 +48,18 @@ final class HealthKitObserverService {
             }
 
             let query = HKObserverQuery(sampleType: type, predicate: nil) { [weak self] _, completionHandler, error in
-                guard let self else {
-                    completionHandler()
-                    return
-                }
+                // Call the completion synchronously to satisfy HK's contract;
+                // schedule the actual work on the main actor without sharing
+                // the completion handler across actor boundaries (Swift 6
+                // strict concurrency does not allow that send).
+                defer { completionHandler() }
+                guard let self else { return }
                 if let error {
                     self.logger.warning("HKObserverQuery for \(type.identifier, privacy: .public) error: \(error.localizedDescription, privacy: .public)")
-                    completionHandler()
                     return
                 }
                 Task { @MainActor in
                     await self.handleUpdate()
-                    completionHandler()
                 }
             }
             store.execute(query)

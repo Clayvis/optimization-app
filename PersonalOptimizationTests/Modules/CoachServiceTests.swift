@@ -188,6 +188,6 @@ final class StubAPI: CoachAPIInvoking {
                               maxTokens: Int) async throws -> ClaudeAPIClient.Response {
         callCount += 1
         if let error { throw error }
-        return ClaudeAPIClient.Response(text: text, inputTokens: inputTokens, outputTokens: outputTokens)
+        return ClaudeAPIClient.Response(text: text, inputTokens: inputTokens, outputTokens: outputTokens, modelUsed: .sonnet46)
     }
 }
