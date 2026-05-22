@@ -147,7 +147,7 @@ final class HydrationService {
             timezone: timezone,
             hydrationTargets: targets
         )
-        _ = try? streakService.recompute(domain: .hydration, asOf: date)
+        _ = try? streakService.recompute(domain: .hydration, asOf: date)  // MARK: try? justified - best-effort; failure logged inside the called function.
         #endif
     }
 
@@ -161,7 +161,7 @@ final class HydrationService {
             predicate: #Predicate<HydrationEntry> { $0.date >= day && $0.date < next },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        return (try? modelContext.fetch(descriptor)) ?? []
+        return modelContext.fetchOrEmpty(descriptor)
     }
 
     private func existingLog(for date: Date) -> DailyLog? {
@@ -172,7 +172,7 @@ final class HydrationService {
         let descriptor = FetchDescriptor<DailyLog>(
             predicate: #Predicate<DailyLog> { $0.date == day }
         )
-        return (try? modelContext.fetch(descriptor))?.first
+        return modelContext.fetchFirstOrNil(descriptor)
     }
 
     // MARK: - Helpers

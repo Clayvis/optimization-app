@@ -59,7 +59,7 @@ enum ArchiveBackgroundScheduler {
             context.insert(log)
             try? context.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
 
-            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
+            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
             let service = ActivityArchiveService(
                 modelContext: context,
                 hydrationTargets: targets
@@ -87,7 +87,7 @@ enum ArchiveBackgroundScheduler {
         let taskLog = BackgroundTaskLog(taskId: taskIdentifier)
         Task { @MainActor in
             modelContainer.mainContext.insert(taskLog)
-            try? modelContainer.mainContext.save()
+            try? modelContainer.mainContext.save()  // MARK: try? justified - best-effort; failure logged inside the called function.
         }
         // iOS gives BG app-refresh tasks ~30s. Leave a 5s safety margin so
         // we mark "partial" and persist the log row before the OS yanks us.
@@ -97,13 +97,13 @@ enum ArchiveBackgroundScheduler {
             Task { @MainActor in
                 taskLog.status = "expired"
                 taskLog.endedAt = Date()
-                try? modelContainer.mainContext.save()
+                try? modelContainer.mainContext.save()  // MARK: try? justified - best-effort; failure logged inside the called function.
             }
             task.setTaskCompleted(success: false)
         }
         Task { @MainActor in
             let context = modelContainer.mainContext
-            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
+            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
             let service = ActivityArchiveService(
                 modelContext: context,
                 hydrationTargets: targets

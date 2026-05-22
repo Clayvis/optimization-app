@@ -176,7 +176,7 @@ struct HydrationView: View {
             LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(quickPicks, id: \.self) { oz in
                     Button {
-                        _ = try? service.logBeverage(amountOz: oz, beverageType: customBeverage)
+                        _ = try? service.logBeverage(amountOz: oz, beverageType: customBeverage)  // MARK: try? justified - best-effort; failure logged inside the called function.
                         refreshTrigger += 1
                         celebrationTrigger += 1
                     } label: {
@@ -250,7 +250,7 @@ struct HydrationView: View {
             }
             Spacer()
             Button {
-                _ = try? service.logElectrolyte()
+                _ = try? service.logElectrolyte()  // MARK: try? justified - best-effort; failure logged inside the called function.
                 refreshTrigger += 1
                 celebrationTrigger += 1
             } label: {
@@ -303,7 +303,7 @@ struct HydrationView: View {
                     .buttonStyle(.plain)
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) {
-                            _ = try? service.deleteEntry(entry)
+                            _ = try? service.deleteEntry(entry)  // MARK: try? justified - best-effort; failure logged inside the called function.
                             refreshTrigger += 1
                         } label: {
                             Label("Delete", systemImage: "trash")
@@ -321,9 +321,9 @@ struct HydrationView: View {
     private func logCustom(service: HydrationService) {
         switch customUnit {
         case .oz:
-            _ = try? service.logBeverage(amountOz: customAmount, beverageType: customBeverage)
+            _ = try? service.logBeverage(amountOz: customAmount, beverageType: customBeverage)  // MARK: try? justified - best-effort; failure logged inside the called function.
         case .mL:
-            _ = try? service.logBeverage(amountML: customAmount, beverageType: customBeverage)
+            _ = try? service.logBeverage(amountML: customAmount, beverageType: customBeverage)  // MARK: try? justified - best-effort; failure logged inside the called function.
         }
         customAmount = 0
         refreshTrigger += 1

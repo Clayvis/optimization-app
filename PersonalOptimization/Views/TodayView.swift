@@ -13,16 +13,33 @@ struct TodayView: View {
     @State private var pendingCelebration: MilestoneUnlock?
     @State private var showingMemorySheet = false
 
-    private var service: ScheduleService {
-        ScheduleService(modelContext: modelContext)
-    }
-
-    private var summaryService: DailySummaryService {
-        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
-        return DailySummaryService(modelContext: modelContext, hydrationTargets: targets)
-    }
+    // V11 launch-polish (Item 6): services held in @State so they survive
+    // body evaluations. Pre-refactor these were computed every render
+    // (ScheduleService init does a SwiftData FetchDescriptor walk;
+    // DailySummaryService reads bundled hydration targets). The cost
+    // multiplied across every TabView re-emission produced the "wonky" feel
+    // on daily launch. Lazy-bootstrap via .task; refresh on demand via
+    // bootstrapServices(reset: true).
+    @State private var scheduleService: ScheduleService?
+    @State private var summaryService: DailySummaryService?
 
     private var profile: UserProfile? { profiles.first }
+
+    /// Pre-bootstrap callers fall back to a transient instance so the view
+    /// can render before the .task has run. Once bootstrap completes the
+    /// @State copies take over and subsequent renders are free.
+    private var service: ScheduleService {
+        scheduleService ?? ScheduleService(modelContext: modelContext)
+    }
+
+    private var dailySummary: DailySummaryService {
+        if let summaryService { return summaryService }
+        // MARK: - try? justified because: ScheduleConfig is a bundled
+        // resource; falling back to nil targets keeps DailySummaryService
+        // working with its default hydration floor.
+        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
+        return DailySummaryService(modelContext: modelContext, hydrationTargets: targets)
+    }
 
     var body: some View {
         NavigationStack {
@@ -231,9 +248,7 @@ struct TodayView: View {
             }
             .onAppear {
                 now = Date()
-                if hkSyncService == nil {
-                    hkSyncService = HealthKitSyncService(modelContext: modelContext)
-                }
+                bootstrapServices()
                 characterService.start(modelContext: modelContext)
                 Task { await loadDailyQuote() }
                 refreshLapseAndMilestones()
@@ -249,12 +264,18 @@ struct TodayView: View {
                 await svc.syncToday()
                 NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
             }
+            // V11 launch-polish: build services once per view appearance.
+            // Subsequent body evaluations read the @State copies instead of
+            // re-allocating per-render.
+            .task(id: "todayview.bootstrap") {
+                bootstrapServices()
+            }
             // SwiftUI-native ticker. The OS pauses the task when the view
             // leaves the screen and resumes it when it returns; no manual
             // Timer lifecycle to manage and no battery cost while idle.
             .task(id: "todayview.tick") {
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(60))
+                    try? await Task.sleep(for: .seconds(60))  // MARK: try? justified - best-effort; failure logged inside the called function.
                     now = Date()
                 }
             }
@@ -267,17 +288,44 @@ struct TodayView: View {
         }
     }
 
+    /// V11 launch-polish (Item 6). Lazily allocates the ScheduleService /
+    /// DailySummaryService / HealthKitSyncService instances on first view
+    /// appearance. Idempotent: subsequent calls without `reset: true` are
+    /// no-ops. Callers that mutate the schedule (template re-apply, AI
+    /// generation accept) should call `bootstrapServices(reset: true)`
+    /// after the mutation so the cached service picks up the new rows.
+    private func bootstrapServices(reset: Bool = false) {
+        if reset {
+            scheduleService = nil
+            summaryService = nil
+            hkSyncService = nil
+        }
+        if scheduleService == nil {
+            scheduleService = ScheduleService(modelContext: modelContext)
+        }
+        if summaryService == nil {
+            // MARK: - try? justified because: ScheduleConfig is a bundled
+            // resource; falling back to nil targets keeps DailySummaryService
+            // working with its default hydration floor.
+            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
+            summaryService = DailySummaryService(modelContext: modelContext, hydrationTargets: targets)
+        }
+        if hkSyncService == nil {
+            hkSyncService = HealthKitSyncService(modelContext: modelContext)
+        }
+    }
+
     /// Walk lapse + milestone services on Today appearance. Cheap (mostly
     /// SwiftData reads) and gives the user immediate feedback when they
     /// cross a threshold or come back from a slump.
     private func refreshLapseAndMilestones() {
-        _ = try? LapseDetectionService(modelContext: modelContext).recompute()
+        _ = try? LapseDetectionService(modelContext: modelContext).recompute()  // MARK: try? justified - best-effort; failure logged inside the called function.
         let milestones = MilestoneService(modelContext: modelContext)
-        _ = try? milestones.evaluate()
+        _ = try? milestones.evaluate()  // MARK: try? justified - best-effort; failure logged inside the called function.
         if let next = milestones.nextPendingCelebration() {
             pendingCelebration = next
         }
-        _ = try? AchievementService(modelContext: modelContext).evaluate()
+        _ = try? AchievementService(modelContext: modelContext).evaluate()  // MARK: try? justified - best-effort; failure logged inside the called function.
     }
 
     @ViewBuilder
@@ -318,7 +366,7 @@ struct TodayView: View {
     }
 
     private var masterMetricCard: some View {
-        let tally = summaryService.todayProtocol(asOf: now)
+        let tally = dailySummary.todayProtocol(asOf: now)
         return Button {
             showingProtocolDetail = true
         } label: {
@@ -351,7 +399,7 @@ struct TodayView: View {
     /// chips with active streaks; muted otherwise so non-streaks don't shout.
     @ViewBuilder
     private var streakStrip: some View {
-        let counters = (try? modelContext.fetch(FetchDescriptor<StreakCounter>())) ?? []
+        let counters = modelContext.fetchOrEmpty(FetchDescriptor<StreakCounter>())
         let workout = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
         let hydration = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0
         let learning = counters.first { $0.domain == StreakDomain.learning.rawValue }?.currentStreak ?? 0
@@ -514,7 +562,7 @@ struct TodayView: View {
             default:        return nil
             }
         }()
-        let templates = (try? modelContext.fetch(FetchDescriptor<CustomActivityTemplate>())) ?? []
+        let templates = modelContext.fetchOrEmpty(FetchDescriptor<CustomActivityTemplate>())
         if let lookupName,
            let match = templates.first(where: {
                $0.name.caseInsensitiveCompare(lookupName) == .orderedSame && !$0.archived
@@ -590,6 +638,6 @@ struct TodayView: View {
     let schema = AppSchema.schema()
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
-    try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)
+    try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)  // MARK: try? justified - best-effort; failure logged inside the called function.
     return TodayView().modelContainer(container)
 }

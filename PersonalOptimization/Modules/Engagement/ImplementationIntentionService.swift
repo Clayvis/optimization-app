@@ -18,7 +18,7 @@ final class ImplementationIntentionService {
         let descriptor = FetchDescriptor<ImplementationIntention>(
             sortBy: [SortDescriptor(\.createdAt, order: .forward)]
         )
-        let all = (try? modelContext.fetch(descriptor)) ?? []
+        let all = modelContext.fetchOrEmpty(descriptor)
         return all.filter { $0.active }
     }
 
@@ -76,7 +76,7 @@ final class ImplementationIntentionService {
     @discardableResult
     func seedStartersIfNeeded() throws -> Int {
         let descriptor = FetchDescriptor<ImplementationIntention>()
-        let existingCount = (try? modelContext.fetchCount(descriptor)) ?? 0
+        let existingCount = modelContext.fetchCountOrZero(descriptor)
         guard existingCount == 0 else { return 0 }
 
         let starters: [(String, TriggerType, String)] = [

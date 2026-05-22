@@ -63,7 +63,7 @@ final class DailySummaryService {
                 $0.dayOfWeek == weekday && $0.isOverride == false
             }
         )
-        let blocksToday = (try? modelContext.fetch(blocksDescriptor)) ?? []
+        let blocksToday = modelContext.fetchOrEmpty(blocksDescriptor)
         let workoutScheduled = blocksToday.contains { $0.type == .training && $0.module != nil }
 
         // DailyLog: one row for the day. Predicate keyed on equality so
@@ -71,7 +71,7 @@ final class DailySummaryService {
         let logDescriptor = FetchDescriptor<DailyLog>(
             predicate: #Predicate<DailyLog> { $0.date == day }
         )
-        let log = (try? modelContext.fetch(logDescriptor))?.first
+        let log = modelContext.fetchFirstOrNil(logDescriptor)
 
         // WorkoutEvent: scoped to today's range with the completed flag.
         let workoutEventsDescriptor = FetchDescriptor<WorkoutEvent>(
@@ -79,7 +79,7 @@ final class DailySummaryService {
                 $0.date >= day && $0.date < tomorrow && $0.completed
             }
         )
-        let workoutEvents = (try? modelContext.fetch(workoutEventsDescriptor)) ?? []
+        let workoutEvents = modelContext.fetchOrEmpty(workoutEventsDescriptor)
         let workoutCompleted = !workoutEvents.isEmpty
 
         let fastingDone = log?.fastEnd != nil
@@ -99,7 +99,7 @@ final class DailySummaryService {
             || totalLearningMin >= 20
 
         // Travel/sick day grace: treat all scheduled domains as completed when active.
-        let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first
+        let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>())
         let travelOn = (profile?.travelModeActiveUntil ?? .distantPast) >= asOf
         let sickOn = (profile?.sickDayActiveUntil ?? .distantPast) >= asOf
         let graceCovered = travelOn || sickOn
@@ -173,7 +173,7 @@ final class DailySummaryService {
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         customsDescriptor.fetchLimit = 1
-        if let custom = (try? modelContext.fetch(customsDescriptor))?.first {
+        if let custom = modelContext.fetchFirstOrNil(customsDescriptor) {
             let name = custom.templateName.isEmpty ? "Cardio" : custom.templateName
             return "\(name) · \(custom.durationMinutes) min"
         }
@@ -185,7 +185,7 @@ final class DailySummaryService {
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         liftsDescriptor.fetchLimit = 1
-        if let lift = (try? modelContext.fetch(liftsDescriptor))?.first {
+        if let lift = modelContext.fetchFirstOrNil(liftsDescriptor) {
             return "\(lift.template) · \(lift.durationMinutes) min"
         }
 
@@ -196,7 +196,7 @@ final class DailySummaryService {
             sortBy: [SortDescriptor(\.startTime, order: .reverse)]
         )
         bballDescriptor.fetchLimit = 1
-        if let game = (try? modelContext.fetch(bballDescriptor))?.first, game.endTime > game.startTime {
+        if let game = modelContext.fetchFirstOrNil(bballDescriptor), game.endTime > game.startTime {
             let minutes = max(1, Int(game.endTime.timeIntervalSince(game.startTime) / 60))
             return "Basketball · \(minutes) min"
         }
@@ -208,7 +208,7 @@ final class DailySummaryService {
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         swimsDescriptor.fetchLimit = 1
-        if let swim = (try? modelContext.fetch(swimsDescriptor))?.first {
+        if let swim = modelContext.fetchFirstOrNil(swimsDescriptor) {
             return "Swim · \(swim.durationMinutes) min · \(Int(swim.totalMeters))m"
         }
 

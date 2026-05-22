@@ -145,7 +145,7 @@ struct SwimSessionView: View {
             HStack(spacing: 8) {
                 ForEach([1, 2, 5, 10], id: \.self) { count in
                     Button {
-                        _ = try? service.logLap(in: session, count: count)
+                        _ = try? service.logLap(in: session, count: count)  // MARK: try? justified - best-effort; failure logged inside the called function.
                     } label: {
                         Text("+\(count)")
                             .font(.subheadline.weight(.bold))
@@ -164,7 +164,7 @@ struct SwimSessionView: View {
             HStack {
                 Stepper("Laps: \(lapsExact)", value: $lapsExact, in: 0...500)
                 Button("Set") {
-                    _ = try? service.setExactLaps(in: session, laps: lapsExact)
+                    _ = try? service.setExactLaps(in: session, laps: lapsExact)  // MARK: try? justified - best-effort; failure logged inside the called function.
                 }
                 .buttonStyle(.bordered)
             }
@@ -177,7 +177,7 @@ struct SwimSessionView: View {
             HStack(spacing: 8) {
                 ForEach([100.0, 250.0, 500.0, 1000.0], id: \.self) { m in
                     Button {
-                        _ = try? service.logMeters(in: session, meters: m)
+                        _ = try? service.logMeters(in: session, meters: m)  // MARK: try? justified - best-effort; failure logged inside the called function.
                     } label: {
                         Text("+\(Int(m))")
                             .font(.subheadline.weight(.bold))
@@ -198,7 +198,7 @@ struct SwimSessionView: View {
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.leading)
                 Button("Set") {
-                    _ = try? service.setExactDistance(in: session, meters: metersExact)
+                    _ = try? service.setExactDistance(in: session, meters: metersExact)  // MARK: try? justified - best-effort; failure logged inside the called function.
                 }
                 .buttonStyle(.bordered)
             }

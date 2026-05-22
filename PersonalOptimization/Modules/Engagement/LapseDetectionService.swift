@@ -45,7 +45,7 @@ final class LapseDetectionService {
         let descriptor = FetchDescriptor<ActivityArchive>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        let allArchives = (try? modelContext.fetch(descriptor)) ?? []
+        let allArchives = modelContext.fetchOrEmpty(descriptor)
         let lookback = cal.date(byAdding: .day, value: -30, to: today) ?? today
         let recent = allArchives.filter { $0.date >= lookback && $0.date <= today }
 
@@ -115,7 +115,7 @@ final class LapseDetectionService {
         let descriptor = FetchDescriptor<LapseEvent>(
             sortBy: [SortDescriptor(\.detectedAt, order: .reverse)]
         )
-        let all = (try? modelContext.fetch(descriptor)) ?? []
+        let all = modelContext.fetchOrEmpty(descriptor)
         return all.first { $0.resolvedAt == nil }
     }
 

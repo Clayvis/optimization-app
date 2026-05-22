@@ -31,7 +31,7 @@ final class TokenBudgetService {
 
     /// User-configured daily budget. 0 = AI off.
     var dailyBudget: Int {
-        let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first
+        let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>())
         return profile?.dailyTokenBudget ?? 50_000
     }
 
@@ -52,7 +52,7 @@ final class TokenBudgetService {
         let descriptor = FetchDescriptor<TokenUsageEntry>(
             predicate: #Predicate<TokenUsageEntry> { $0.date == day }
         )
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
+        if let existing = modelContext.fetchFirstOrNil(descriptor) {
             existing.inputTokens += inputTokens
             existing.outputTokens += outputTokens
             existing.callCount += 1
@@ -77,7 +77,7 @@ final class TokenBudgetService {
         let descriptor = FetchDescriptor<TokenUsageEntry>(
             predicate: #Predicate<TokenUsageEntry> { $0.date == day }
         )
-        let entry = (try? modelContext.fetch(descriptor))?.first
+        let entry = modelContext.fetchFirstOrNil(descriptor)
         return (entry?.inputTokens ?? 0) + (entry?.outputTokens ?? 0)
     }
 
@@ -89,7 +89,7 @@ final class TokenBudgetService {
         let descriptor = FetchDescriptor<TokenUsageEntry>(
             predicate: #Predicate<TokenUsageEntry> { $0.date >= monthStart }
         )
-        let entries = (try? modelContext.fetch(descriptor)) ?? []
+        let entries = modelContext.fetchOrEmpty(descriptor)
         return entries.reduce(0) { $0 + $1.inputTokens + $1.outputTokens }
     }
 }

@@ -43,7 +43,7 @@ struct AchievementsView: View {
         .navigationTitle("Achievements")
         .task {
             // Re-evaluate on appear so any deltas surface immediately.
-            _ = try? AchievementService(modelContext: modelContext).evaluate()
+            _ = try? AchievementService(modelContext: modelContext).evaluate()  // MARK: try? justified - best-effort; failure logged inside the called function.
         }
     }
 

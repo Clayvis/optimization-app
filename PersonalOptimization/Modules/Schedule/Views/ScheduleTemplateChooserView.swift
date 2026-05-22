@@ -167,7 +167,7 @@ enum ScheduleTemplateApplier {
             )
             // MARK: - try? justified because best-effort cleanup; the save
             // below catches the underlying failure if SwiftData is broken.
-            let toDelete = (try? modelContext.fetch(descriptor)) ?? []
+            let toDelete = modelContext.fetchOrEmpty(descriptor)
             for block in toDelete { modelContext.delete(block) }
             try modelContext.save()
             return

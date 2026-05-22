@@ -27,7 +27,7 @@ final class CustomActivityService {
         let descriptor = FetchDescriptor<CustomActivityTemplate>(
             sortBy: [SortDescriptor(\.createdAt, order: .forward)]
         )
-        let all = (try? modelContext.fetch(descriptor)) ?? []
+        let all = modelContext.fetchOrEmpty(descriptor)
         return all.filter { !$0.archived }
     }
 
@@ -76,7 +76,7 @@ final class CustomActivityService {
     /// yoga) without forcing them on Clay's existing setup.
     func seedDefaultsIfNeeded() throws {
         let descriptor = FetchDescriptor<CustomActivityTemplate>()
-        let count = (try? modelContext.fetchCount(descriptor)) ?? 0
+        let count = modelContext.fetchCountOrZero(descriptor)
         guard count == 0 else { return }
         let starters: [(String, String, Int, Bool)] = [
             ("Running",       "figure.run",                    30, true),
@@ -123,7 +123,7 @@ final class CustomActivityService {
         let descriptor = FetchDescriptor<CustomActivitySession>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        let sessions = modelContext.fetchOrEmpty(descriptor)
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
         return sessions.first {

@@ -37,7 +37,7 @@ final class DailyLogStore {
         let descriptor = FetchDescriptor<DailyLog>(
             predicate: #Predicate<DailyLog> { $0.date == day }
         )
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
+        if let existing = modelContext.fetchFirstOrNil(descriptor) {
             return existing
         }
         let log = DailyLog(date: day, calendar: calendar)

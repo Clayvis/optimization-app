@@ -139,7 +139,7 @@ enum ScheduleSeed {
             modelContext.insert(draft.toScheduleBlock())
         }
 
-        if let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first {
+        if let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>()) {
             profile.lastGeneratedAt = now
             let csv = anchorEvents
                 .map { $0.trimmingCharacters(in: .whitespaces) }

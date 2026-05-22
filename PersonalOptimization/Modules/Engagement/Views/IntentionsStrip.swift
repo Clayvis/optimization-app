@@ -92,7 +92,7 @@ struct IntentionsStrip: View {
             intention.lastCompletedAt = nil
             try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
         } else {
-            _ = try? service.recordCompletion(intention)
+            _ = try? service.recordCompletion(intention)  // MARK: try? justified - best-effort; failure logged inside the called function.
         }
     }
 }

@@ -120,7 +120,7 @@ final class LiftService {
         let descriptor = FetchDescriptor<LiftSession>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        let sessions = modelContext.fetchOrEmpty(descriptor)
         return sessions.first { $0.durationMinutes == 0 }
     }
 }

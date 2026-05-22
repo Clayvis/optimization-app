@@ -201,7 +201,7 @@ struct ScheduleGenerationView: View {
         // fill in fields the prior session didn't touch.
         if let json = profile.lastIntakeJSON,
            let data = json.data(using: .utf8),
-           let saved = try? JSONDecoder().decode(ScheduleIntake.self, from: data) {
+           let saved = try? JSONDecoder().decode(ScheduleIntake.self, from: data) {  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
             intake = saved
             return
         }
@@ -223,6 +223,7 @@ struct ScheduleGenerationView: View {
     /// hydrates next time the user opens it. Cheap — runs on each field edit.
     private func persistIntake(_ intake: ScheduleIntake) {
         guard let profile = profiles.first else { return }
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         guard let data = try? JSONEncoder().encode(intake),
               let json = String(data: data, encoding: .utf8) else { return }
         profile.lastIntakeJSON = json

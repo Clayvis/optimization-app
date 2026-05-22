@@ -233,13 +233,13 @@ final class CharacterStateService {
         cal.timeZone = timezone
         let day = cal.startOfDay(for: now)
 
-        let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first
+        let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>())
         // Scoped fetch: predicate on date == day so we only pull the one row
         // instead of streaming the entire DailyLog table every recompute.
         let todayLogDescriptor = FetchDescriptor<DailyLog>(
             predicate: #Predicate<DailyLog> { $0.date == day }
         )
-        let todayLog = (try? modelContext.fetch(todayLogDescriptor))?.first
+        let todayLog = modelContext.fetchFirstOrNil(todayLogDescriptor)
         let scheduleService = ScheduleService(modelContext: modelContext, timezone: timezone)
         let currentBlock = scheduleService.currentBlock(at: now)
         let nextBlock = scheduleService.nextBlock(after: now)
@@ -256,7 +256,7 @@ final class CharacterStateService {
         let hydrationProgressByHour = max(0, min(hydrationFloor, hydrationFloor * hourFraction))
 
         // Streak signals: read today's StreakCounter rows.
-        let counters = (try? modelContext.fetch(FetchDescriptor<StreakCounter>())) ?? []
+        let counters = modelContext.fetchOrEmpty(FetchDescriptor<StreakCounter>())
         let workoutCounter = counters.first { $0.domain == StreakDomain.workout.rawValue }
         let workoutStreakHitMilestone = isMilestone(workoutCounter?.currentStreak)
             && (workoutCounter?.lastCompletedDate.map { cal.isDate($0, inSameDayAs: day) } ?? false)
@@ -272,25 +272,25 @@ final class CharacterStateService {
         let todaysLiftsDescriptor = FetchDescriptor<LiftSession>(
             predicate: #Predicate<LiftSession> { $0.date >= day && $0.date < tomorrow }
         )
-        let todaysLifts = (try? modelContext.fetch(todaysLiftsDescriptor)) ?? []
+        let todaysLifts = modelContext.fetchOrEmpty(todaysLiftsDescriptor)
         var priorLiftsDescriptor = FetchDescriptor<LiftSession>(
             predicate: #Predicate<LiftSession> { $0.date < day },
             sortBy: [SortDescriptor(\.totalVolumeLbs, order: .reverse)]
         )
         priorLiftsDescriptor.fetchLimit = 1
-        let priorMaxLiftVolume = (try? modelContext.fetch(priorLiftsDescriptor))?.first?.totalVolumeLbs ?? 0
+        let priorMaxLiftVolume = modelContext.fetchFirstOrNil(priorLiftsDescriptor)?.totalVolumeLbs ?? 0
         let liftPR = !todaysLifts.isEmpty && (todaysLifts.map { $0.totalVolumeLbs }.max() ?? 0) > priorMaxLiftVolume && priorMaxLiftVolume > 0
 
         let todaysSwimsDescriptor = FetchDescriptor<SwimSession>(
             predicate: #Predicate<SwimSession> { $0.date >= day && $0.date < tomorrow }
         )
-        let todaysSwims = (try? modelContext.fetch(todaysSwimsDescriptor)) ?? []
+        let todaysSwims = modelContext.fetchOrEmpty(todaysSwimsDescriptor)
         var priorSwimsDescriptor = FetchDescriptor<SwimSession>(
             predicate: #Predicate<SwimSession> { $0.date < day },
             sortBy: [SortDescriptor(\.totalMeters, order: .reverse)]
         )
         priorSwimsDescriptor.fetchLimit = 1
-        let priorMaxSwimDist = (try? modelContext.fetch(priorSwimsDescriptor))?.first?.totalMeters ?? 0
+        let priorMaxSwimDist = modelContext.fetchFirstOrNil(priorSwimsDescriptor)?.totalMeters ?? 0
         let swimPR = !todaysSwims.isEmpty && (todaysSwims.map { $0.totalMeters }.max() ?? 0) > priorMaxSwimDist && priorMaxSwimDist > 0
 
         let achillesHigh = (todayLog?.achillesPain ?? 0) >= 6

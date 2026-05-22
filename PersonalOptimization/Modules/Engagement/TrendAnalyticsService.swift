@@ -124,35 +124,35 @@ final class TrendAnalyticsService {
 
         switch domain {
         case .lift:
-            let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+            let lifts = modelContext.fetchOrEmpty(FetchDescriptor<LiftSession>())
             for s in lifts {
                 let day = startOfDay(for: s.date)
                 guard out[day] != nil else { continue }
                 out[day]! += s.totalVolumeLbs
             }
         case .basketball:
-            let sessions = (try? modelContext.fetch(FetchDescriptor<BasketballSession>())) ?? []
+            let sessions = modelContext.fetchOrEmpty(FetchDescriptor<BasketballSession>())
             for s in sessions {
                 let day = startOfDay(for: s.date)
                 guard out[day] != nil else { continue }
                 out[day]! += 1
             }
         case .swim:
-            let sessions = (try? modelContext.fetch(FetchDescriptor<SwimSession>())) ?? []
+            let sessions = modelContext.fetchOrEmpty(FetchDescriptor<SwimSession>())
             for s in sessions {
                 let day = startOfDay(for: s.date)
                 guard out[day] != nil else { continue }
                 out[day]! += s.totalMeters
             }
         case .learning:
-            let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+            let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
             for log in logs {
                 let day = startOfDay(for: log.date)
                 guard out[day] != nil else { continue }
                 out[day]! += Double(log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes + log.musicMinutes)
             }
         case .fasting:
-            let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+            let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
             for log in logs {
                 let day = startOfDay(for: log.date)
                 guard out[day] != nil else { continue }
@@ -160,7 +160,7 @@ final class TrendAnalyticsService {
                 out[day]! = max(0, end.timeIntervalSince(start) / 3600)
             }
         case .hydration:
-            let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+            let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
             for log in logs {
                 let day = startOfDay(for: log.date)
                 guard out[day] != nil else { continue }
@@ -231,7 +231,7 @@ final class TrendAnalyticsService {
     /// Schedule drift: > 50% of recent training-block dates land on a different
     /// weekday than the same block ran during the prior month.
     private func detectScheduleDrift(over range: DateRange) -> DetectedPattern? {
-        let workoutEvents = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
+        let workoutEvents = modelContext.fetchOrEmpty(FetchDescriptor<WorkoutEvent>())
         let inRange = workoutEvents.filter { $0.completed && range.contains($0.date) }
         guard inRange.count >= 4 else { return nil }
         var weekdayCounts: [Int: Int] = [:]
@@ -283,7 +283,7 @@ final class TrendAnalyticsService {
     /// Hydration vs adherence correlation: above-target hydration days have
     /// higher adherence than below-target days.
     private func detectHydrationCorrelation(over range: DateRange) -> DetectedPattern? {
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
         let adherence = dailyAdherence(over: range)
         var above: [Double] = []
         var below: [Double] = []
@@ -311,7 +311,7 @@ final class TrendAnalyticsService {
 
     /// Sleep impact: low-sleep nights (< 6h) precede days with adherence < 0.5.
     private func detectSleepImpact(over range: DateRange) -> DetectedPattern? {
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
         let logsByDay = Dictionary(uniqueKeysWithValues: logs.map { (startOfDay(for: $0.date), $0) })
         let adherence = dailyAdherence(over: range)
         let sortedDays = adherence.keys.sorted()
@@ -341,7 +341,7 @@ final class TrendAnalyticsService {
 
     /// Fasting consistency: completion rate trending down over time.
     private func detectFastingConsistency(over range: DateRange) -> DetectedPattern? {
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
         let inRange = logs.filter { range.contains($0.date) }
         guard inRange.count >= 14 else { return nil }
         let sorted = inRange.sorted(by: { $0.date < $1.date })
@@ -389,7 +389,7 @@ final class TrendAnalyticsService {
     // MARK: - Aggregations
 
     private func workoutsPerWeek(in range: DateRange) -> [Date: Int] {
-        let events = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
+        let events = modelContext.fetchOrEmpty(FetchDescriptor<WorkoutEvent>())
         let inRange = events.filter { $0.completed && range.contains($0.date) }
         var byWeek: [Date: Int] = [:]
         for ev in inRange {
@@ -400,7 +400,7 @@ final class TrendAnalyticsService {
     }
 
     private func liftVolumeByWeek(in range: DateRange) -> [Date: Double] {
-        let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+        let lifts = modelContext.fetchOrEmpty(FetchDescriptor<LiftSession>())
         let inRange = lifts.filter { range.contains($0.date) }
         var byWeek: [Date: Double] = [:]
         for s in inRange {
@@ -411,7 +411,7 @@ final class TrendAnalyticsService {
     }
 
     private func learningMinutesByWeek(in range: DateRange) -> [Date: Double] {
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
         let inRange = logs.filter { range.contains($0.date) }
         var byWeek: [Date: Double] = [:]
         for log in inRange {
@@ -422,7 +422,7 @@ final class TrendAnalyticsService {
     }
 
     private func hydrationMissRatio(in range: DateRange) -> Double {
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
         let inRange = logs.filter { range.contains($0.date) }
         guard !inRange.isEmpty else { return 0 }
         let misses = inRange.filter { $0.waterOz < hydrationTargetMin(for: $0.date) }.count
@@ -430,7 +430,7 @@ final class TrendAnalyticsService {
     }
 
     private func fastingCompletionRate(in range: DateRange) -> Double {
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
         let inRange = logs.filter { range.contains($0.date) }
         guard !inRange.isEmpty else { return 0 }
         let done = inRange.filter { $0.fastEnd != nil }.count
@@ -443,7 +443,7 @@ final class TrendAnalyticsService {
         let descriptor = FetchDescriptor<ActivityArchive>(
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )
-        return ((try? modelContext.fetch(descriptor)) ?? []).filter { range.contains($0.date) }
+        return (modelContext.fetchOrEmpty(descriptor)).filter { range.contains($0.date) }
     }
 
     private func enumerateDays(in range: DateRange) -> [Date] {

@@ -47,7 +47,7 @@ struct PersonalOptimizationApp: App {
             // only if the sync hasn't populated their schedule.
             Task { @MainActor in
                 let context = container.mainContext
-                let profile = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first
+                let profile = context.fetchFirstOrNil(FetchDescriptor<UserProfile>())
                 let onboardingComplete = profile?.onboardingCompleted ?? false
                 if onboardingComplete {
                     do {

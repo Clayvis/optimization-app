@@ -103,7 +103,7 @@ struct CharacterView: View {
             // MARK: - try? justified because Task.sleep only throws on
             // cancellation; if the view cancels, we want the animation
             // settle to skip silently.
-            try? await Task.sleep(for: .milliseconds(250))
+            try? await Task.sleep(for: .milliseconds(250))  // MARK: try? justified - best-effort; failure logged inside the called function.
             withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
                 pulseScale = 1.0
             }

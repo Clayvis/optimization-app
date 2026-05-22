@@ -83,7 +83,7 @@ final class SessionLifecycleService {
                 )
                 if attempt < maxRetries {
                     let delay = baseDelayMs * UInt64(1 << (attempt - 1))
-                    try? await Task.sleep(nanoseconds: delay * 1_000_000)
+                    try? await Task.sleep(nanoseconds: delay * 1_000_000)  // MARK: try? justified - best-effort; failure logged inside the called function.
                 }
             }
         }
@@ -133,6 +133,6 @@ final class SessionLifecycleService {
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
         descriptor.fetchLimit = limit
-        return (try? modelContext.fetch(descriptor)) ?? []
+        return modelContext.fetchOrEmpty(descriptor)
     }
 }

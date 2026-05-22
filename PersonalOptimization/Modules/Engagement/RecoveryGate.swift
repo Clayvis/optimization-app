@@ -101,7 +101,7 @@ struct RecoveryGate {
         let descriptor = FetchDescriptor<DailyLog>(
             predicate: #Predicate<DailyLog> { $0.date == day }
         )
-        return (try? modelContext.fetch(descriptor))?.first
+        return modelContext.fetchFirstOrNil(descriptor)
     }
 
     private struct Baseline {
@@ -121,7 +121,7 @@ struct RecoveryGate {
         let descriptor = FetchDescriptor<DailyLog>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        let all = (try? modelContext.fetch(descriptor)) ?? []
+        let all = modelContext.fetchOrEmpty(descriptor)
         let window = all.filter { $0.date >= weekAgo && $0.date < today }
 
         let sleepValues = window.compactMap(\.sleepHours)

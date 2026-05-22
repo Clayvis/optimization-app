@@ -83,7 +83,7 @@ struct WeeklyReflectionCard: View {
 
     private func ensureGenerated() {
         if current == nil {
-            _ = try? WeeklyReflectionService(modelContext: modelContext).currentOrGenerate()
+            _ = try? WeeklyReflectionService(modelContext: modelContext).currentOrGenerate()  // MARK: try? justified - best-effort; failure logged inside the called function.
         }
     }
 }
@@ -133,7 +133,7 @@ private struct WeeklyReflectionDetailView: View {
                             .foregroundStyle(.secondary)
                         Spacer()
                         Button("Regenerate") {
-                            _ = try? WeeklyReflectionService(modelContext: modelContext).regenerate()
+                            _ = try? WeeklyReflectionService(modelContext: modelContext).regenerate()  // MARK: try? justified - best-effort; failure logged inside the called function.
                         }
                         .font(.caption.weight(.semibold))
                     }

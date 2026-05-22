@@ -19,7 +19,7 @@ enum UserCalendar {
     }
 
     static func timezone(modelContext: ModelContext) -> TimeZone {
-        let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first
+        let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>())
         if profile?.travelModeFollowsDevice == true {
             return .current
         }

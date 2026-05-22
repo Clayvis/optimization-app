@@ -161,7 +161,7 @@ struct ScheduleDiffView: View {
             // M4.2: persist the optimization focuses that drove this proposal
             // so Settings + Coach prompts pick them up after apply.
             if !optimizationFocusesCSV.isEmpty,
-               let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first {
+               let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>()) {
                 profile.optimizationFocusesCSV = optimizationFocusesCSV
                 try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
             }

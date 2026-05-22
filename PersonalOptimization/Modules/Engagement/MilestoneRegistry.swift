@@ -172,7 +172,7 @@ final class MilestoneService {
         let descriptor = FetchDescriptor<MilestoneUnlock>(
             sortBy: [SortDescriptor(\.unlockedAt, order: .reverse)]
         )
-        let all = (try? modelContext.fetch(descriptor)) ?? []
+        let all = modelContext.fetchOrEmpty(descriptor)
         return all.first { !$0.celebrationShown }
     }
 
@@ -205,25 +205,25 @@ final class MilestoneService {
     }
 
     private func computeMetrics(asOf date: Date) -> Metrics {
-        let counters = (try? modelContext.fetch(FetchDescriptor<StreakCounter>())) ?? []
+        let counters = modelContext.fetchOrEmpty(FetchDescriptor<StreakCounter>())
         let workoutStreak = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
         let hydrationStreak = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0
         let learningStreak = counters.first { $0.domain == StreakDomain.learning.rawValue }?.currentStreak ?? 0
         // Use the longest active streak as the "consistency" metric.
         let streakDays = max(workoutStreak, max(hydrationStreak, learningStreak))
 
-        let workouts = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
+        let workouts = modelContext.fetchOrEmpty(FetchDescriptor<WorkoutEvent>())
         let totalWorkouts = workouts.filter { $0.completed }.count
 
-        let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+        let lifts = modelContext.fetchOrEmpty(FetchDescriptor<LiftSession>())
         let totalVolume = lifts.reduce(0) { $0 + Int($1.totalVolumeLbs) }
 
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
         let fastingDays = logs.filter { $0.fastEnd != nil }.count
         let learningMinutes = logs.reduce(0) { $0 + $1.japaneseMinutes + $1.guitarMinutes + $1.courseworkMinutes }
 
         // App usage = number of distinct DailyLog rows or ActivityArchive rows.
-        let archives = (try? modelContext.fetch(FetchDescriptor<ActivityArchive>())) ?? []
+        let archives = modelContext.fetchOrEmpty(FetchDescriptor<ActivityArchive>())
         let appUsageDays = max(logs.count, archives.count)
 
         return Metrics(

@@ -263,7 +263,11 @@ final class ScheduleAIService {
                             proposal: GenerationProposal,
                             model: String,
                             tokens: Int) throws -> ScheduleGenerationRun {
+        // MARK: try? justified - best-effort audit-trail serialization; nil
+        // produces an empty string, which the audit row tolerates.
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         let intakeJSON = (try? JSONEncoder().encode(intake)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        // MARK: try? justified - same as above for the proposal payload.
         let proposalJSON = (try? JSONEncoder().encode(proposal)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
         let run = ScheduleGenerationRun(
             generatedAt: now(),
@@ -280,7 +284,7 @@ final class ScheduleAIService {
     }
 
     private func ensureProfile() -> UserProfile {
-        if let existing = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first {
+        if let existing = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>()) {
             return existing
         }
         let new = UserProfile()

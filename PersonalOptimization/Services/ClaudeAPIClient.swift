@@ -155,7 +155,7 @@ struct ClaudeAPIClient: Sendable {
                 }
                 let delay = computeBackoff(attempt: attempt)
                 logger.warning("Retry \(attempt, privacy: .public)/\(self.maxAttempts, privacy: .public) for \(model.rawValue, privacy: .public) after \(delay, privacy: .public)ms: \(error.localizedDescription, privacy: .public)")
-                try? await Task.sleep(nanoseconds: delay * 1_000_000)
+                try? await Task.sleep(nanoseconds: delay * 1_000_000)  // MARK: try? justified - best-effort; failure logged inside the called function.
             }
         }
         throw ClaudeAPIError.allRetriesFailed(last: lastErrorDescription)

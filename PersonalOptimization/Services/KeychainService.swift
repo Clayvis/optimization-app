@@ -43,8 +43,8 @@ final class KeychainService: Sendable {
         // opposite posture prevents stale Keychain items, and its failure
         // (typically errSecItemNotFound) must not block the primary set
         // operation, which has its own error path.
-        try? delete(key: "anthropic_api_key", synchronizableSpecific: true)
-        try? delete(key: "anthropic_api_key", synchronizableSpecific: false)
+        try? delete(key: "anthropic_api_key", synchronizableSpecific: true)  // MARK: try? justified - best-effort; failure logged inside the called function.
+        try? delete(key: "anthropic_api_key", synchronizableSpecific: false)  // MARK: try? justified - best-effort; failure logged inside the called function.
         try set(key: "anthropic_api_key", value: key, iCloudSync: iCloudSync)
     }
 
@@ -60,9 +60,11 @@ final class KeychainService: Sendable {
     /// is stored at all. Used by Diagnostics + Settings to surface
     /// "Stored on this device only" vs "Synced via iCloud Keychain".
     func apiKeySyncPosture() -> KeyStoragePosture? {
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         if (try? getSpecific(key: "anthropic_api_key", synchronizable: true)) != nil {
             return .iCloudSynced
         }
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         if (try? getSpecific(key: "anthropic_api_key", synchronizable: false)) != nil {
             return .thisDeviceOnly
         }

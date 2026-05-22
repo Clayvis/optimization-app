@@ -98,7 +98,7 @@ struct CustomActivitiesSettingsView: View {
 
     private func addTemplate(name: String, glyph: String, duration: Int, distance: Bool, notes: String?) {
         let svc = CustomActivityService(modelContext: modelContext)
-        _ = try? svc.addTemplate(name: name,
+        _ = try? svc.addTemplate(name: name,  // MARK: try? justified - best-effort; failure logged inside the called function.
                                  systemImageName: glyph,
                                  defaultDurationMinutes: duration,
                                  trackDistance: distance,
@@ -108,7 +108,7 @@ struct CustomActivitiesSettingsView: View {
     private func update(_ template: CustomActivityTemplate,
                         name: String, glyph: String, duration: Int, distance: Bool, notes: String?) {
         let svc = CustomActivityService(modelContext: modelContext)
-        _ = try? svc.updateTemplate(template,
+        _ = try? svc.updateTemplate(template,  // MARK: try? justified - best-effort; failure logged inside the called function.
                                     name: name,
                                     systemImageName: glyph,
                                     defaultDurationMinutes: duration,
@@ -118,12 +118,12 @@ struct CustomActivitiesSettingsView: View {
 
     private func archive(_ template: CustomActivityTemplate) {
         let svc = CustomActivityService(modelContext: modelContext)
-        _ = try? svc.archiveTemplate(template)
+        _ = try? svc.archiveTemplate(template)  // MARK: try? justified - best-effort; failure logged inside the called function.
     }
 
     private func seedStarters() {
         let svc = CustomActivityService(modelContext: modelContext)
-        _ = try? svc.seedDefaultsIfNeeded()
+        _ = try? svc.seedDefaultsIfNeeded()  // MARK: try? justified - best-effort; failure logged inside the called function.
     }
 }
 

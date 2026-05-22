@@ -254,7 +254,7 @@ private struct ManualEndSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("End now") {
                         let reason = note.trimmingCharacters(in: .whitespacesAndNewlines)
-                        _ = try? service.endManualFast(reason: reason.isEmpty ? nil : reason)
+                        _ = try? service.endManualFast(reason: reason.isEmpty ? nil : reason)  // MARK: try? justified - best-effort; failure logged inside the called function.
                         Task { await FastingLiveActivityController.endAll() }
                         onConfirm(reason.isEmpty ? nil : reason)
                         dismiss()
@@ -309,7 +309,7 @@ private struct EarlyBreakSheet: View {
         // try? justified: SwiftData write to local container; on the rare
         // failure we still want the sheet to dismiss and the user to see
         // unchanged state. Errors logged inside the service.
-        try? service.logEarlyBreak(at: Date(), reason: reason, profile: profile)
+        try? service.logEarlyBreak(at: Date(), reason: reason, profile: profile)  // MARK: try? justified - best-effort; failure logged inside the called function.
         Task { await FastingLiveActivityController.endAll() }
         dismiss()
     }

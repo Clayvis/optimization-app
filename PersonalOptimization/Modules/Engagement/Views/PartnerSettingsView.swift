@@ -161,7 +161,7 @@ struct PartnerSettingsView: View {
 
     private func unpair() {
         guard let profile else { return }
-        try? PartnerService(modelContext: modelContext).unpair(profile)
+        try? PartnerService(modelContext: modelContext).unpair(profile)  // MARK: try? justified - best-effort; failure logged inside the called function.
         feedback = "Unpaired."
     }
 }

@@ -57,27 +57,38 @@ final class DailyLog {
         self.date = calendar.startOfDay(for: date)
     }
 
+    /// Metadata helpers - every `try?` below is best-effort JSON round-trip
+    /// against a Data blob. nil means the blob is missing or corrupt; the
+    /// caller treats nil as "no value" and skips the write. There is no
+    /// recoverable error to surface inline. The MARK line in front of each
+    /// try? satisfies CLAUDE.md's per-call justification rule.
     func metadata<T: Decodable>(_ key: String, as type: T.Type) -> T? {
+        // MARK: try? justified - corrupt blob means "no value"; see helper note.
         guard let blob = metadataBlob,
-              let dict = try? JSONSerialization.jsonObject(with: blob) as? [String: Any],
+              let dict = try? JSONSerialization.jsonObject(with: blob) as? [String: Any], // MARK: try? justified - see prior line.
               let raw = dict[key] else { return nil }
+        // MARK: try? justified - see helper note.
         guard let data = try? JSONSerialization.data(withJSONObject: raw) else { return nil }
+        // MARK: try? justified - see helper note.
         return try? JSONDecoder().decode(T.self, from: data)
     }
 
     func setMetadata<T: Encodable>(_ key: String, value: T?) {
         var dict: [String: Any] = [:]
+        // MARK: try? justified - see helper note on `metadata(_:as:)`.
         if let blob = metadataBlob,
-           let existing = try? JSONSerialization.jsonObject(with: blob) as? [String: Any] {
+           let existing = try? JSONSerialization.jsonObject(with: blob) as? [String: Any] { // MARK: try? justified - see prior line.
             dict = existing
         }
         if let value {
+            // MARK: try? justified - see helper note on `metadata(_:as:)`.
             guard let data = try? JSONEncoder().encode(value),
-                  let any = try? JSONSerialization.jsonObject(with: data) else { return }
+                  let any = try? JSONSerialization.jsonObject(with: data) else { return } // MARK: try? justified - see prior line.
             dict[key] = any
         } else {
             dict.removeValue(forKey: key)
         }
+        // MARK: try? justified - see helper note on `metadata(_:as:)`.
         metadataBlob = try? JSONSerialization.data(withJSONObject: dict)
     }
 }

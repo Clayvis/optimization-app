@@ -77,7 +77,7 @@ struct StartFastIntent: AppIntent {
             return .result(dialog: "Couldn't open the database.")
         }
         let context = wrapper.mainContext
-        guard let profile = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first else {
+        guard let profile = context.fetchFirstOrNil(FetchDescriptor<UserProfile>()) else {
             return .result(dialog: "No profile yet.")
         }
         do {

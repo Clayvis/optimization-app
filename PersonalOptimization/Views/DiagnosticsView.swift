@@ -48,7 +48,7 @@ struct DiagnosticsView: View {
             if hkSyncService == nil {
                 hkSyncService = HealthKitSyncService(modelContext: modelContext)
             }
-            try? AchievementService(modelContext: modelContext).unlockImperative("diagnostics_clean")
+            try? AchievementService(modelContext: modelContext).unlockImperative("diagnostics_clean")  // MARK: try? justified - best-effort; failure logged inside the called function.
         }
     }
 

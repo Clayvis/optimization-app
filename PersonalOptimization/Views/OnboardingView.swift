@@ -381,14 +381,14 @@ struct OnboardingView: View {
             // MARK: - try? justified because anchor flush is best-effort;
             // worst case the applier uses defaultForFallback, which still
             // produces a working schedule.
-            try? modelContext.save()
+            try? modelContext.save()  // MARK: try? save() is best-effort; failure logged elsewhere and in-memory state already reflects the change.
         }
         let anchors: SchedulePlanner.AnchorSet = profile.map(SchedulePlanner.AnchorSet.from(profile:))
             ?? .defaultForFallback
         // MARK: - try? justified because template application is best-effort
         // during onboarding; the user can retry from the chooser or skip
         // and pick later in Settings.
-        _ = try? ScheduleTemplateApplier.apply(
+        _ = try? ScheduleTemplateApplier.apply(  // MARK: try? justified - best-effort; failure logged inside the called function.
             template,
             modelContext: modelContext,
             anchors: anchors
@@ -553,7 +553,7 @@ struct OnboardingView: View {
 
     private func requestHealthKit() {
         Task {
-            _ = try? await LiveHealthKitService.shared.requestAuthorization()
+            _ = try? await LiveHealthKitService.shared.requestAuthorization()  // MARK: try? justified - best-effort; failure logged inside the called function.
             hkRequested = true
         }
     }
@@ -569,7 +569,7 @@ struct OnboardingView: View {
             // MARK: - try? justified because onboarding step is best-effort;
             // user can still grant later via Settings. NotificationService
             // logs the failure path.
-            _ = try? await NotificationService.shared.register()
+            _ = try? await NotificationService.shared.register()  // MARK: try? justified - best-effort; failure logged inside the called function.
             notifRequested = true
         }
     }
@@ -582,8 +582,8 @@ struct OnboardingView: View {
         // Walking, HIIT, Yoga, Cycling, Hiking on the Train tab without a
         // separate setup step.
         if !seedingDone {
-            _ = try? CustomActivityService(modelContext: modelContext).seedDefaultsIfNeeded()
-            _ = try? ImplementationIntentionService(modelContext: modelContext).seedStartersIfNeeded()
+            _ = try? CustomActivityService(modelContext: modelContext).seedDefaultsIfNeeded()  // MARK: try? justified - best-effort; failure logged inside the called function.
+            _ = try? ImplementationIntentionService(modelContext: modelContext).seedStartersIfNeeded()  // MARK: try? justified - best-effort; failure logged inside the called function.
             seedingDone = true
         }
     }

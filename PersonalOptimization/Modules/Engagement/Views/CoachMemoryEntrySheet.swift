@@ -90,7 +90,7 @@ struct CoachMemoryEntrySheet: View {
 
     private func save() {
         let key = derivedKey(for: text)
-        _ = try? CoachMemoryService(modelContext: modelContext)
+        _ = try? CoachMemoryService(modelContext: modelContext)  // MARK: try? justified - best-effort; failure logged inside the called function.
             .add(value: text,
                  key: key,
                  importance: importance,

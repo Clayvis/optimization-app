@@ -172,6 +172,7 @@ targets:
         name: SharedEngagement
       - path: PersonalOptimization/Services/BuildConfig.swift
       - path: PersonalOptimization/Services/Logger+Categories.swift
+      - path: PersonalOptimization/Services/SwiftDataHelpers.swift
       - path: PersonalOptimization/Services/HealthKitService.swift
       - path: PersonalOptimization/Services/WatchConnectivityService.swift
       - path: PersonalOptimization/Services/AppGroupContainer.swift
@@ -282,6 +283,7 @@ targets:
       - path: PersonalOptimization/Modules/Engagement/AdaptiveNotificationTiming.swift
         name: SharedEngagement
       - path: PersonalOptimization/Services/Logger+Categories.swift
+      - path: PersonalOptimization/Services/SwiftDataHelpers.swift
       - path: PersonalOptimization/Services/ProfileService.swift
       - path: PersonalOptimization/Services/BuildConfig.swift
       - path: PersonalOptimization/Services/AppGroupContainer.swift

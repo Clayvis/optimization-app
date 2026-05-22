@@ -205,7 +205,7 @@ struct LiftSessionView: View {
                 AddSetSheet(exercise: exercise) { weight, reps, rest in
                     // try? justified: SwiftData write to local container; failures
                     // surface via Logger and the user simply re-taps.
-                    _ = try? service.logSet(in: session, exerciseName: exercise.name, weightLbs: weight, reps: reps, restSeconds: rest)
+                    _ = try? service.logSet(in: session, exerciseName: exercise.name, weightLbs: weight, reps: reps, restSeconds: rest)  // MARK: try? justified - best-effort; failure logged inside the called function.
                     if let rest, rest > 0 {
                         restTimerEndsAt = Date().addingTimeInterval(TimeInterval(rest))
                     }
@@ -312,7 +312,7 @@ struct LiftSessionView: View {
     private func addCustomExercise(service: LiftService, session: LiftSession) {
         let name = customExerciseName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
-        _ = try? service.addCustomExercise(in: session, name: name)
+        _ = try? service.addCustomExercise(in: session, name: name)  // MARK: try? justified - best-effort; failure logged inside the called function.
         customExerciseName = ""
     }
 
@@ -369,7 +369,7 @@ struct LiftSessionView: View {
         let descriptor = FetchDescriptor<LiftSession>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        let sessions = modelContext.fetchOrEmpty(descriptor)
         return sessions.first {
             $0.template == templateName
                 && $0.durationMinutes == 0

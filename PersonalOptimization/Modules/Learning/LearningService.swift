@@ -74,7 +74,7 @@ final class LearningService {
         let descriptor = FetchDescriptor<LearningStreak>(
             predicate: #Predicate<LearningStreak> { $0.module == key }
         )
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
+        if let existing = modelContext.fetchFirstOrNil(descriptor) {
             return existing
         }
         let new = LearningStreak(module: module.rawValue)

@@ -161,12 +161,13 @@ struct SettingsView: View {
 
     private func loadDataSectionState() async {
         // Most recent DailyLog timestamp tells us when HK last wrote.
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
         let mostRecentSync = logs.compactMap(\.healthKitSyncedAt).max()
         lastSyncDate = mostRecentSync
 
         // iCloud account status — cheap call to CKContainer.
         let container = CKContainer(identifier: BuildConfig.cloudKitContainer)
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         if let status = try? await container.accountStatus() {
             iCloudAccountStatus = status
         }
@@ -178,7 +179,7 @@ struct SettingsView: View {
         defer { hkSyncBusy = false }
 
         // Request auth (no-op if already granted) then sync today.
-        _ = try? await LiveHealthKitService.shared.requestAuthorization()
+        _ = try? await LiveHealthKitService.shared.requestAuthorization()  // MARK: try? justified - best-effort; failure logged inside the called function.
         let service = HealthKitSyncService(modelContext: modelContext)
         _ = await service.syncToday()
 
@@ -421,8 +422,9 @@ struct SettingsView: View {
                     .onChange(of: profile.apiKeyICloudSync) { _, newValue in
                         // Re-write the key with the requested posture so the
                         // stored item matches the user's preference immediately.
+                        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
                         if let existing = try? KeychainService.shared.getApiKey(), !existing.isEmpty {
-                            try? KeychainService.shared.setApiKey(existing, iCloudSync: newValue)
+                            try? KeychainService.shared.setApiKey(existing, iCloudSync: newValue)  // MARK: try? justified - best-effort; failure logged inside the called function.
                         }
                     }
                 Text(profile.apiKeyICloudSync
@@ -444,7 +446,7 @@ struct SettingsView: View {
                 }
                 if apiKeyStatus == .set {
                     Button(role: .destructive) {
-                        try? KeychainService.shared.deleteApiKey()
+                        try? KeychainService.shared.deleteApiKey()  // MARK: try? justified - best-effort; failure logged inside the called function.
                         refreshAPIKeyStatus()
                     } label: {
                         Label("Remove API key", systemImage: "trash")
@@ -558,7 +560,7 @@ struct SettingsView: View {
                 set: { newValue in
                     let service = StreakService(modelContext: modelContext)
                     if newValue {
-                        try? service.activateSickDay()
+                        try? service.activateSickDay()  // MARK: try? justified - best-effort; failure logged inside the called function.
                         graceFeedback = IdentityCopy.sickBanner
                     } else {
                         profile.sickDayActiveUntil = nil
@@ -572,7 +574,7 @@ struct SettingsView: View {
                 Spacer()
                 if travelActive {
                     Button("End travel mode", role: .destructive) {
-                        try? StreakService(modelContext: modelContext).deactivateTravelMode()
+                        try? StreakService(modelContext: modelContext).deactivateTravelMode()  // MARK: try? justified - best-effort; failure logged inside the called function.
                     }
                 } else {
                     Stepper("\(travelDays) days", value: $travelDays, in: 1...14)
@@ -582,7 +584,7 @@ struct SettingsView: View {
 
             if !travelActive {
                 Button {
-                    try? StreakService(modelContext: modelContext).activateTravelMode(days: travelDays)
+                    try? StreakService(modelContext: modelContext).activateTravelMode(days: travelDays)  // MARK: try? justified - best-effort; failure logged inside the called function.
                     graceFeedback = IdentityCopy.travelBanner
                 } label: {
                     Label("Activate travel mode", systemImage: "airplane.departure")

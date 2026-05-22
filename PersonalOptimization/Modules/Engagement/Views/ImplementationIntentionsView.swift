@@ -87,24 +87,24 @@ struct ImplementationIntentionsView: View {
         }
         .sheet(isPresented: $showingAdd) {
             IntentionEditSheet(intention: nil) { trigger, type, action, time in
-                _ = try? ImplementationIntentionService(modelContext: modelContext)
+                _ = try? ImplementationIntentionService(modelContext: modelContext)  // MARK: try? justified - best-effort; failure logged inside the called function.
                     .add(trigger: trigger, triggerType: type, action: action, triggerTimeMinutes: time)
             }
         }
         .sheet(item: $editing) { intention in
             IntentionEditSheet(intention: intention) { trigger, type, action, time in
-                _ = try? ImplementationIntentionService(modelContext: modelContext)
+                _ = try? ImplementationIntentionService(modelContext: modelContext)  // MARK: try? justified - best-effort; failure logged inside the called function.
                     .update(intention, trigger: trigger, triggerType: type, action: action, triggerTimeMinutes: time)
             }
         }
     }
 
     private func archive(_ intention: ImplementationIntention) {
-        _ = try? ImplementationIntentionService(modelContext: modelContext).archive(intention)
+        _ = try? ImplementationIntentionService(modelContext: modelContext).archive(intention)  // MARK: try? justified - best-effort; failure logged inside the called function.
     }
 
     private func seedStarters() {
-        _ = try? ImplementationIntentionService(modelContext: modelContext).seedStartersIfNeeded()
+        _ = try? ImplementationIntentionService(modelContext: modelContext).seedStartersIfNeeded()  // MARK: try? justified - best-effort; failure logged inside the called function.
     }
 }
 

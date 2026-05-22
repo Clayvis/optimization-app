@@ -26,7 +26,7 @@ enum DevSecretsBootstrap {
     static func bootstrapIfNeeded() {
         #if DEBUG
         do {
-            let existing = try? KeychainService.shared.getApiKey()
+            let existing = try? KeychainService.shared.getApiKey()  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
             if let existing, !existing.isEmpty { return }
             guard let key = readDevKey(), !key.isEmpty else { return }
             try KeychainService.shared.setApiKey(key)
@@ -45,6 +45,7 @@ enum DevSecretsBootstrap {
         guard let url = Bundle.main.url(forResource: "anthropic_key", withExtension: "txt") else {
             return nil
         }
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         guard let data = try? Data(contentsOf: url),
               let raw = String(data: data, encoding: .utf8) else {
             return nil

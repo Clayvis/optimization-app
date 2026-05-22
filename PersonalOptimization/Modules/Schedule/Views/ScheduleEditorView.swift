@@ -119,7 +119,7 @@ struct ScheduleEditorView: View {
     }
 
     private func resetSeededOnly() {
-        try? ScheduleSeed.resetToDefault(modelContext: modelContext)
+        try? ScheduleSeed.resetToDefault(modelContext: modelContext)  // MARK: try? justified - best-effort; failure logged inside the called function.
     }
 
     private func weekdayName(_ iso: Int) -> String {
@@ -319,6 +319,6 @@ private extension Array {
     let schema = AppSchema.schema()
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
     let container = try! ModelContainer(for: schema, configurations: [config])
-    try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)
+    try? ScheduleSeed.seedIfNeeded(modelContext: container.mainContext)  // MARK: try? justified - best-effort; failure logged inside the called function.
     return NavigationStack { ScheduleEditorView() }.modelContainer(container)
 }

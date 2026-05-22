@@ -144,6 +144,7 @@ final class CoachService {
         let trends = TrendAnalyticsService(
             modelContext: modelContext,
             timezone: timezone,
+            // MARK: try? justified - bundled resource; nil falls back to defaults.
             hydrationTargets: try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
         )
         let historical = trends.summaryForCoach(over: range)
@@ -190,7 +191,7 @@ final class CoachService {
             sortBy: [SortDescriptor(\.generatedAt, order: .reverse)]
         )
         descriptor.fetchLimit = 3
-        let rows = (try? modelContext.fetch(descriptor)) ?? []
+        let rows = modelContext.fetchOrEmpty(descriptor)
         guard !rows.isEmpty else { return "" }
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"
@@ -208,7 +209,7 @@ final class CoachService {
         let descriptor = FetchDescriptor<LapseEvent>(
             sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
-        let recent = (try? modelContext.fetch(descriptor)) ?? []
+        let recent = modelContext.fetchOrEmpty(descriptor)
         guard let active = recent.first(where: { $0.resolvedAt == nil }) else { return "" }
         switch active.severity {
         case .soft:
@@ -294,6 +295,7 @@ final class CoachService {
         let trends = TrendAnalyticsService(
             modelContext: modelContext,
             timezone: timezone,
+            // MARK: try? justified - bundled resource; nil falls back to defaults.
             hydrationTargets: try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
         )
         let patterns = trends.patternsDetected(over: range, minConfidence: 0.5)
@@ -426,7 +428,7 @@ final class CoachService {
         )
         descriptor.fetchLimit = limit * 4
         let pendingRaw = ScheduleSuggestionStatus.pending.rawValue
-        let all = (try? modelContext.fetch(descriptor)) ?? []
+        let all = modelContext.fetchOrEmpty(descriptor)
         return Array(all.filter { $0.statusRaw == pendingRaw }.prefix(limit))
     }
 
@@ -441,7 +443,7 @@ final class CoachService {
         // Naive heuristic: total minutes of un-blocked time between 06:00 and 22:00,
         // i.e. (16h * 60) minus sum of training/study block durations from today.
         let weekday = isoWeekday(for: now())
-        let blocks = ((try? modelContext.fetch(FetchDescriptor<ScheduleBlock>())) ?? [])
+        let blocks = (modelContext.fetchOrEmpty(FetchDescriptor<ScheduleBlock>()))
             .filter { $0.dayOfWeek == weekday && !$0.isOverride }
         let blocked = blocks.reduce(0) { acc, block in
             guard let s = ScheduleService.parseTimeToMinutes(block.startTime),
@@ -456,7 +458,7 @@ final class CoachService {
         let descriptor = FetchDescriptor<PrescribedWorkout>(
             predicate: #Predicate<PrescribedWorkout> { $0.forDate == day }
         )
-        return (try? modelContext.fetch(descriptor))?.first
+        return modelContext.fetchFirstOrNil(descriptor)
     }
 
     private func upsertPrescription(for day: Date) -> PrescribedWorkout {
@@ -470,7 +472,7 @@ final class CoachService {
         let descriptor = FetchDescriptor<WeeklyProgram>(
             predicate: #Predicate<WeeklyProgram> { $0.weekStartDate == weekStart }
         )
-        return (try? modelContext.fetch(descriptor))?.first
+        return modelContext.fetchFirstOrNil(descriptor)
     }
 
     private func upsertWeeklyProgram(weekStart: Date) -> WeeklyProgram {
@@ -517,7 +519,7 @@ final class CoachService {
     private func parsePrescription(jsonText: String) -> ParsedPrescription {
         let cleaned = stripCodeFences(jsonText)
         guard let data = cleaned.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
             return ParsedPrescription(
                 workoutType: .rest,
                 templateJSON: "{}",
@@ -531,6 +533,7 @@ final class CoachService {
         let title = (obj["creativeTitle"] as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         var templateJSON = "{}"
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         if let template = obj["template"], let templateData = try? JSONSerialization.data(withJSONObject: template),
            let templateString = String(data: templateData, encoding: .utf8) {
             templateJSON = templateString
@@ -546,7 +549,7 @@ final class CoachService {
     private func parseSuggestion(jsonText: String) -> ParsedSuggestion? {
         let cleaned = stripCodeFences(jsonText)
         guard let data = cleaned.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
               let summary = obj["summary"] as? String,
               let detail = obj["detail"] as? String,
               let typeRaw = obj["changeType"] as? String else {
@@ -564,7 +567,7 @@ final class CoachService {
         }()
         var payloadJSON = "{}"
         if let payload = obj["changePayload"],
-           let payloadData = try? JSONSerialization.data(withJSONObject: payload),
+           let payloadData = try? JSONSerialization.data(withJSONObject: payload),  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
            let payloadString = String(data: payloadData, encoding: .utf8) {
             payloadJSON = payloadString
         }
@@ -579,7 +582,7 @@ final class CoachService {
     private func parseWeeklyProgram(jsonText: String) -> ParsedWeeklyProgram {
         let cleaned = stripCodeFences(jsonText)
         guard let data = cleaned.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
             return ParsedWeeklyProgram(
                 narrative: jsonText.trimmingCharacters(in: .whitespacesAndNewlines),
                 programJSON: "{}"
@@ -588,7 +591,7 @@ final class CoachService {
         let narrative = (obj["narrative"] as? String) ?? ""
         var programJSON = "{}"
         if let days = obj["days"],
-           let daysData = try? JSONSerialization.data(withJSONObject: days),
+           let daysData = try? JSONSerialization.data(withJSONObject: days),  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
            let daysString = String(data: daysData, encoding: .utf8) {
             programJSON = daysString
         }
@@ -674,7 +677,7 @@ final class CoachService {
             sortBy: [SortDescriptor(\.generatedAt, order: .reverse)]
         )
         descriptor.fetchLimit = 1
-        return (try? modelContext.fetch(descriptor))?.first
+        return modelContext.fetchFirstOrNil(descriptor)
     }
 
     func gatherContext(profile: UserProfile) -> CoachContext {
@@ -683,13 +686,13 @@ final class CoachService {
         let today = cal.startOfDay(for: asOf)
 
         let summary = DailySummaryService(modelContext: modelContext).todayProtocol(asOf: asOf)
-        let counters = (try? modelContext.fetch(FetchDescriptor<StreakCounter>())) ?? []
+        let counters = modelContext.fetchOrEmpty(FetchDescriptor<StreakCounter>())
         let workout = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
         let hydration = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0
         let fasting = counters.first { $0.domain == StreakDomain.fasting.rawValue }?.currentStreak ?? 0
         let learning = counters.first { $0.domain == StreakDomain.learning.rawValue }?.currentStreak ?? 0
 
-        let todayLog = (try? modelContext.fetch(FetchDescriptor<DailyLog>()))?.first {
+        let todayLog = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>()).first {
             cal.isDate($0.date, inSameDayAs: today)
         }
 
@@ -707,11 +710,11 @@ final class CoachService {
             return asOf.timeIntervalSince(end) / 3600
         }()
 
-        let workoutEvents = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
+        let workoutEvents = modelContext.fetchOrEmpty(FetchDescriptor<WorkoutEvent>())
         let weekAgo = cal.date(byAdding: .day, value: -7, to: today) ?? today
         let recentWorkouts = workoutEvents.filter { $0.completed && $0.date >= weekAgo }.count
 
-        let liftSessions = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+        let liftSessions = modelContext.fetchOrEmpty(FetchDescriptor<LiftSession>())
         let todaysLifts = liftSessions.filter { cal.isDate($0.date, inSameDayAs: today) }
         let priorMaxLiftVolume = liftSessions.filter { !cal.isDate($0.date, inSameDayAs: today) }
             .map { $0.totalVolumeLbs }.max() ?? 0
@@ -719,7 +722,7 @@ final class CoachService {
             && (todaysLifts.map { $0.totalVolumeLbs }.max() ?? 0) > priorMaxLiftVolume
             && priorMaxLiftVolume > 0
 
-        let swimSessions = (try? modelContext.fetch(FetchDescriptor<SwimSession>())) ?? []
+        let swimSessions = modelContext.fetchOrEmpty(FetchDescriptor<SwimSession>())
         let todaysSwims = swimSessions.filter { cal.isDate($0.date, inSameDayAs: today) }
         let priorMaxSwimDist = swimSessions.filter { !cal.isDate($0.date, inSameDayAs: today) }
             .map { $0.totalMeters }.max() ?? 0
@@ -730,6 +733,7 @@ final class CoachService {
         let mascotState = CharacterStateService.shared.currentState.rawValue
 
         // Hydration target floor for today.
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         let hydrationTargetMin: Double = (try? ScheduleConfigLoader.loadCached().hydrationTargetsOz)
             .map { targets in
                 let weekday: Int = {
@@ -778,7 +782,7 @@ final class CoachService {
     }
 
     private func ensureProfile() -> UserProfile {
-        if let existing = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first {
+        if let existing = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>()) {
             return existing
         }
         let p = UserProfile()

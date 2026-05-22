@@ -19,7 +19,7 @@ final class ScheduleService {
             predicate: #Predicate<ScheduleBlock> { $0.dayOfWeek == weekday && $0.isOverride == false },
             sortBy: [SortDescriptor(\.startTime)]
         )
-        return (try? modelContext.fetch(descriptor)) ?? []
+        return modelContext.fetchOrEmpty(descriptor)
     }
 
     /// Returns the block whose [start, end) range contains `date`.

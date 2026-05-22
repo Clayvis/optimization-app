@@ -26,7 +26,7 @@ final class WeeklyReflectionService {
         let descriptor = FetchDescriptor<WeeklyReflection>(
             predicate: #Predicate<WeeklyReflection> { $0.weekStartDate == weekStart }
         )
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
+        if let existing = modelContext.fetchFirstOrNil(descriptor) {
             return existing
         }
         return try generate(weekStartDate: weekStart)
@@ -40,7 +40,7 @@ final class WeeklyReflectionService {
         let descriptor = FetchDescriptor<WeeklyReflection>(
             predicate: #Predicate<WeeklyReflection> { $0.weekStartDate == weekStart }
         )
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
+        if let existing = modelContext.fetchFirstOrNil(descriptor) {
             modelContext.delete(existing)
         }
         return try generate(weekStartDate: weekStart)
@@ -54,7 +54,7 @@ final class WeeklyReflectionService {
         let archivesDescriptor = FetchDescriptor<ActivityArchive>(
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )
-        let allArchives = (try? modelContext.fetch(archivesDescriptor)) ?? []
+        let allArchives = modelContext.fetchOrEmpty(archivesDescriptor)
         let archives = allArchives.filter { $0.date >= weekStartDate && $0.date < weekEnd }
 
         let adherenceMean: Double = {

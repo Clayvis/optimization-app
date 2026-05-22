@@ -26,7 +26,7 @@ final class CoachMemoryService {
                 SortDescriptor(\.createdAt, order: .reverse)
             ]
         )
-        let all = (try? modelContext.fetch(descriptor)) ?? []
+        let all = modelContext.fetchOrEmpty(descriptor)
         return all.filter { ($0.expiresAt ?? .distantFuture) > date }
     }
 
@@ -43,7 +43,7 @@ final class CoachMemoryService {
             let descriptor = FetchDescriptor<CoachMemory>(
                 predicate: #Predicate<CoachMemory> { $0.key == key }
             )
-            for prior in (try? modelContext.fetch(descriptor)) ?? [] {
+            for prior in modelContext.fetchOrEmpty(descriptor) {
                 modelContext.delete(prior)
             }
         }
@@ -86,7 +86,7 @@ final class CoachMemoryService {
 
     private func pruneExpired(asOf date: Date) {
         let descriptor = FetchDescriptor<CoachMemory>()
-        let all = (try? modelContext.fetch(descriptor)) ?? []
+        let all = modelContext.fetchOrEmpty(descriptor)
         var pruned = 0
         for memory in all {
             if let expires = memory.expiresAt, expires <= date {

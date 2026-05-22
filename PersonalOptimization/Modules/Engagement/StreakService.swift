@@ -191,6 +191,7 @@ final class StreakService {
         let workoutDescriptor = FetchDescriptor<WorkoutEvent>(
             predicate: #Predicate<WorkoutEvent> { $0.date == dayConst && $0.source == sourceRaw }
         )
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         if (try? modelContext.fetch(workoutDescriptor))?.isEmpty ?? true {
             modelContext.insert(WorkoutEvent(date: day, completed: true, source: source))
         }
@@ -201,6 +202,7 @@ final class StreakService {
             let descriptor = FetchDescriptor<FreezeApplication>(
                 predicate: #Predicate<FreezeApplication> { $0.domain == domainKey && $0.date == dayConst }
             )
+            // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
             if (try? modelContext.fetch(descriptor))?.isEmpty ?? true {
                 modelContext.insert(FreezeApplication(domain: domain, date: day))
             }
@@ -208,7 +210,7 @@ final class StreakService {
     }
 
     private func ensureProfile() -> UserProfile {
-        if let existing = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first {
+        if let existing = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>()) {
             return existing
         }
         let p = UserProfile()
@@ -220,7 +222,7 @@ final class StreakService {
 
     private func buildCompletionHistory(domain: StreakDomain, asOf: Date) throws -> [Date: Bool] {
         let cal = jstCalendar()
-        let profile = (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first
+        let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>())
         let today = cal.startOfDay(for: asOf)
         var history: [Date: Bool] = [:]
 
@@ -347,7 +349,7 @@ final class StreakService {
     /// Other domains have no auto rest days.
     private func autoRestDays(domain: StreakDomain) -> Set<Int> {
         guard domain == .workout else { return [] }
-        let blocks = (try? modelContext.fetch(FetchDescriptor<ScheduleBlock>())) ?? []
+        let blocks = modelContext.fetchOrEmpty(FetchDescriptor<ScheduleBlock>())
         let trainingDays = Set(
             blocks.compactMap { block -> Int? in
                 guard !block.isOverride, block.type == .training, block.module != nil else { return nil }
@@ -377,7 +379,7 @@ final class StreakService {
         let descriptor = FetchDescriptor<StreakCounter>(
             predicate: #Predicate<StreakCounter> { $0.domain == key }
         )
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
+        if let existing = modelContext.fetchFirstOrNil(descriptor) {
             return existing
         }
         let counter = StreakCounter(domain: domain)

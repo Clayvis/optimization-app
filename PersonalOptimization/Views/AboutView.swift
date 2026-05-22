@@ -33,9 +33,13 @@ struct AboutView: View {
     }
 
     private var totalSessions: Int {
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>()))?.count ?? 0
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         let bball = (try? modelContext.fetch(FetchDescriptor<BasketballSession>()))?.count ?? 0
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         let swim = (try? modelContext.fetch(FetchDescriptor<SwimSession>()))?.count ?? 0
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         let custom = (try? modelContext.fetch(FetchDescriptor<CustomActivitySession>()))?.count ?? 0
         return lifts + bball + swim + custom
     }

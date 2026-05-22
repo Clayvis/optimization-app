@@ -173,7 +173,7 @@ final class AchievementService {
         let descriptor = FetchDescriptor<Achievement>(
             sortBy: [SortDescriptor(\.unlockedAt, order: .reverse)]
         )
-        let all = (try? modelContext.fetch(descriptor)) ?? []
+        let all = modelContext.fetchOrEmpty(descriptor)
         return all.first { !$0.celebrationShown }
     }
 
@@ -184,7 +184,7 @@ final class AchievementService {
 
     /// Returns the unlocked subset for UI rendering (id → unlock date).
     func unlockedByID() -> [String: Date] {
-        let rows = (try? modelContext.fetch(FetchDescriptor<Achievement>())) ?? []
+        let rows = modelContext.fetchOrEmpty(FetchDescriptor<Achievement>())
         return Dictionary(uniqueKeysWithValues: rows.map { ($0.identifier, $0.unlockedAt) })
     }
 
@@ -215,19 +215,19 @@ final class AchievementService {
     }
 
     private func computeMetrics(asOf date: Date) -> Metrics {
-        let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
-        let bball = (try? modelContext.fetch(FetchDescriptor<BasketballSession>())) ?? []
-        let swims = (try? modelContext.fetch(FetchDescriptor<SwimSession>())) ?? []
-        let customs = (try? modelContext.fetch(FetchDescriptor<CustomActivitySession>())) ?? []
-        let workouts = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
-        let hydrationEntries = (try? modelContext.fetch(FetchDescriptor<HydrationEntry>())) ?? []
-        let intentions = (try? modelContext.fetch(FetchDescriptor<ImplementationIntention>())) ?? []
-        let coachInsights = (try? modelContext.fetch(FetchDescriptor<CoachInsight>())) ?? []
-        let blocks = (try? modelContext.fetch(FetchDescriptor<ScheduleBlock>())) ?? []
-        let mascotLogs = (try? modelContext.fetch(FetchDescriptor<CharacterStateLog>())) ?? []
-        let archives = (try? modelContext.fetch(FetchDescriptor<ActivityArchive>())) ?? []
-        let counters = (try? modelContext.fetch(FetchDescriptor<StreakCounter>())) ?? []
+        let lifts = modelContext.fetchOrEmpty(FetchDescriptor<LiftSession>())
+        let bball = modelContext.fetchOrEmpty(FetchDescriptor<BasketballSession>())
+        let swims = modelContext.fetchOrEmpty(FetchDescriptor<SwimSession>())
+        let customs = modelContext.fetchOrEmpty(FetchDescriptor<CustomActivitySession>())
+        let workouts = modelContext.fetchOrEmpty(FetchDescriptor<WorkoutEvent>())
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
+        let hydrationEntries = modelContext.fetchOrEmpty(FetchDescriptor<HydrationEntry>())
+        let intentions = modelContext.fetchOrEmpty(FetchDescriptor<ImplementationIntention>())
+        let coachInsights = modelContext.fetchOrEmpty(FetchDescriptor<CoachInsight>())
+        let blocks = modelContext.fetchOrEmpty(FetchDescriptor<ScheduleBlock>())
+        let mascotLogs = modelContext.fetchOrEmpty(FetchDescriptor<CharacterStateLog>())
+        let archives = modelContext.fetchOrEmpty(FetchDescriptor<ActivityArchive>())
+        let counters = modelContext.fetchOrEmpty(FetchDescriptor<StreakCounter>())
 
         let workoutStreak = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
         let hydrationStreak = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0
@@ -321,7 +321,7 @@ final class AchievementService {
         let descriptor = FetchDescriptor<Achievement>(
             predicate: #Predicate<Achievement> { $0.identifier == id }
         )
-        let existing = (try? modelContext.fetch(descriptor)) ?? []
+        let existing = modelContext.fetchOrEmpty(descriptor)
         guard existing.isEmpty else { return }
         let row = Achievement(identifier: id)
         modelContext.insert(row)

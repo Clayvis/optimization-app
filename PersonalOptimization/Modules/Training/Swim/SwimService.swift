@@ -97,7 +97,7 @@ final class SwimService {
         let descriptor = FetchDescriptor<SwimSession>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        let sessions = modelContext.fetchOrEmpty(descriptor)
         return sessions.first { $0.durationMinutes == 0 }
     }
 
@@ -107,7 +107,7 @@ final class SwimService {
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         descriptor.fetchLimit = 50
-        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        let sessions = modelContext.fetchOrEmpty(descriptor)
         var seen = Set<String>()
         var out: [String] = []
         for s in sessions {

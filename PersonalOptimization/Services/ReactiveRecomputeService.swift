@@ -65,13 +65,13 @@ final class ReactiveRecomputeService {
 
         // Recompute every streak domain so a late-arriving HK workout, sleep,
         // or weight sample updates the persistent counter the UI reads from.
-        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
+        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
         let streakService = StreakService(
             modelContext: context,
             hydrationTargets: targets
         )
         for domain in StreakDomain.allCases {
-            _ = try? streakService.recompute(domain: domain)
+            _ = try? streakService.recompute(domain: domain)  // MARK: try? justified - best-effort; failure logged inside the called function.
         }
         logger.info("ReactiveRecomputeService recomputed \(StreakDomain.allCases.count, privacy: .public) streak domains after dailyLogsRecomputed.")
     }

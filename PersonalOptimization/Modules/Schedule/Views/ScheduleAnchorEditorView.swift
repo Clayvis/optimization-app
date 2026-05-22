@@ -160,7 +160,7 @@ struct ScheduleAnchorEditorView: View {
         let descriptor = FetchDescriptor<ScheduleBlock>(
             predicate: #Predicate<ScheduleBlock> { $0.isCustom == false && $0.isOverride == false }
         )
-        let count = (try? modelContext.fetchCount(descriptor)) ?? 0
+        let count = modelContext.fetchCountOrZero(descriptor)
         return count > 0 ? .balanced : nil
     }
 }

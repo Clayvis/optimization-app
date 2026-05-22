@@ -60,7 +60,7 @@ final class BasketballService {
                     $0.date == sessionDay && $0.note == "basketball"
                 }
             )
-            let existing = (try? modelContext.fetch(descriptor))?.first
+            let existing = modelContext.fetchFirstOrNil(descriptor)
             let priorEffective = existing?.effectiveOz ?? 0
             let entry: HydrationEntry
             if let existing {
@@ -101,7 +101,7 @@ final class BasketballService {
         let descriptor = FetchDescriptor<BasketballSession>(
             sortBy: [SortDescriptor(\.startTime, order: .reverse)]
         )
-        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        let sessions = modelContext.fetchOrEmpty(descriptor)
         return sessions.first { $0.startTime == $0.endTime }
     }
 

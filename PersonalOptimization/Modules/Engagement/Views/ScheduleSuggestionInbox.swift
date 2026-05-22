@@ -125,7 +125,7 @@ struct ScheduleSuggestionInbox: View {
         let memoryService = CoachMemoryService(modelContext: modelContext)
         // Compact one-line value so prompts can scan a list quickly.
         let value = "\(suggestion.changeType.rawValue): \(suggestion.summary)"
-        _ = try? memoryService.add(value: value, key: key, importance: 2, expiresIn: 60)
+        _ = try? memoryService.add(value: value, key: key, importance: 2, expiresIn: 60)  // MARK: try? justified - best-effort; failure logged inside the called function.
     }
 
     /// Deterministic key for a suggestion's change signature. Same shape →

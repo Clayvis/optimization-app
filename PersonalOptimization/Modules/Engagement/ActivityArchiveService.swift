@@ -112,12 +112,12 @@ final class ActivityArchiveService {
     // MARK: - Aggregations
 
     private func countWorkouts(in range: Range<Date>) -> Int {
-        let events = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
+        let events = modelContext.fetchOrEmpty(FetchDescriptor<WorkoutEvent>())
         return events.filter { $0.completed && range.contains($0.date) }.count
     }
 
     private func liftVolumeSum(in range: Range<Date>) -> Double {
-        let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+        let lifts = modelContext.fetchOrEmpty(FetchDescriptor<LiftSession>())
         return lifts.filter { range.contains($0.date) }.reduce(0) { $0 + $1.totalVolumeLbs }
     }
 
@@ -125,7 +125,7 @@ final class ActivityArchiveService {
         let descriptor = FetchDescriptor<DailyLog>(
             predicate: #Predicate<DailyLog> { $0.date == day }
         )
-        return (try? modelContext.fetch(descriptor))?.first
+        return modelContext.fetchFirstOrNil(descriptor)
     }
 
     private func computeFastingHours(log: DailyLog) -> Double {
@@ -134,7 +134,7 @@ final class ActivityArchiveService {
     }
 
     private func dominantMascotState(in range: Range<Date>) -> String {
-        let logs = (try? modelContext.fetch(FetchDescriptor<CharacterStateLog>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<CharacterStateLog>())
         let inRange = logs.filter { range.contains($0.timestamp) }
         guard !inRange.isEmpty else { return "neutral" }
         var counts: [String: Int] = [:]
@@ -157,11 +157,13 @@ final class ActivityArchiveService {
     private func earliestSourceDataDate() -> Date? {
         let cal = calendar()
         var candidates: [Date] = []
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         if let firstLog = (try? modelContext.fetch(FetchDescriptor<DailyLog>(
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )))?.first {
             candidates.append(cal.startOfDay(for: firstLog.date))
         }
+        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
         if let firstWorkout = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>(
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )))?.first {
@@ -174,7 +176,7 @@ final class ActivityArchiveService {
         let descriptor = FetchDescriptor<ActivityArchive>(
             predicate: #Predicate<ActivityArchive> { $0.date == day }
         )
-        if let existing = (try? modelContext.fetch(descriptor))?.first {
+        if let existing = modelContext.fetchFirstOrNil(descriptor) {
             return existing
         }
         let archive = ActivityArchive(date: day)

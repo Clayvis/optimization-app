@@ -103,7 +103,7 @@ struct CoachInsightCard: View {
     private func startVisibilityTimer() {
         viewVisibleSince = Date()
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            try? await Task.sleep(nanoseconds: 1_500_000_000)  // MARK: try? justified - best-effort; failure logged inside the called function.
             guard let started = viewVisibleSince,
                   Date().timeIntervalSince(started) >= 1.5,
                   let latest else { return }

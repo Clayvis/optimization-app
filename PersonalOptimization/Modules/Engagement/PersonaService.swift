@@ -26,7 +26,7 @@ final class PersonaService {
     /// Returns the current persona row, creating one if absent.
     @discardableResult
     func currentOrCreate() -> UserPersona {
-        if let existing = (try? modelContext.fetch(FetchDescriptor<UserPersona>()))?.first {
+        if let existing = modelContext.fetchFirstOrNil(FetchDescriptor<UserPersona>()) {
             return existing
         }
         let new = UserPersona()
@@ -185,7 +185,7 @@ final class PersonaService {
     }
 
     private func dismissedSignalKeys() -> Set<String> {
-        let memories = (try? modelContext.fetch(FetchDescriptor<CoachMemory>())) ?? []
+        let memories = modelContext.fetchOrEmpty(FetchDescriptor<CoachMemory>())
         return Set(memories.compactMap { mem -> String? in
             let prefix = "persona_signal_dismissed_"
             guard mem.key.hasPrefix(prefix) else { return nil }
@@ -203,7 +203,7 @@ final class PersonaService {
     }
 
     private func recentLiftStarts(since: Date) -> [PersonaBehavioralInference.LiftStart] {
-        let sessions = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+        let sessions = modelContext.fetchOrEmpty(FetchDescriptor<LiftSession>())
         let cal = Calendar.current
         return sessions
             .filter { $0.date >= since }
@@ -211,8 +211,8 @@ final class PersonaService {
     }
 
     private func recentRecoveryDays(from start: Date, to end: Date) -> [PersonaBehavioralInference.RecoveryDay] {
-        let logs = (try? modelContext.fetch(FetchDescriptor<DailyLog>())) ?? []
-        let events = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
+        let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
+        let events = modelContext.fetchOrEmpty(FetchDescriptor<WorkoutEvent>())
         let cal = Calendar.current
 
         let inRangeLogs = logs.filter { $0.date >= start && $0.date <= end }
@@ -229,8 +229,8 @@ final class PersonaService {
     }
 
     private func recentSkipPairs(since: Date, asOf: Date) -> [PersonaBehavioralInference.SkipDayPair] {
-        let events = (try? modelContext.fetch(FetchDescriptor<WorkoutEvent>())) ?? []
-        let lifts = (try? modelContext.fetch(FetchDescriptor<LiftSession>())) ?? []
+        let events = modelContext.fetchOrEmpty(FetchDescriptor<WorkoutEvent>())
+        let lifts = modelContext.fetchOrEmpty(FetchDescriptor<LiftSession>())
         let cal = Calendar.current
 
         // Typical duration baseline = median of completed lift sessions in range.
@@ -266,7 +266,7 @@ final class PersonaService {
     }
 
     private func suggestionOutcomes(since: Date) -> PersonaBehavioralInference.SuggestionOutcomes {
-        let all = (try? modelContext.fetch(FetchDescriptor<ScheduleSuggestion>())) ?? []
+        let all = modelContext.fetchOrEmpty(FetchDescriptor<ScheduleSuggestion>())
         let inRange = all.filter { $0.generatedAt >= since }
         var a = 0, d = 0, s = 0
         for sug in inRange {

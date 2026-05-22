@@ -256,7 +256,7 @@ final class FastingService {
         let descriptor = FetchDescriptor<DailyLog>(
             predicate: #Predicate<DailyLog> { $0.date == day }
         )
-        return (try? modelContext.fetch(descriptor))?.first
+        return modelContext.fetchFirstOrNil(descriptor)
     }
 
     private func upsertDailyLog(for date: Date) -> DailyLog {

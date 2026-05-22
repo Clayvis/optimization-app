@@ -52,6 +52,7 @@ extension ScheduleGenerationRun {
         let descriptor = FetchDescriptor<ScheduleGenerationRun>(
             predicate: #Predicate<ScheduleGenerationRun> { $0.generatedAt < cutoff }
         )
+        // MARK: try? justified - best-effort purge; nil result means nothing to purge.
         guard let stale = try? modelContext.fetch(descriptor), !stale.isEmpty else { return }
         for row in stale { modelContext.delete(row) }
         try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
