@@ -360,6 +360,11 @@ struct SettingsView: View {
                     Label("Start fresh from template", systemImage: "doc.badge.gearshape")
                 }
                 NavigationLink {
+                    ScheduleAnchorEditorView()
+                } label: {
+                    Label("Time anchors", systemImage: "clock.arrow.circlepath")
+                }
+                NavigationLink {
                     ImplementationIntentionsView()
                 } label: {
                     Label("Implementation intentions", systemImage: "arrow.right.circle.fill")

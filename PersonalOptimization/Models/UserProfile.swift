@@ -96,6 +96,28 @@ final class UserProfile {
     /// See AppSchema.swift for the rule.
     var metadataBlob: Data?
 
+    // M5 schedule re-haul anchors (V11). Templates resolve their time slots
+    // against these anchors instead of carrying hardcoded wall-clock times,
+    // so a "Balanced" template no longer assumes 18:00 lifts. Defaults are
+    // safe starting points; the onboarding "Time anchors" step writes the
+    // user's actual values before any template is applied.
+    var wakeHHMM: String = "06:00"
+    var bedtimeHHMM: String = "22:00"
+    var kidDropoffHHMM: String = "09:00"
+    var kidPickupHHMM: String = "17:00"
+    var trainingWindowStartHHMM: String = "06:00"
+    var trainingWindowEndHHMM: String = "21:00"
+    /// Raw value of TimeOfDayPreference. Use `preferredTrainingTimeOfDay`
+    /// for typed access.
+    var preferredTrainingTimeOfDayRaw: String = "evening"
+    var learningWindowStartHHMM: String = "19:00"
+    var learningWindowEndHHMM: String = "21:00"
+
+    var preferredTrainingTimeOfDay: TimeOfDayPreference {
+        get { TimeOfDayPreference(rawValue: preferredTrainingTimeOfDayRaw) ?? .evening }
+        set { preferredTrainingTimeOfDayRaw = newValue.rawValue }
+    }
+
     /// Parsed view of `anchorEventsCSV`. Empty CSV → empty array.
     /// Trims whitespace, drops empty tokens.
     var anchorEvents: [String] {

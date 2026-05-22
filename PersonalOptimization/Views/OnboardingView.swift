@@ -21,6 +21,7 @@ struct OnboardingView: View {
     @State private var notifRequested = false
     @State private var seedingDone = false
     @State private var showingAIGeneration = false
+    @State private var anchorDraft: ScheduleAnchorDraft = .init()
     // M4.2 T0c: track explicit schedule choice during this onboarding session.
     // Set when the user taps a template tile OR returns from the AI flow with
     // an applied proposal. Gates the Continue button on the schedule step.
@@ -30,7 +31,7 @@ struct OnboardingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ProgressView(value: Double(step + 1), total: 6)
+            ProgressView(value: Double(step + 1), total: 7)
                 .tint(.accentColor)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -39,9 +40,10 @@ struct OnboardingView: View {
                 welcomeScreen.tag(0)
                 permissionsScreen.tag(1)
                 goalsScreen.tag(2)
-                scheduleScreen.tag(3)
-                mascotScreen.tag(4)
-                wrapUpScreen.tag(5)
+                anchorsScreen.tag(3)      // M5: collect anchors BEFORE template
+                scheduleScreen.tag(4)
+                mascotScreen.tag(5)
+                wrapUpScreen.tag(6)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut, value: step)
@@ -195,7 +197,71 @@ struct OnboardingView: View {
         .buttonStyle(.plain)
     }
 
-    /// Onboarding screen 3 — schedule template. Lets the wife (or any new
+    /// Onboarding screen 3 (V11): collect daily anchors BEFORE the template
+    /// picker. Without this the chooser falls through to evening-default
+    /// resolution and lands lifts at 18:00 regardless of what the user
+    /// actually does after work. The DatePickers bind to local Date values
+    /// in `anchorDraft`; `applyScheduleTemplate` flushes them to the
+    /// profile before resolving blocks.
+    @ViewBuilder
+    private var anchorsScreen: some View {
+        Form {
+            Section {
+                Text("Tell me your day's anchors. Templates resolve against these — no defaults are assumed. The app will not place a workout at 18:00 unless you choose it.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            Section("Daily anchors") {
+                DatePicker(
+                    "Wake time",
+                    selection: $anchorDraft.wakeDate,
+                    displayedComponents: .hourAndMinute
+                )
+                DatePicker(
+                    "Bedtime",
+                    selection: $anchorDraft.bedtimeDate,
+                    displayedComponents: .hourAndMinute
+                )
+            }
+            Section("Kids") {
+                DatePicker(
+                    "Drop off",
+                    selection: $anchorDraft.kidDropDate,
+                    displayedComponents: .hourAndMinute
+                )
+                DatePicker(
+                    "Pickup",
+                    selection: $anchorDraft.kidPickupDate,
+                    displayedComponents: .hourAndMinute
+                )
+            }
+            Section("Training") {
+                Picker("Preferred window", selection: $anchorDraft.preferredTrainingTimeOfDay) {
+                    ForEach(TimeOfDayPreference.allCases) { pref in
+                        Text(pref.displayName).tag(pref)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            }
+            Section("Learning") {
+                DatePicker(
+                    "Evening learning starts",
+                    selection: $anchorDraft.learningStartDate,
+                    displayedComponents: .hourAndMinute
+                )
+            }
+            if anchorDraft.isValid == false {
+                Section {
+                    Text("Wake must be before bedtime and drop-off must be before pickup.")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+        }
+    }
+
+    /// Onboarding screen 4 — schedule template. Lets the wife (or any new
     /// user) avoid landing on Clay's seeded blocks. The template picker
     /// applies the chosen template via ScheduleTemplateApplier; user can
     /// always edit individual blocks later in Settings → Schedule.
@@ -305,7 +371,28 @@ struct OnboardingView: View {
 
     private func applyScheduleTemplate(_ template: ScheduleTemplate) {
         scheduleTemplate = template
-        _ = try? ScheduleTemplateApplier.apply(template, modelContext: modelContext)
+        // Flush the anchor draft so the template applier resolves blocks
+        // against the user's chosen wake/training/learning windows. Without
+        // this the planner falls back to evening defaults and the
+        // "Balanced" template lands lifts at 18:00 — the exact bug the M5
+        // re-haul is meant to fix.
+        if let profile = profile {
+            anchorDraft.writeTo(profile: profile)
+            // MARK: - try? justified because anchor flush is best-effort;
+            // worst case the applier uses defaultForFallback, which still
+            // produces a working schedule.
+            try? modelContext.save()
+        }
+        let anchors: SchedulePlanner.AnchorSet = profile.map(SchedulePlanner.AnchorSet.from(profile:))
+            ?? .defaultForFallback
+        // MARK: - try? justified because template application is best-effort
+        // during onboarding; the user can retry from the chooser or skip
+        // and pick later in Settings.
+        _ = try? ScheduleTemplateApplier.apply(
+            template,
+            modelContext: modelContext,
+            anchors: anchors
+        )
         scheduleChosenInSession = true
     }
 
@@ -386,7 +473,7 @@ struct OnboardingView: View {
                     .buttonStyle(.bordered)
             }
             Spacer()
-            if step < 5 {
+            if step < 6 {
                 Button("Continue") { step += 1 }
                     .buttonStyle(.borderedProminent)
                     .disabled(canAdvance == false)
@@ -404,11 +491,14 @@ struct OnboardingView: View {
         case 1: return true // permissions are optional but encouraged
         case 2: return true
         case 3:
-            // M4.2 T0c: schedule step requires an explicit choice. The user
-            // must either pick a template (non-blank or blank), or apply an
-            // AI-generated schedule (lastGeneratedAt is set). The blank
-            // template still counts as a choice because the user actively
-            // tapped it; Settings → Schedule remains available to refine.
+            // M5: anchors step. Require a sane wake/bedtime ordering before
+            // we let the user proceed to template selection. Defaults pass
+            // this check, so a user who taps Continue without changing
+            // anything still gets through.
+            return anchorDraft.isValid
+        case 4:
+            // M4.2 T0c (shifted +1): schedule step requires an explicit
+            // choice. User must tap a template tile or apply an AI schedule.
             return hasMadeScheduleChoice
         default: return true
         }
@@ -506,7 +596,94 @@ struct OnboardingView: View {
         }
         profile.equipmentAccess = equipmentAccess
         profile.mascotVariant = pickedVariant.rawValue
+        // V11: persist final anchor draft if the user touched the screen but
+        // never tapped a template tile (defensive — the flush in
+        // applyScheduleTemplate already covers the normal path).
+        anchorDraft.writeTo(profile: profile)
         profile.onboardingCompleted = true
         try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
+    }
+}
+
+/// Local-only draft model for the onboarding anchors screen. Holds the
+/// DatePicker bindings as `Date` values (DatePicker requires Date, not
+/// HH:MM strings) and converts to/from the profile's HH:MM string fields
+/// on flush. Living inside OnboardingView so other surfaces (Settings
+/// anchor editor) build their own draft from the live profile rather than
+/// inheriting a half-filled in-memory shape.
+struct ScheduleAnchorDraft {
+    var wakeDate: Date
+    var bedtimeDate: Date
+    var kidDropDate: Date
+    var kidPickupDate: Date
+    var learningStartDate: Date
+    var preferredTrainingTimeOfDay: TimeOfDayPreference
+
+    init(wakeHHMM: String = "06:00",
+         bedtimeHHMM: String = "22:00",
+         kidDropHHMM: String = "09:00",
+         kidPickupHHMM: String = "17:00",
+         learningStartHHMM: String = "19:00",
+         preferredTrainingTimeOfDay: TimeOfDayPreference = .evening) {
+        self.wakeDate = Self.todayAt(hhmm: wakeHHMM) ?? Self.todayAt(hour: 6, minute: 0)
+        self.bedtimeDate = Self.todayAt(hhmm: bedtimeHHMM) ?? Self.todayAt(hour: 22, minute: 0)
+        self.kidDropDate = Self.todayAt(hhmm: kidDropHHMM) ?? Self.todayAt(hour: 9, minute: 0)
+        self.kidPickupDate = Self.todayAt(hhmm: kidPickupHHMM) ?? Self.todayAt(hour: 17, minute: 0)
+        self.learningStartDate = Self.todayAt(hhmm: learningStartHHMM) ?? Self.todayAt(hour: 19, minute: 0)
+        self.preferredTrainingTimeOfDay = preferredTrainingTimeOfDay
+    }
+
+    /// Validity gate for the Continue button: wake strictly before bedtime,
+    /// drop-off strictly before pickup. Sub-minute equality counts as
+    /// invalid (same anchor for both events is a configuration error).
+    var isValid: Bool {
+        wakeDate < bedtimeDate && kidDropDate < kidPickupDate
+    }
+
+    /// Flushes draft values into the profile's HH:MM string fields and
+    /// preferred-training-window picker. Idempotent: writing twice with
+    /// the same draft produces the same profile state.
+    func writeTo(profile: UserProfile) {
+        profile.wakeHHMM = Self.hhmm(wakeDate)
+        profile.bedtimeHHMM = Self.hhmm(bedtimeDate)
+        profile.kidDropoffHHMM = Self.hhmm(kidDropDate)
+        profile.kidPickupHHMM = Self.hhmm(kidPickupDate)
+        profile.learningWindowStartHHMM = Self.hhmm(learningStartDate)
+        profile.preferredTrainingTimeOfDay = preferredTrainingTimeOfDay
+    }
+
+    /// Inverse of `writeTo`: builds a draft seeded from the profile's
+    /// current anchor fields. Used by the Settings anchor editor.
+    static func from(profile: UserProfile) -> ScheduleAnchorDraft {
+        ScheduleAnchorDraft(
+            wakeHHMM: profile.wakeHHMM,
+            bedtimeHHMM: profile.bedtimeHHMM,
+            kidDropHHMM: profile.kidDropoffHHMM,
+            kidPickupHHMM: profile.kidPickupHHMM,
+            learningStartHHMM: profile.learningWindowStartHHMM,
+            preferredTrainingTimeOfDay: profile.preferredTrainingTimeOfDay
+        )
+    }
+
+    private static func todayAt(hour: Int, minute: Int) -> Date {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        components.hour = hour
+        components.minute = minute
+        return Calendar.current.date(from: components) ?? Date()
+    }
+
+    private static func todayAt(hhmm: String) -> Date? {
+        let parts = hhmm.split(separator: ":")
+        guard parts.count == 2,
+              let h = Int(parts[0]),
+              let m = Int(parts[1]),
+              (0..<24).contains(h),
+              (0..<60).contains(m) else { return nil }
+        return todayAt(hour: h, minute: m)
+    }
+
+    private static func hhmm(_ date: Date) -> String {
+        let comps = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return String(format: "%02d:%02d", comps.hour ?? 0, comps.minute ?? 0)
     }
 }

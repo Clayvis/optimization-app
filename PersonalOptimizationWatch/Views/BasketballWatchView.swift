@@ -53,7 +53,8 @@ struct BasketballWatchView: View {
                     ))
                 }
 
-                TimelineView(.periodic(from: .now, by: 1)) { context in
+                // V11 always-on polish: 60s tick when dimmed, 1Hz otherwise.
+                TimelineView(.periodic(from: .now, by: dimmed ? 60 : 1)) { context in
                     Text(formatDuration(context.date.timeIntervalSince(startedAt)))
                         .font(.title3.weight(.semibold))
                         .monospacedDigit()
@@ -92,6 +93,9 @@ struct BasketballWatchView: View {
             service = svc
             startedAt = Date()
             try? live.start(activityType: .basketball, locationType: .indoor)
+            // V11 Handoff parity: phone Lock Screen surfaces a "Continue
+            // Basketball" banner mirroring the Lift flow.
+            _ = HandoffService.startActivity(type: .basketball)
             WatchConnectivityService.shared.send(
                 WatchConnectivityEvent(kind: .workoutStarted, payload: ["type": "basketball"])
             )

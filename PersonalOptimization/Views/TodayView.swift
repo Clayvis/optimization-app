@@ -86,6 +86,13 @@ struct TodayView: View {
                 }
 
                 Section {
+                    NextBlockCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
                     streakStrip
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)

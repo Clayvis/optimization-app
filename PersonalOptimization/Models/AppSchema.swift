@@ -14,6 +14,10 @@ import SwiftData
 enum AppSchema {
     /// The current versioned schema. Bump in one place when a new SchemaVN is
     /// added (and add its migration stage in AppMigrationPlan.stages).
+    /// Note: the V11 schedule-re-haul (added anchor fields to UserProfile)
+    /// did not introduce new entities, so it rides SchemaV10 — SwiftData's
+    /// lightweight migration applies the new properties in place when the
+    /// stored UserProfile rows are first read.
     static let current: any VersionedSchema.Type = SchemaV10.self
 
     /// Builds the Schema object for ModelContainer initialisation.

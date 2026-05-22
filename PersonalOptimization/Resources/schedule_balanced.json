@@ -1,55 +1,12 @@
 {
-  "version": 1,
-  "timezone": "UTC",
-  "description": "Generic balanced template. 3 lift days, 2 cardio days, weekend recovery. Evening anchored so it fits a typical workday. Edit any block in Settings.",
-  "blocks": [
-    {
-      "dayOfWeek": 1,
-      "startTime": "18:00",
-      "endTime": "19:00",
-      "activity": "Lift A",
-      "type": "training",
-      "module": "lift_a"
-    },
-    {
-      "dayOfWeek": 2,
-      "startTime": "18:00",
-      "endTime": "19:00",
-      "activity": "Cardio (basketball)",
-      "type": "training",
-      "module": "basketball"
-    },
-    {
-      "dayOfWeek": 3,
-      "startTime": "18:00",
-      "endTime": "19:00",
-      "activity": "Lift B",
-      "type": "training",
-      "module": "lift_b"
-    },
-    {
-      "dayOfWeek": 4,
-      "startTime": "18:00",
-      "endTime": "19:00",
-      "activity": "Cardio (swim)",
-      "type": "training",
-      "module": "swim"
-    },
-    {
-      "dayOfWeek": 5,
-      "startTime": "18:00",
-      "endTime": "19:00",
-      "activity": "Lift A",
-      "type": "training",
-      "module": "lift_a"
-    },
-    {
-      "dayOfWeek": 7,
-      "startTime": "10:00",
-      "endTime": "10:30",
-      "activity": "Weekly review",
-      "type": "admin",
-      "module": null
-    }
-  ]
+    "version": 2,
+    "description": "Balanced. 3 lift days, 2 cardio days, weekend recovery. Times anchored to your training-window preference.",
+    "blocks": [
+        { "dayOfWeek": 1, "anchor": "training", "durationMinutes": 60, "activity": "Lift A", "type": "training", "module": "lift_a" },
+        { "dayOfWeek": 2, "anchor": "training", "durationMinutes": 60, "activity": "Cardio (basketball)", "type": "training", "module": "basketball" },
+        { "dayOfWeek": 3, "anchor": "training", "durationMinutes": 60, "activity": "Lift B", "type": "training", "module": "lift_b" },
+        { "dayOfWeek": 4, "anchor": "training", "durationMinutes": 60, "activity": "Cardio (swim)", "type": "training", "module": "swim" },
+        { "dayOfWeek": 5, "anchor": "training", "durationMinutes": 60, "activity": "Lift A", "type": "training", "module": "lift_a" },
+        { "dayOfWeek": 7, "anchor": "morning", "offsetMinutes": 240, "durationMinutes": 30, "activity": "Weekly review", "type": "admin" }
+    ]
 }

@@ -127,15 +127,22 @@ final class ScheduleValidatorTests: XCTestCase {
     /// Constraints with a constraining 17:00-20:00 training window —
     /// "I can only work out after work but before kid bedtime."
     private var afterWorkOnly: ScheduleValidator.Constraints {
-        ScheduleValidator.Constraints(
+        let d = ScheduleValidator.Constraints.default
+        return ScheduleValidator.Constraints(
             sleepWindowStartHour: 22,
             sleepWindowEndHour: 6,
             weeklyLiftMax: 6,
-            knownModules: ScheduleValidator.Constraints.default.knownModules,
-            knownAnchors: ScheduleValidator.Constraints.default.knownAnchors,
+            knownModules: d.knownModules,
+            knownAnchors: d.knownAnchors,
             trainingWindowStartHour: 17,
             trainingWindowEndHour: 20,
-            trainingTypeModules: ScheduleValidator.Constraints.default.trainingTypeModules
+            trainingTypeModules: d.trainingTypeModules,
+            wakeHHMM: nil,
+            bedtimeHHMM: nil,
+            kidDropoffHHMM: nil,
+            kidPickupHHMM: nil,
+            dailyMinuteCap: d.dailyMinuteCap,
+            learningTypeModules: d.learningTypeModules
         )
     }
 

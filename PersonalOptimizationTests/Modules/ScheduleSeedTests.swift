@@ -55,27 +55,30 @@ final class ScheduleSeedTests: XCTestCase {
     // MARK: - Per-template seeds
 
     func test_loadScheduleFile_balanced_decodes() throws {
-        let file = try ScheduleSeed.loadScheduleFile(resourceName: "schedule_balanced", bundle: Self.resourceBundle())
-        XCTAssertEqual(file.version, 1)
+        // V11: the four shipped templates are v2 parametric files; use the
+        // matching loader. Version assertion guards against an accidental
+        // revert to the v1 shape.
+        let file = try ScheduleSeed.loadParametricScheduleFile(resourceName: "schedule_balanced", bundle: Self.resourceBundle())
+        XCTAssertEqual(file.version, 2)
         XCTAssertFalse(file.blocks.isEmpty, "balanced template must seed at least one block")
     }
 
     func test_loadScheduleFile_gymFocused_decodes() throws {
-        let file = try ScheduleSeed.loadScheduleFile(resourceName: "schedule_gym_focused", bundle: Self.resourceBundle())
+        let file = try ScheduleSeed.loadParametricScheduleFile(resourceName: "schedule_gym_focused", bundle: Self.resourceBundle())
         XCTAssertFalse(file.blocks.isEmpty)
         let liftDays = Set(file.blocks.filter { $0.type == "training" && ($0.module == "lift_a" || $0.module == "lift_b") }.map(\.dayOfWeek))
         XCTAssertGreaterThanOrEqual(liftDays.count, 3, "gym-focused must schedule lift on 3+ days")
     }
 
     func test_loadScheduleFile_languageFocused_decodes() throws {
-        let file = try ScheduleSeed.loadScheduleFile(resourceName: "schedule_language_focused", bundle: Self.resourceBundle())
+        let file = try ScheduleSeed.loadParametricScheduleFile(resourceName: "schedule_language_focused", bundle: Self.resourceBundle())
         XCTAssertFalse(file.blocks.isEmpty)
         let learningDays = Set(file.blocks.filter { $0.type == "learning" }.map(\.dayOfWeek))
         XCTAssertGreaterThanOrEqual(learningDays.count, 5, "language-focused must schedule learning on 5+ days")
     }
 
     func test_loadScheduleFile_fastingFocused_decodes() throws {
-        let file = try ScheduleSeed.loadScheduleFile(resourceName: "schedule_fasting_focused", bundle: Self.resourceBundle())
+        let file = try ScheduleSeed.loadParametricScheduleFile(resourceName: "schedule_fasting_focused", bundle: Self.resourceBundle())
         XCTAssertFalse(file.blocks.isEmpty)
     }
 
@@ -85,7 +88,7 @@ final class ScheduleSeedTests: XCTestCase {
         let tokens = ["DeepWater", "McTureous", "Pimsleur", "PMGT"]
         let names = ["schedule_balanced", "schedule_gym_focused", "schedule_language_focused", "schedule_fasting_focused"]
         for name in names {
-            let file = try ScheduleSeed.loadScheduleFile(resourceName: name, bundle: Self.resourceBundle())
+            let file = try ScheduleSeed.loadParametricScheduleFile(resourceName: name, bundle: Self.resourceBundle())
             for block in file.blocks {
                 for token in tokens {
                     XCTAssertFalse(block.activity.contains(token), "\(name) leaks token \(token) in block: \(block.activity)")
@@ -102,14 +105,17 @@ final class ScheduleSeedTests: XCTestCase {
         try ScheduleSeed.seedIfNeeded(modelContext: context, bundle: Self.resourceBundle())
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<ScheduleBlock>()), 39)
 
-        // Apply the gym-focused template. Clay's blocks should be wiped.
-        try ScheduleSeed.resetToTemplate(resourceName: "schedule_gym_focused",
-                                         modelContext: context,
-                                         bundle: Self.resourceBundle())
+        // V11: gym-focused is a parametric v2 template; reset via the new path.
+        try ScheduleSeed.resetToParametricTemplate(
+            resourceName: "schedule_gym_focused",
+            anchors: .defaultForFallback,
+            modelContext: context,
+            bundle: Self.resourceBundle()
+        )
 
-        // No remaining Clay blocks; only gym-focused blocks (5).
+        // No remaining Clay blocks; only gym-focused blocks.
         let total = try context.fetchCount(FetchDescriptor<ScheduleBlock>())
-        let gymFile = try ScheduleSeed.loadScheduleFile(resourceName: "schedule_gym_focused", bundle: Self.resourceBundle())
+        let gymFile = try ScheduleSeed.loadParametricScheduleFile(resourceName: "schedule_gym_focused", bundle: Self.resourceBundle())
         XCTAssertEqual(total, gymFile.blocks.count)
 
         // Verify no leaked Clay-specific activity strings.
@@ -137,9 +143,12 @@ final class ScheduleSeedTests: XCTestCase {
         context.insert(custom)
         try context.save()
 
-        try ScheduleSeed.resetToTemplate(resourceName: "schedule_balanced",
-                                         modelContext: context,
-                                         bundle: Self.resourceBundle())
+        try ScheduleSeed.resetToParametricTemplate(
+            resourceName: "schedule_balanced",
+            anchors: .defaultForFallback,
+            modelContext: context,
+            bundle: Self.resourceBundle()
+        )
 
         let customs = try context.fetch(
             FetchDescriptor<ScheduleBlock>(predicate: #Predicate { $0.isCustom == true })
@@ -156,7 +165,7 @@ final class ScheduleSeedTests: XCTestCase {
 
         try ScheduleTemplateApplier.apply(.balanced, modelContext: context, bundle: Self.resourceBundle())
 
-        let expectedCount = try ScheduleSeed.loadScheduleFile(resourceName: "schedule_balanced", bundle: Self.resourceBundle()).blocks.count
+        let expectedCount = try ScheduleSeed.loadParametricScheduleFile(resourceName: "schedule_balanced", bundle: Self.resourceBundle()).blocks.count
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<ScheduleBlock>()), expectedCount)
     }
 

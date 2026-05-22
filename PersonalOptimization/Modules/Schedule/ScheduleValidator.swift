@@ -21,6 +21,11 @@ enum ScheduleValidator {
         case invalidTimeFormat(blockIndex: Int, field: String, value: String)
         case timeRangeInverted(blockIndex: Int, start: String, end: String)
         case trainingBlockOutsideWindow(blockIndex: Int, start: String, end: String, windowStart: String, windowEnd: String)
+        // V11 anchor-aware validation rules.
+        case learningOutsideWakeWindow(blockIndex: Int, start: String, end: String, wake: String, bedtime: String)
+        case dailyVolumeExceeded(day: Int, totalMinutes: Int, cap: Int)
+        case kidDropConflict(blockIndex: Int, day: Int, kidDrop: String)
+        case kidPickupConflict(blockIndex: Int, day: Int, kidPickup: String)
 
         var errorDescription: String? {
             switch self {
@@ -42,6 +47,15 @@ enum ScheduleValidator {
                 return "Block \(i) has endTime \(end) before startTime \(start)."
             case .trainingBlockOutsideWindow(let i, let start, let end, let ws, let we):
                 return "Training block \(i) (\(start)-\(end)) falls outside the user's stated training window \(ws)-\(we). Move it inside the window or change the type to recovery/learning/other."
+            case .learningOutsideWakeWindow(let i, let start, let end, let wake, let bedtime):
+                return "Learning block \(i) (\(start)-\(end)) falls outside your awake window \(wake)-\(bedtime). Move it inside the window."
+            case .dailyVolumeExceeded(let day, let totalMinutes, let cap):
+                let hours = String(format: "%.1f", Double(totalMinutes) / 60.0)
+                return "Day \(day) has \(hours)h scheduled, over the \(cap / 60)h cap. Trim a block."
+            case .kidDropConflict(let i, let day, let kidDrop):
+                return "Block \(i) on day \(day) overlaps kid drop-off at \(kidDrop). Move it later or earlier."
+            case .kidPickupConflict(let i, let day, let kidPickup):
+                return "Block \(i) on day \(day) overlaps kid pickup at \(kidPickup). Move it later or earlier."
             }
         }
     }
@@ -62,6 +76,14 @@ enum ScheduleValidator {
         let trainingWindowStartHour: Int   // 0 = no lower bound check
         let trainingWindowEndHour: Int     // 24 = no upper bound check
         let trainingTypeModules: Set<String>  // modules counted as "training"
+        // V11 anchor-aware rules. nil values turn the rule off so the
+        // existing default behavior is unchanged.
+        let wakeHHMM: String?              // "06:00"; learning must be inside [wake, bedtime]
+        let bedtimeHHMM: String?           // "22:00"
+        let kidDropoffHHMM: String?        // "09:00"; blocks may not overlap [drop-15, drop+30]
+        let kidPickupHHMM: String?         // "17:00"; blocks may not overlap [pickup-15, pickup+15]
+        let dailyMinuteCap: Int            // 360 (6h) default; per-day total scheduled minutes ceiling
+        let learningTypeModules: Set<String>  // modules counted as "learning" for window check
 
         static let `default` = Constraints(
             sleepWindowStartHour: 22,
@@ -84,8 +106,43 @@ enum ScheduleValidator {
                 "lift_a", "lift_b",
                 "basketball", "swim",
                 "cardio", "running", "cycling", "walking", "hiit", "yoga", "hiking"
-            ]
+            ],
+            wakeHHMM: nil,
+            bedtimeHHMM: nil,
+            kidDropoffHHMM: nil,
+            kidPickupHHMM: nil,
+            dailyMinuteCap: 360,
+            learningTypeModules: ["japanese", "guitar", "music"]
         )
+
+        /// Factory for V11 callers (planner, seed path) that have the live
+        /// profile anchors available. Wraps `.default` and overlays the
+        /// anchor-aware fields. Keeps the existing default in place so
+        /// callers that don't pass anchors still validate the same way.
+        static func fromProfile(wakeHHMM: String,
+                                bedtimeHHMM: String,
+                                kidDropoffHHMM: String,
+                                kidPickupHHMM: String,
+                                trainingWindowStartHour: Int = 0,
+                                trainingWindowEndHour: Int = 24) -> Constraints {
+            let base = Constraints.default
+            return Constraints(
+                sleepWindowStartHour: base.sleepWindowStartHour,
+                sleepWindowEndHour: base.sleepWindowEndHour,
+                weeklyLiftMax: base.weeklyLiftMax,
+                knownModules: base.knownModules,
+                knownAnchors: base.knownAnchors,
+                trainingWindowStartHour: trainingWindowStartHour,
+                trainingWindowEndHour: trainingWindowEndHour,
+                trainingTypeModules: base.trainingTypeModules,
+                wakeHHMM: wakeHHMM,
+                bedtimeHHMM: bedtimeHHMM,
+                kidDropoffHHMM: kidDropoffHHMM,
+                kidPickupHHMM: kidPickupHHMM,
+                dailyMinuteCap: base.dailyMinuteCap,
+                learningTypeModules: base.learningTypeModules
+            )
+        }
     }
 
     // MARK: - Input block shape
@@ -167,6 +224,50 @@ enum ScheduleValidator {
             }
         }
 
+        // V11 anchor-aware per-block checks (learning window, kid conflicts).
+        // Skipped when the corresponding anchor field is nil so legacy
+        // callers (M4.x AI path) keep their existing behavior.
+        for (i, block) in blocks.enumerated() {
+            guard let s = parseMinutes(block.startTime),
+                  let e = parseMinutes(block.endTime),
+                  e > s else { continue }
+
+            if let wake = constraints.wakeHHMM,
+               let bedtime = constraints.bedtimeHHMM,
+               let wakeMin = parseMinutes(wake),
+               let bedMin = parseMinutes(bedtime),
+               let module = block.module,
+               constraints.learningTypeModules.contains(module) {
+                if s < wakeMin || e > bedMin {
+                    errors.append(.learningOutsideWakeWindow(
+                        blockIndex: i,
+                        start: block.startTime,
+                        end: block.endTime,
+                        wake: wake,
+                        bedtime: bedtime
+                    ))
+                }
+            }
+
+            if let kidDrop = constraints.kidDropoffHHMM,
+               let dropMin = parseMinutes(kidDrop) {
+                let conflictStart = dropMin - 15
+                let conflictEnd = dropMin + 30
+                if overlaps(aStart: s, aEnd: e, bStart: conflictStart, bEnd: conflictEnd) {
+                    errors.append(.kidDropConflict(blockIndex: i, day: block.dayOfWeek, kidDrop: kidDrop))
+                }
+            }
+
+            if let kidPickup = constraints.kidPickupHHMM,
+               let pickupMin = parseMinutes(kidPickup) {
+                let conflictStart = pickupMin - 15
+                let conflictEnd = pickupMin + 15
+                if overlaps(aStart: s, aEnd: e, bStart: conflictStart, bEnd: conflictEnd) {
+                    errors.append(.kidPickupConflict(blockIndex: i, day: block.dayOfWeek, kidPickup: kidPickup))
+                }
+            }
+        }
+
         // Cross-block: same-day overlap. Index-quadratic with skip on syntactic-bad blocks.
         let perDay = Dictionary(grouping: blocks.enumerated().filter { _, b in
             (1...7).contains(b.dayOfWeek)
@@ -188,6 +289,20 @@ enum ScheduleValidator {
                         break
                     }
                 }
+            }
+        }
+
+        // V11 daily volume cap. Sum total minutes per day and flag if over
+        // the cap (6h default). Skips syntactic-bad blocks.
+        for (day, indexed) in perDay {
+            let total = indexed.reduce(0) { acc, item in
+                guard let s = parseMinutes(item.element.startTime),
+                      let e = parseMinutes(item.element.endTime),
+                      e > s else { return acc }
+                return acc + (e - s)
+            }
+            if total > constraints.dailyMinuteCap {
+                errors.append(.dailyVolumeExceeded(day: day, totalMinutes: total, cap: constraints.dailyMinuteCap))
             }
         }
 

@@ -60,7 +60,8 @@ struct CustomActivityWatchView: View {
                     ))
                 }
 
-                TimelineView(.periodic(from: .now, by: 1)) { context in
+                // V11 always-on polish: 60s tick when dimmed, 1Hz otherwise.
+                TimelineView(.periodic(from: .now, by: dimmed ? 60 : 1)) { context in
                     Text(formatDuration(context.date.timeIntervalSince(startedAt)))
                         .font(.title3.weight(.semibold))
                         .monospacedDigit()
@@ -108,6 +109,8 @@ struct CustomActivityWatchView: View {
             service = svc
             startedAt = Date()
             try? live.start(activityType: hkActivityType, locationType: locationType)
+            // V11 Handoff parity: phone Lock Screen banner names the template.
+            _ = HandoffService.startActivity(type: .customActivity, template: template.name)
             WatchConnectivityService.shared.send(
                 WatchConnectivityEvent(kind: .workoutStarted,
                                        payload: ["type": "custom", "template": template.name])

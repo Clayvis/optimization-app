@@ -142,6 +142,7 @@ targets:
         name: SharedSchedule
         excludes:
           - "Views/**"
+          - "AI/ScheduleAIService.swift"
       - path: PersonalOptimization/Modules/Fasting
         name: SharedFasting
         excludes:
@@ -266,6 +267,7 @@ targets:
         name: SharedSchedule
         excludes:
           - "Views/**"
+          - "AI/ScheduleAIService.swift"
       - path: PersonalOptimization/Modules/Fasting
         name: SharedFasting
         excludes:

@@ -51,7 +51,11 @@ struct SwimWatchView: View {
                     ))
                 }
 
-                TimelineView(.periodic(from: .now, by: 1)) { context in
+                // V11 always-on polish: dial the elapsed-time tick from
+                // 1Hz to 60s when the watch dims its face. The HK builder
+                // still samples HR/cals at 1Hz under the hood; only the
+                // UI repaint slows down.
+                TimelineView(.periodic(from: .now, by: dimmed ? 60 : 1)) { context in
                     VStack(spacing: 2) {
                         Text(formatDuration(context.date.timeIntervalSince(startedAt)))
                             .font(.title3.weight(.semibold))
@@ -98,6 +102,8 @@ struct SwimWatchView: View {
             service = svc
             startedAt = Date()
             try? live.start(activityType: .swimming, locationType: .indoor)
+            // V11 Handoff parity.
+            _ = HandoffService.startActivity(type: .swim)
             WatchConnectivityService.shared.send(
                 WatchConnectivityEvent(kind: .workoutStarted, payload: ["type": "swim"])
             )

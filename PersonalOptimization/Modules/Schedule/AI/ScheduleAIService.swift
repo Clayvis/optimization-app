@@ -167,15 +167,22 @@ final class ScheduleAIService {
         let knownAnchors: Set<String> = intake.anchorEvents.isEmpty
             ? ScheduleValidator.Constraints.default.knownAnchors
             : Set(intake.anchorEvents)
+        let defaults = ScheduleValidator.Constraints.default
         let constraints = ScheduleValidator.Constraints(
             sleepWindowStartHour: intake.sleepStartHour,
             sleepWindowEndHour: intake.sleepEndHour,
             weeklyLiftMax: 6,
-            knownModules: ScheduleValidator.Constraints.default.knownModules,
+            knownModules: defaults.knownModules,
             knownAnchors: knownAnchors,
             trainingWindowStartHour: intake.earliestTrainingHour,
             trainingWindowEndHour: intake.latestTrainingHour,
-            trainingTypeModules: ScheduleValidator.Constraints.default.trainingTypeModules
+            trainingTypeModules: defaults.trainingTypeModules,
+            wakeHHMM: nil,
+            bedtimeHHMM: nil,
+            kidDropoffHHMM: nil,
+            kidPickupHHMM: nil,
+            dailyMinuteCap: defaults.dailyMinuteCap,
+            learningTypeModules: defaults.learningTypeModules
         )
         let errors = ScheduleValidator.collect(validatorBlocks, against: constraints)
         if !errors.isEmpty {

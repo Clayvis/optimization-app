@@ -168,4 +168,79 @@ enum ScheduleSeed {
             throw ScheduleSeedError.decodingFailed(decodingError)
         }
     }
+
+    /// V11 loader for v2 parametric template JSONs (the four shipped
+    /// templates: balanced, gym_focused, language_focused, fasting_focused).
+    /// Used by tests and any caller that wants to inspect the template's
+    /// shape without applying it.
+    static func loadParametricScheduleFile(resourceName: String,
+                                           bundle: Bundle = .main) throws -> ParametricScheduleFile {
+        guard let url = bundle.url(forResource: resourceName, withExtension: "json") else {
+            throw ScheduleSeedError.resourceMissing
+        }
+        do {
+            let data = try Data(contentsOf: url)
+            return try JSONDecoder().decode(ParametricScheduleFile.self, from: data)
+        } catch let decodingError {
+            throw ScheduleSeedError.decodingFailed(decodingError)
+        }
+    }
+
+    /// M5 parametric template application. Wipes non-custom non-override
+    /// ScheduleBlocks then resolves the v2 template's anchor-based blocks
+    /// against the user's chosen anchors before inserting. User-marked
+    /// `isCustom` blocks are preserved verbatim so a re-apply respects the
+    /// user's manual edits.
+    ///
+    /// Throws `decodingFailed` when the JSON isn't a v2 file (version != 2);
+    /// the legacy `resetToTemplate` path stays available for v1 callers.
+    static func resetToParametricTemplate(resourceName: String,
+                                          anchors: SchedulePlanner.AnchorSet,
+                                          modelContext: ModelContext,
+                                          bundle: Bundle = .main) throws {
+        let descriptor = FetchDescriptor<ScheduleBlock>(
+            predicate: #Predicate<ScheduleBlock> { $0.isCustom == false && $0.isOverride == false }
+        )
+        let toDelete = try modelContext.fetch(descriptor)
+        for block in toDelete {
+            modelContext.delete(block)
+        }
+        try modelContext.save()
+
+        guard let url = bundle.url(forResource: resourceName, withExtension: "json") else {
+            throw ScheduleSeedError.resourceMissing
+        }
+        let data = try Data(contentsOf: url)
+        let file: ParametricScheduleFile
+        do {
+            file = try JSONDecoder().decode(ParametricScheduleFile.self, from: data)
+        } catch {
+            throw ScheduleSeedError.decodingFailed(error)
+        }
+        guard file.version == 2 else {
+            throw ScheduleSeedError.decodingFailed(
+                NSError(domain: "ScheduleSeed", code: 2, userInfo: [
+                    NSLocalizedDescriptionKey: "expected parametric template version 2, got \(file.version)"
+                ])
+            )
+        }
+
+        let resolved = try SchedulePlanner.resolveAll(templateBlocks: file.blocks, anchors: anchors)
+        for r in resolved {
+            let blockType = BlockType(rawValue: r.type) ?? .other
+            let block = ScheduleBlock(
+                dayOfWeek: r.dayOfWeek,
+                startTime: r.startHHMM,
+                endTime: r.endHHMM,
+                activity: r.activity,
+                type: blockType,
+                module: r.module
+            )
+            modelContext.insert(block)
+        }
+        try modelContext.save()
+        Logger.schedule.info(
+            "Applied parametric template \(resourceName, privacy: .public): wrote \(resolved.count, privacy: .public) blocks against training anchor \(anchors.trainingStartHHMM, privacy: .public)"
+        )
+    }
 }
