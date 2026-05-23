@@ -200,6 +200,13 @@ targets:
         WKBackgroundModes:
           - workout-processing
         ITSAppUsesNonExemptEncryption: false
+        # Required by App Store Connect validation (error 90683). The watch
+        # target links HealthKit (com.apple.developer.healthkit entitlement
+        # below) and shares HealthKitService.swift, so both purpose strings
+        # must ship in the watch bundle Info.plist independently of the iOS
+        # parent app's strings.
+        NSHealthShareUsageDescription: Tracks sleep, heart rate, and HRV to power character emotional state and weekly review insights.
+        NSHealthUpdateUsageDescription: Logs workouts and water intake to Apple Health for cross-app integration.
     entitlements:
       path: PersonalOptimizationWatch/PersonalOptimizationWatch.entitlements
       properties:

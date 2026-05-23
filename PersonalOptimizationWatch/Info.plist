@@ -22,6 +22,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Tracks sleep, heart rate, and HRV to power character emotional state and weekly review insights.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Logs workouts and water intake to Apple Health for cross-app integration.</string>
 	<key>TeamBundlePrefix</key>
 	<string>$(TEAM_BUNDLE_PREFIX)</string>
 	<key>WKApplication</key>
