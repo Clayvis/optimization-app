@@ -4,8 +4,8 @@ import SwiftData
 /// Audit trail for AI-driven schedule generations. One row per call to
 /// `ScheduleAIService.generate`. Persisted so the user can revisit a discarded
 /// proposal ("oh wait, that one was fine") and so Settings → Diagnostics can
-/// surface "AI calls this month" with token + cost rollup. Auto-purged after
-/// 30 days via `ScheduleGenerationRun.purgeStale`.
+/// surface "AI calls this month" with token + cost rollup. Retained
+/// permanently (no auto-purge) per the CLAUDE.md retention rule.
 @Model
 final class ScheduleGenerationRun {
     var generatedAt: Date = Date.distantPast
@@ -42,19 +42,4 @@ enum ScheduleGenerationRunStatus: String, Codable, CaseIterable, Sendable {
     case proposed       // generated, awaiting user decision
     case accepted       // user tapped Apply
     case discarded      // user tapped Discard
-}
-
-extension ScheduleGenerationRun {
-    /// Deletes rows older than 30 days. Called once per app launch.
-    @MainActor
-    static func purgeStale(modelContext: ModelContext, asOf: Date = Date()) {
-        let cutoff = asOf.addingTimeInterval(-30 * 86_400)
-        let descriptor = FetchDescriptor<ScheduleGenerationRun>(
-            predicate: #Predicate<ScheduleGenerationRun> { $0.generatedAt < cutoff }
-        )
-        // MARK: try? justified - best-effort purge; nil result means nothing to purge.
-        guard let stale = try? modelContext.fetch(descriptor), !stale.isEmpty else { return }
-        for row in stale { modelContext.delete(row) }
-        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
-    }
 }

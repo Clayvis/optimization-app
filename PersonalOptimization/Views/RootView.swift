@@ -6,12 +6,37 @@ struct RootView: View {
     @Query private var profiles: [UserProfile]
     @State private var showTravelPrompt: Bool = false
 
+    /// Persistence rung the app launched on. Defaults to `.full` so previews
+    /// and any other callers compile unchanged; the app injects the real mode.
+    var persistenceMode: PersistenceMode = .full
+
+    /// Local-only sync banner is dismissible per launch.
+    @State private var showSyncBanner: Bool = true
+
     var body: some View {
+        switch persistenceMode {
+        case .recovery(let reason):
+            PersistenceRecoveryView(reason: reason)
+        case .full, .localOnly:
+            mainContent
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
         Group {
             if let profile = profiles.first, profile.onboardingCompleted {
                 tabRoot
             } else {
                 OnboardingView()
+            }
+        }
+        .overlay(alignment: .top) {
+            if case .localOnly(let reason) = persistenceMode, showSyncBanner {
+                ErrorBanner(message: reason) { showSyncBanner = false }
+                    .padding(.horizontal)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .accessibilityAddTraits(.isStaticText)
             }
         }
         .onAppear { checkTravelPrompt() }

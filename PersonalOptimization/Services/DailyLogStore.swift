@@ -35,7 +35,7 @@ final class DailyLogStore {
     func upsert(for date: Date) -> DailyLog {
         let day = calendar.startOfDay(for: date)
         let descriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
+            predicate: #Predicate<DailyLog> { $0.date == day && $0.supersededAt == nil }
         )
         if let existing = modelContext.fetchFirstOrNil(descriptor) {
             return existing
@@ -54,11 +54,17 @@ final class DailyLogStore {
 
     /// One-shot dedupe pass. Scans for DailyLog rows whose date keys collapse
     /// to the same calendar day under the store's calendar; merges the
-    /// duplicates and deletes them. Idempotent: re-running on a clean store
-    /// is a no-op. Caller is responsible for gating this on a UserDefaults
-    /// flag so it does not run on every launch.
+    /// duplicates into a canonical row. Non-destructive: duplicates are NOT
+    /// deleted (CLAUDE.md retention forbids deletes on this launch/background
+    /// path). Each duplicate is marked `supersededAt` and neutralized so it
+    /// contributes nothing to any aggregate while the row is retained.
+    /// Idempotent: already-superseded rows are skipped, so re-running is a
+    /// no-op. Caller gates this on a UserDefaults flag so it does not run on
+    /// every launch.
     func dedupe() throws {
-        let all = try modelContext.fetch(FetchDescriptor<DailyLog>(sortBy: [SortDescriptor(\.date, order: .forward)]))
+        let all = try modelContext
+            .fetch(FetchDescriptor<DailyLog>(sortBy: [SortDescriptor(\.date, order: .forward)]))
+            .filter { $0.supersededAt == nil }
         var byDay: [Date: [DailyLog]] = [:]
         for log in all {
             let day = calendar.startOfDay(for: log.date)
@@ -66,13 +72,17 @@ final class DailyLogStore {
         }
         var mergeCount = 0
         for (day, logs) in byDay where logs.count > 1 {
-            // Sort: canonical row is the first one (oldest by date, which is
-            // typically the one with the most filled fields). Merge the rest
-            // into it then delete them.
+            // Canonical row is the first one (oldest by date, typically the
+            // most filled). Merge the rest into it, then supersede them.
             let canonical = logs[0]
             for dup in logs.dropFirst() {
                 Self.merge(source: dup, into: canonical)
-                modelContext.delete(dup)
+                // Non-destructive supersede: the duplicate's data now lives in
+                // canonical. Neutralize the duplicate's fields so it adds zero
+                // to any sum even for readers that do not filter superseded
+                // rows, then stamp supersededAt. The row is retained.
+                Self.neutralize(dup)
+                dup.supersededAt = Date()
                 mergeCount += 1
             }
             // Pin the canonical row's date to the user-calendar start-of-day
@@ -80,7 +90,7 @@ final class DailyLogStore {
             canonical.date = day
         }
         if mergeCount > 0 {
-            logger.notice("DailyLogStore.dedupe merged \(mergeCount, privacy: .public) duplicate rows.")
+            logger.notice("DailyLogStore.dedupe superseded \(mergeCount, privacy: .public) duplicate rows (non-destructive).")
             try modelContext.save()
         }
     }
@@ -130,6 +140,51 @@ final class DailyLogStore {
         if target.timeInDaylightMinutes == nil { target.timeInDaylightMinutes = source.timeInDaylightMinutes }
         if target.stepCount == nil { target.stepCount = source.stepCount }
         if target.healthKitSyncedAt == nil { target.healthKitSyncedAt = source.healthKitSyncedAt }
+    }
+
+    /// Resets every measurement field on a superseded duplicate to its zero
+    /// value so the retained tombstone contributes nothing to any aggregate.
+    /// Must cover exactly the fields `merge` reads; keep the two in sync when a
+    /// DailyLog field is added. `date` is left intact so the row does not break
+    /// earliest-log scans; `supersededAt` is stamped by the caller.
+    private static func neutralize(_ log: DailyLog) {
+        log.fastStart = nil
+        log.fastEnd = nil
+        log.fastBrokeEarly = false
+        log.fastBreakReason = nil
+        log.waterOz = 0
+        log.electrolyteSessions = 0
+        log.japaneseMinutes = 0
+        log.guitarMinutes = 0
+        log.courseworkMinutes = 0
+        log.musicMinutes = 0
+        log.subjectiveEnergy = nil
+        log.achillesPain = nil
+        log.sleepHours = nil
+        log.restingHR = nil
+        log.hrvRmssd = nil
+        log.weightLbs = nil
+        log.notes = nil
+        log.respiratoryRate = nil
+        log.oxygenSaturationPercent = nil
+        log.bodyFatPercentage = nil
+        log.leanBodyMassLbs = nil
+        log.heartRateRecovery1minBpm = nil
+        log.appleExerciseMinutes = nil
+        log.appleStandHours = nil
+        log.distanceMeters = nil
+        log.environmentalAudioDb = nil
+        log.wristTemperatureCelsius = nil
+        log.mindfulMinutes = nil
+        log.dietaryKcal = nil
+        log.dietaryProteinG = nil
+        log.dietaryCarbsG = nil
+        log.dietaryFatG = nil
+        log.caffeineMg = nil
+        log.timeInDaylightMinutes = nil
+        log.stepCount = nil
+        log.healthKitSyncedAt = nil
+        log.metadataBlob = nil
     }
 }
 

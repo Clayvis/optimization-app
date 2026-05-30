@@ -53,6 +53,15 @@ final class DailyLog {
     /// Pattern lets us add fields without bumping the SwiftData schema.
     var metadataBlob: Data?
 
+    /// Non-nil when this row was a duplicate of another calendar-day row and
+    /// has been merged into the canonical one by `DailyLogStore.dedupe`. Its
+    /// measurement fields are neutralized (zeroed/niled) so it contributes
+    /// nothing to any aggregate. The row is retained (never deleted) per the
+    /// CLAUDE.md permanent-retention rule. `DailyLogStore.upsert` filters these
+    /// out so the writer never returns a tombstone. Optional with a nil default
+    /// so it lands as a lightweight in-place migration on the current schema.
+    var supersededAt: Date?
+
     init(date: Date, calendar: Calendar = .current) {
         self.date = calendar.startOfDay(for: date)
     }

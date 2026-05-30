@@ -50,6 +50,15 @@ enum IdentityCopy {
     static let travelBanner = "Travel mode active. Streaks paused, not faked."
     static let sickBanner = "Sick day. Today is covered. Rest up."
 
+    // MARK: - Streak mercy (design principle 2: streaks need mercy, made visible)
+
+    /// Reassures the user that missing a day will not erase their streak,
+    /// because freezes are available. Identity-framed: protection, not pressure.
+    static func streakFreezeAvailable(count: Int) -> String {
+        let noun = count == 1 ? "freeze" : "freezes"
+        return "\(count) streak \(noun) left this month. A missed day won't erase you."
+    }
+
     // MARK: - Mascot reasons (display-only, not load-bearing)
 
     static let mascotProudStreak = "You hit a streak milestone."

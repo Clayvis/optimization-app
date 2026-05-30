@@ -1,15 +1,14 @@
 import Foundation
 import SwiftData
-import os
 
 /// CRUD + retrieval for `CoachMemory`. Pulled into `CoachService.gatherFullContext`
 /// so the Coach can reference the user's stated context across days instead of
-/// starting cold every call. Auto-prunes expired rows on read so memory doesn't
-/// inflate.
+/// starting cold every call. Expired rows are filtered out at read time
+/// (non-destructive); they are retained in the store per the CLAUDE.md
+/// permanent-retention rule, not deleted.
 @MainActor
 final class CoachMemoryService {
     private let modelContext: ModelContext
-    private let logger = Logger(subsystem: BuildConfig.loggingSubsystem, category: "coach-memory")
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -19,7 +18,6 @@ final class CoachMemoryService {
     /// recency. Caller can take the top N when assembling a token-budgeted
     /// prompt block.
     func active(asOf date: Date = Date()) -> [CoachMemory] {
-        pruneExpired(asOf: date)
         let descriptor = FetchDescriptor<CoachMemory>(
             sortBy: [
                 SortDescriptor(\.importance, order: .reverse),
@@ -82,22 +80,6 @@ final class CoachMemoryService {
         }
         guard !lines.isEmpty else { return "" }
         return "User-supplied context to remember:\n" + lines.joined(separator: "\n")
-    }
-
-    private func pruneExpired(asOf date: Date) {
-        let descriptor = FetchDescriptor<CoachMemory>()
-        let all = modelContext.fetchOrEmpty(descriptor)
-        var pruned = 0
-        for memory in all {
-            if let expires = memory.expiresAt, expires <= date {
-                modelContext.delete(memory)
-                pruned += 1
-            }
-        }
-        if pruned > 0 {
-            try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
-            logger.info("Pruned \(pruned, privacy: .public) expired CoachMemory rows")
-        }
     }
 }
 

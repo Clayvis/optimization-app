@@ -8,6 +8,9 @@ import os
 @MainActor
 struct CharacterStateInputs {
     var now: Date
+    /// User's resolved timezone. Carried so the static resolvers do day/hour
+    /// math in the user's zone, not the device's (W6).
+    var timezone: TimeZone
     var profile: UserProfile?
     var todayLog: DailyLog?
     var hydrationTargetMin: Double         // floor that counts as "on track"
@@ -27,6 +30,7 @@ struct CharacterStateInputs {
 
     static let empty = CharacterStateInputs(
         now: Date(),
+        timezone: .current,
         profile: nil,
         todayLog: nil,
         hydrationTargetMin: 64,
@@ -84,11 +88,19 @@ final class CharacterStateService {
         self.modelContext = modelContext
         if let tz = timezone { self.timezone = tz }
         recompute(force: true)
-        // Subscribe to state-change events instead of polling. Workflows
-        // posting `userStateChanged` (water logged, fast ended, etc.) and
-        // HealthKitSyncService posting `dailyLogsRecomputed` after late
-        // samples land both bypass the cache window so the mascot reacts
-        // immediately.
+        // Subscribe to state-change events instead of polling.
+        //
+        // `userStateChanged` is a user action (water logged, fast ended) and is
+        // rare, so force an immediate recompute for instant mascot feedback.
+        //
+        // `dailyLogsRecomputed` fires from background HealthKit fan-out, which a
+        // single Garmin/Withings sync delivers as a burst of up to a dozen posts
+        // within seconds (C2). Force-recomputing on every one hammered the main
+        // actor with SwiftData fetches under a concurrent CloudKit merge. Route
+        // it through the normal cache window instead (force: false): the first
+        // post recomputes, the rest of the burst are cache hits, so the storm
+        // collapses to one recompute. Mascot state is daily-granularity, so the
+        // up-to-cacheWindow staleness on late samples is irrelevant.
         observers.append(NotificationCenter.default.addObserver(
             forName: .userStateChanged, object: nil, queue: .main
         ) { [weak self] _ in
@@ -97,7 +109,7 @@ final class CharacterStateService {
         observers.append(NotificationCenter.default.addObserver(
             forName: .dailyLogsRecomputed, object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.recompute(force: true) }
+            Task { @MainActor in self?.recompute(force: false) }
         })
     }
 
@@ -313,6 +325,7 @@ final class CharacterStateService {
 
         return CharacterStateInputs(
             now: now,
+            timezone: timezone,
             profile: profile,
             todayLog: todayLog,
             hydrationTargetMin: hydrationFloor,
@@ -334,7 +347,7 @@ final class CharacterStateService {
 
     private static func hydrationFarBehindEvening(inputs: CharacterStateInputs) -> Bool {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone.current
+        cal.timeZone = inputs.timezone
         let hour = cal.component(.hour, from: inputs.now)
         guard hour >= 18 else { return false }
         guard let log = inputs.todayLog else { return false }
