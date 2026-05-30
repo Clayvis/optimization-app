@@ -70,6 +70,9 @@ Allowed deletions (explicit user actions only):
 - ScheduleSeed.resetToDefault (preserves user-marked isCustom blocks)
 - JSONImportService.replaceAll (called only when user imports a file)
 - KeychainService.deleteApiKey (Settings -> AI -> Remove API key)
+- CoachMemoryService.add key-dedupe (the user replaces a keyed note; the prior row for that key is removed on the user's explicit save)
+
+Non-destructive by construction (2026-05-30 stability pass, decision 013): DailyLog dedupe no longer deletes duplicates. It merges each duplicate into the canonical row, then marks the duplicate `supersededAt` and neutralizes its fields, so a retained tombstone contributes zero to any aggregate. CoachMemory expired rows are filtered at read time, not deleted. ScheduleGenerationRun.purgeStale was removed (it was dormant and would have violated retention the moment it was wired). No non-user-action delete path remains in the codebase.
 
 ActivityArchive (added M3.7) is an additive rollup; it does not replace or supersede source-of-truth session rows. Source rows remain intact even if archives are corrupted or migrated.
 

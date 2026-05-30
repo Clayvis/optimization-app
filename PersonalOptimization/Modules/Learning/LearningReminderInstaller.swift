@@ -9,15 +9,24 @@ enum LearningReminderInstaller {
     static func scheduleNext7Days(notification: NotificationService,
                                   scheduleFile: DefaultScheduleFile,
                                   asOf: Date = Date(),
-                                  timezone: TimeZone = TimeZone.current) async throws -> [String] {
+                                  timezone: TimeZone = TimeZone.current,
+                                  history: [CompletionHistory] = []) async throws -> [String] {
         let times = LearningReminderScheduler.plannedTimes(scheduleFile: scheduleFile)
         let upcoming = LearningReminderScheduler.upcomingDates(from: times, startingFrom: asOf, timezone: timezone)
         var ids: [String] = []
         for (time, date) in upcoming {
+            // Design Principle 3 (suppress if logged): skip a reminder for any
+            // day the learning domain is already satisfied. For future days the
+            // history holds nothing, so only today's redundant nudge is cut.
+            if AdaptiveNotificationTiming.shouldSuppressIfAlreadyLogged(
+                domain: .learning, history: history, asOf: date, timezone: timezone) {
+                continue
+            }
             let id = try await notification.scheduleLearningReminder(
                 at: date,
                 moduleName: time.module.displayName,
-                targetMinutes: time.module.defaultDailyTargetMinutes
+                targetMinutes: time.module.defaultDailyTargetMinutes,
+                timezone: timezone
             )
             ids.append(id)
         }

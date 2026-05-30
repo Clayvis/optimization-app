@@ -38,6 +38,15 @@ final class FastingService {
         self.defaults = defaults
     }
 
+    /// Gregorian calendar pinned to the user's timezone. Use for day arithmetic
+    /// so adding/subtracting a day crosses DST correctly (a calendar day can be
+    /// 23 or 25 hours), unlike a raw 86400-second offset.
+    private var userCalendar: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = timezone
+        return cal
+    }
+
     /// Computes the fast window that begins on the day of `date` based on profile phase.
     func windowStartingOnDay(of date: Date, profile: UserProfile) -> FastWindow {
         let weekday = isoWeekday(for: date)
@@ -81,7 +90,7 @@ final class FastingService {
         if (today.start...today.end).contains(date) {
             return today
         }
-        let yesterday = date.addingTimeInterval(-86400)
+        let yesterday = userCalendar.date(byAdding: .day, value: -1, to: date) ?? date
         let prior = windowStartingOnDay(of: yesterday, profile: profile)
         if (prior.start...prior.end).contains(date) {
             return prior
@@ -95,7 +104,7 @@ final class FastingService {
         if today.start > date {
             return today
         }
-        let tomorrow = date.addingTimeInterval(86400)
+        let tomorrow = userCalendar.date(byAdding: .day, value: 1, to: date) ?? date
         return windowStartingOnDay(of: tomorrow, profile: profile)
     }
 
@@ -152,7 +161,7 @@ final class FastingService {
            today.fastStart != nil, today.fastEnd == nil {
             return today
         }
-        let prior = date.addingTimeInterval(-86400)
+        let prior = userCalendar.date(byAdding: .day, value: -1, to: date) ?? date
         if let yesterday = currentDailyLog(for: prior),
            yesterday.fastStart != nil, yesterday.fastEnd == nil {
             return yesterday

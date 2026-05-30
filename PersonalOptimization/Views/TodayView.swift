@@ -403,6 +403,13 @@ struct TodayView: View {
         let workout = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
         let hydration = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0
         let learning = counters.first { $0.domain == StreakDomain.learning.rawValue }?.currentStreak ?? 0
+        // Design Principle 2 (streaks need mercy, made visible): smallest freeze
+        // balance across the shown domains so the count never over-promises.
+        let freezesLeft = [
+            counters.first { $0.domain == StreakDomain.workout.rawValue }?.freezesAvailable,
+            counters.first { $0.domain == StreakDomain.hydration.rawValue }?.freezesAvailable,
+            counters.first { $0.domain == StreakDomain.learning.rawValue }?.freezesAvailable
+        ].compactMap { $0 }.min()
 
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
@@ -416,6 +423,17 @@ struct TodayView: View {
                 streakChip(label: "Workout", days: workout, systemImage: "figure.strengthtraining.traditional")
                 streakChip(label: "Hydration", days: hydration, systemImage: "drop.fill")
                 streakChip(label: "Learning", days: learning, systemImage: "book.fill")
+            }
+            if let freezesLeft, freezesLeft > 0 {
+                HStack(spacing: 4) {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                    Text(IdentityCopy.streakFreezeAvailable(count: freezesLeft))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
             }
         }
         .padding(12)

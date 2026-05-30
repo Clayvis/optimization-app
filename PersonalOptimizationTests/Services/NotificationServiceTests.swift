@@ -160,7 +160,7 @@ final class NotificationServiceTests: XCTestCase {
 
     func test_scheduleFastStart_addsRequest() async throws {
         let date = jstDate(2026, 5, 4, 22, 0)
-        let id = try await service.scheduleFastStart(at: date, label: "training")
+        let id = try await service.scheduleFastStart(at: date, label: "training", timezone: jst)
         XCTAssertTrue(id.hasPrefix("fast.start"))
         XCTAssertEqual(fake.addedRequests.count, 1)
         XCTAssertEqual(fake.addedRequests.first?.content.categoryIdentifier, NotificationIdentifier.fastStartCategory)
@@ -168,14 +168,36 @@ final class NotificationServiceTests: XCTestCase {
 
     func test_scheduleFastEnd_addsRequest() async throws {
         let date = jstDate(2026, 5, 5, 9, 0)
-        let id = try await service.scheduleFastEnd(at: date, label: "training")
+        let id = try await service.scheduleFastEnd(at: date, label: "training", timezone: jst)
         XCTAssertTrue(id.hasPrefix("fast.end"))
         XCTAssertEqual(fake.addedRequests.count, 1)
     }
 
+    // W3: re-scheduling the same behavior on the same local day replaces rather
+    // than stacks (cancel-before-schedule + stable id).
+    func test_scheduleFastStart_isIdempotentPerDay() async throws {
+        let morning = jstDate(2026, 5, 4, 21, 0)
+        let later = jstDate(2026, 5, 4, 21, 30)
+        let id1 = try await service.scheduleFastStart(at: morning, label: "training", timezone: jst)
+        let id2 = try await service.scheduleFastStart(at: later, label: "training", timezone: jst)
+        XCTAssertEqual(id1, id2, "Same behavior + local day must share a stable id.")
+        XCTAssertEqual(fake.addedRequests.count, 1, "Re-scheduling must replace, not stack.")
+    }
+
+    // W2: the calendar trigger fires at the user's wall-clock time, carrying the
+    // user's timezone rather than the device's.
+    func test_scheduleFastStart_triggerUsesUserTimezone() async throws {
+        let date = jstDate(2026, 5, 4, 22, 0)
+        _ = try await service.scheduleFastStart(at: date, label: "training", timezone: jst)
+        let trigger = fake.addedRequests.first?.trigger as? UNCalendarNotificationTrigger
+        XCTAssertEqual(trigger?.dateComponents.timeZone, jst)
+        XCTAssertEqual(trigger?.dateComponents.hour, 22)
+        XCTAssertEqual(trigger?.dateComponents.minute, 0)
+    }
+
     func test_cancel_removesPendingRequests() async throws {
         let date = jstDate(2026, 5, 4, 22, 0)
-        let id = try await service.scheduleFastStart(at: date, label: "training")
+        let id = try await service.scheduleFastStart(at: date, label: "training", timezone: jst)
         XCTAssertEqual(fake.addedRequests.count, 1)
         service.cancel(identifiers: [id])
         XCTAssertEqual(fake.addedRequests.count, 0)
