@@ -141,13 +141,38 @@ final class HealthKitObserverService {
 
     private func handleUpdate() async {
         guard let container = modelContainer else { return }
-        let sync = HealthKitSyncService(modelContext: container.mainContext)
+        let context = container.mainContext
+        let sync = HealthKitSyncService(modelContext: context)
         // 7 day window covers Garmin's typical late-upload behavior plus
         // weekend / travel gaps.
         await sync.syncRange(days: 7)
+        // Import any workouts the Watch or a third-party app recorded so the
+        // app realizes the user trained without them opening it and starting a
+        // manual timer. Deduped by HealthKit UUID, so it is safe on every fire.
+        await importRecentWorkouts(modelContext: context)
         // Test hook: fire a notification so tests can assert the observer
         // path reached the sync layer without depending on SwiftData state.
         NotificationCenter.default.post(name: .healthKitObserverDidFire, object: nil)
+    }
+
+    /// Pull the last 7 days of HKWorkout samples and import any not already in
+    /// the ledger. No-op when HealthKit is unauthorized (fetch returns empty).
+    private func importRecentWorkouts(modelContext: ModelContext) async {
+        let end = Date()
+        let start = Calendar.current.date(byAdding: .day, value: -7, to: end) ?? end
+        do {
+            let workouts = try await LiveHealthKitService.shared
+                .fetchWorkouts(in: DateInterval(start: start, end: end))
+            let imported = workouts.compactMap { ImportedWorkout(hkWorkout: $0) }
+            let count = try WorkoutImportService.forUser(modelContext: modelContext)
+                .importWorkouts(imported)
+            if count > 0 {
+                // Rederive streaks + character state now that new workouts landed.
+                NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
+            }
+        } catch {
+            logger.warning("Workout import failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }
 

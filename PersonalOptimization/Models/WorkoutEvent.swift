@@ -19,10 +19,22 @@ final class WorkoutEvent {
     var source: String = WorkoutEventSource.lift.rawValue
     var sourceID: UUID?
 
-    init(date: Date, completed: Bool, source: WorkoutEventSource, sourceID: UUID? = nil) {
+    /// HealthKit workout sample UUID when this event was imported by observing
+    /// HKWorkout (Apple Watch or a third-party app); nil for in-app logs. Used
+    /// to dedupe imports so the same workout is never counted twice. Optional
+    /// with a nil default, so it lands as a lightweight in-place SwiftData
+    /// migration on the current schema (same pattern as DailyLog.supersededAt).
+    var hkWorkoutUUID: UUID?
+
+    init(date: Date,
+         completed: Bool,
+         source: WorkoutEventSource,
+         sourceID: UUID? = nil,
+         hkWorkoutUUID: UUID? = nil) {
         self.date = date
         self.completed = completed
         self.source = source.rawValue
         self.sourceID = sourceID
+        self.hkWorkoutUUID = hkWorkoutUUID
     }
 }

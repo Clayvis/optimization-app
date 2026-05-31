@@ -204,3 +204,60 @@ struct TellCoachIntent: AppIntent {
     }
 }
 #endif
+
+// MARK: - Workout
+
+/// Zero-friction "I just worked out" log. Credits the day's workout without the
+/// timer-based session UI, for the common case where the user trained but did
+/// not run an in-app session (and the Watch/HealthKit import has not landed yet).
+/// Deduped naturally: an imported HealthKit workout and this manual log both
+/// create a WorkoutEvent for the day, and the streak counts the day, not rows.
+struct LogWorkoutIntent: AppIntent {
+    static let title: LocalizedStringResource = "Log a workout"
+    static let description = IntentDescription("Records that you completed a workout today. No timer needed.")
+
+    @Parameter(title: "Type", default: .lift)
+    var type: WorkoutTypeOption
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Log a \(\.$type) workout")
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard let wrapper = ModelContainerWrapper.shared else {
+            return .result(dialog: "Couldn't open the database.")
+        }
+        let context = wrapper.mainContext
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = UserCalendar.timezone(modelContext: context)
+        let day = cal.startOfDay(for: Date())
+        context.insert(WorkoutEvent(date: day, completed: true, source: type.toSource()))
+        CompletionHistoryWriter.record(domain: .workout, at: Date(), modelContext: context)
+        // MARK: try? save() is best-effort. CompletionHistoryWriter already saved; failures surface via os_log.
+        try? context.save()
+        NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
+        return .result(dialog: "\(IdentityCopy.workoutLogged)")
+    }
+}
+
+enum WorkoutTypeOption: String, AppEnum {
+    case lift, basketball, swim, cardio
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Workout type"
+    static let caseDisplayRepresentations: [WorkoutTypeOption: DisplayRepresentation] = [
+        .lift:       "lift",
+        .basketball: "basketball",
+        .swim:       "swim",
+        .cardio:     "cardio"
+    ]
+
+    func toSource() -> WorkoutEventSource {
+        switch self {
+        case .lift:       return .lift
+        case .basketball: return .basketball
+        case .swim:       return .swim
+        case .cardio:     return .custom
+        }
+    }
+}
