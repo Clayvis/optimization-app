@@ -171,6 +171,8 @@ targets:
         name: SharedEngagement
       - path: PersonalOptimization/Modules/Engagement/SessionLifecycleService.swift
         name: SharedEngagement
+      - path: PersonalOptimization/Modules/Engagement/IdentityCopy.swift
+        name: SharedEngagement
       - path: PersonalOptimization/Services/BuildConfig.swift
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/SwiftDataHelpers.swift
@@ -181,6 +183,7 @@ targets:
       - path: PersonalOptimization/Services/UserCalendar.swift
       - path: PersonalOptimization/Services/DailyLogStore.swift
       - path: PersonalOptimization/Services/HandoffService.swift
+      - path: PersonalOptimization/Services/PersistenceBootstrap.swift
       - path: PersonalOptimization/AppIntents
         name: SharedAppIntents
     resources:
