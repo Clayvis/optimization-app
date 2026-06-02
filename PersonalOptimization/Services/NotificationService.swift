@@ -75,7 +75,12 @@ enum NotificationSuppressionRules {
 
 protocol NotificationCenterProtocol: AnyObject, Sendable {
     func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool
-    func add(_ request: UNNotificationRequest) async throws
+    // `sending`: the @MainActor NotificationService.schedule* methods build a
+    // UNNotificationRequest locally and transfer it into the nonisolated center.
+    // Without `sending`, Swift 6 region isolation reports "Sending 'request'
+    // risks causing data races" (surfaced on the Xcode 26.5 Release archive,
+    // exit code 65). The request is not used after the call, so the transfer is safe.
+    func add(_ request: sending UNNotificationRequest) async throws
     func setNotificationCategories(_ categories: Set<UNNotificationCategory>)
     func removePendingNotificationRequests(withIdentifiers: [String])
     func pendingNotificationRequests() async -> [UNNotificationRequest]
@@ -88,7 +93,7 @@ final class LiveNotificationCenter: NotificationCenterProtocol, @unchecked Senda
         try await center.requestAuthorization(options: options)
     }
 
-    func add(_ request: UNNotificationRequest) async throws {
+    func add(_ request: sending UNNotificationRequest) async throws {
         try await center.add(request)
     }
 

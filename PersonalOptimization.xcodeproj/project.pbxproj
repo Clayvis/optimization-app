@@ -559,7 +559,7 @@
 		1E74DAEF2EE8233EFEEF488C /* ScheduleValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleValidatorTests.swift; sourceTree = "<group>"; };
 		1F314247853D2FD971ACFBD7 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
 		1F84967C0773B287E1F8B349 /* ProtocolDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolDetailView.swift; sourceTree = "<group>"; };
-		206905E3BDC577894B8FAD18 /* PersonalOptimizationTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PersonalOptimizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		206905E3BDC577894B8FAD18 /* PersonalOptimizationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PersonalOptimizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		21796439F3D7569CB9B4EF96 /* default_schedule_blank.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_schedule_blank.json; sourceTree = "<group>"; };
 		21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationServiceTests.swift; sourceTree = "<group>"; };
 		23798FA0B131D274D6260D79 /* ImplementationIntentionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImplementationIntentionService.swift; sourceTree = "<group>"; };
@@ -571,7 +571,7 @@
 		2980B95DAC2C5D2BF8D46211 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		29B2ED03B44C2BC7563DECA8 /* JSONImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONImportService.swift; sourceTree = "<group>"; };
 		29B56E873F82EA629BB4C40F /* StreakDomain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakDomain.swift; sourceTree = "<group>"; };
-		2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PersonalOptimizationLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PersonalOptimizationLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityCopy.swift; sourceTree = "<group>"; };
 		2CADA8B9C2AAA96402E53588 /* WorkoutEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEvent.swift; sourceTree = "<group>"; };
 		2D40B9372BED9F244BF4A78F /* DSTBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTBoundaryTests.swift; sourceTree = "<group>"; };
@@ -722,7 +722,7 @@
 		B2BA26E7796EB71FC1E0CB0A /* DailyProgressBars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyProgressBars.swift; sourceTree = "<group>"; };
 		B51542D012807C71EE967904 /* HydrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationView.swift; sourceTree = "<group>"; };
 		B5F86301E221611C7691EFE2 /* BasketballWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballWatchView.swift; sourceTree = "<group>"; };
-		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B79525ED54C2630347BC1E7F /* ScheduleSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSuggestion.swift; sourceTree = "<group>"; };
 		B8D93A5E5FE30970CCC17B9A /* AchievementRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementRegistry.swift; sourceTree = "<group>"; };
 		B8DE71D468B74D040F0520D0 /* LearningService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningService.swift; sourceTree = "<group>"; };
@@ -786,7 +786,7 @@
 		F700BEF1126D09AA6348B99D /* ScheduleAnchorEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleAnchorEditorView.swift; sourceTree = "<group>"; };
 		F8784746AB1A5E716335FC51 /* JSONExportImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONExportImportTests.swift; sourceTree = "<group>"; };
 		F885F8A95056A831CDE7B512 /* ScheduleValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleValidator.swift; sourceTree = "<group>"; };
-		F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F9138460973370757A950626 /* BasketballService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballService.swift; sourceTree = "<group>"; };
 		FAACB6357D02C25F3F4541A0 /* ScheduleGenerationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleGenerationView.swift; sourceTree = "<group>"; };
 		FBB5606768832CD31284D286 /* LearningModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningModule.swift; sourceTree = "<group>"; };
@@ -1577,7 +1577,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2640;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					64278B1349F1AAB7E16AFDA2 = {
 						DevelopmentTeam = "";
@@ -2136,6 +2136,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -2188,6 +2189,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -2284,6 +2286,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -2343,6 +2346,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = complete;

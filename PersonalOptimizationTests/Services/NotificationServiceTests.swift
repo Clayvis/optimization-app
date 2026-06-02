@@ -84,7 +84,7 @@ final class FakeNotificationCenter: NotificationCenterProtocol, @unchecked Senda
         return grantAuthorization
     }
 
-    func add(_ request: UNNotificationRequest) async throws {
+    func add(_ request: sending UNNotificationRequest) async throws {
         addedRequests.append(request)
     }
 
