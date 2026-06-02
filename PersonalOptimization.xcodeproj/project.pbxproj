@@ -211,6 +211,7 @@
 		804602218C61E851AA9FBBB7 /* CoachServiceV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C173E33E25CD319154523F5 /* CoachServiceV2Tests.swift */; };
 		80F190EC809095AAF10F7623 /* DailySummaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AD938A95999E64B4E2A26F2 /* DailySummaryService.swift */; };
 		819FF06C908089F663E029A5 /* LiftSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177EF30368767AF7EBD3F9D1 /* LiftSession.swift */; };
+		81B382CA02243FA5AFBFAC4D /* LogFeedbackCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D97F0615C1D2C8E629C624 /* LogFeedbackCenter.swift */; };
 		81C4F39DE3BE103351879422 /* SchemaV4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D082A46276FE47429C48D8 /* SchemaV4.swift */; };
 		81D0F29D44B34A0DCC617BFE /* HydrationEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A58FDE761FD415973D33B2 /* HydrationEntry.swift */; };
 		82082086900D7DA033787E62 /* HandoffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4974834FAD6CC2D925CB5C13 /* HandoffService.swift */; };
@@ -559,9 +560,10 @@
 		1E74DAEF2EE8233EFEEF488C /* ScheduleValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleValidatorTests.swift; sourceTree = "<group>"; };
 		1F314247853D2FD971ACFBD7 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
 		1F84967C0773B287E1F8B349 /* ProtocolDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolDetailView.swift; sourceTree = "<group>"; };
-		206905E3BDC577894B8FAD18 /* PersonalOptimizationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PersonalOptimizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		206905E3BDC577894B8FAD18 /* PersonalOptimizationTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PersonalOptimizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		21796439F3D7569CB9B4EF96 /* default_schedule_blank.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_schedule_blank.json; sourceTree = "<group>"; };
 		21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationServiceTests.swift; sourceTree = "<group>"; };
+		22D97F0615C1D2C8E629C624 /* LogFeedbackCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogFeedbackCenter.swift; sourceTree = "<group>"; };
 		23798FA0B131D274D6260D79 /* ImplementationIntentionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImplementationIntentionService.swift; sourceTree = "<group>"; };
 		242FCE6D86BAB838E4FD1826 /* InMemoryContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryContainer.swift; sourceTree = "<group>"; };
 		256B1B8FB28C96B3F972B502 /* ArchiveBackgroundScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveBackgroundScheduler.swift; sourceTree = "<group>"; };
@@ -571,7 +573,7 @@
 		2980B95DAC2C5D2BF8D46211 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		29B2ED03B44C2BC7563DECA8 /* JSONImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONImportService.swift; sourceTree = "<group>"; };
 		29B56E873F82EA629BB4C40F /* StreakDomain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakDomain.swift; sourceTree = "<group>"; };
-		2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PersonalOptimizationLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PersonalOptimizationLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityCopy.swift; sourceTree = "<group>"; };
 		2CADA8B9C2AAA96402E53588 /* WorkoutEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEvent.swift; sourceTree = "<group>"; };
 		2D40B9372BED9F244BF4A78F /* DSTBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTBoundaryTests.swift; sourceTree = "<group>"; };
@@ -722,7 +724,7 @@
 		B2BA26E7796EB71FC1E0CB0A /* DailyProgressBars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyProgressBars.swift; sourceTree = "<group>"; };
 		B51542D012807C71EE967904 /* HydrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationView.swift; sourceTree = "<group>"; };
 		B5F86301E221611C7691EFE2 /* BasketballWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballWatchView.swift; sourceTree = "<group>"; };
-		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B68F807399134D4E375D023D /* PersonalOptimization.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PersonalOptimization.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B79525ED54C2630347BC1E7F /* ScheduleSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSuggestion.swift; sourceTree = "<group>"; };
 		B8D93A5E5FE30970CCC17B9A /* AchievementRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementRegistry.swift; sourceTree = "<group>"; };
 		B8DE71D468B74D040F0520D0 /* LearningService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningService.swift; sourceTree = "<group>"; };
@@ -786,7 +788,7 @@
 		F700BEF1126D09AA6348B99D /* ScheduleAnchorEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleAnchorEditorView.swift; sourceTree = "<group>"; };
 		F8784746AB1A5E716335FC51 /* JSONExportImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONExportImportTests.swift; sourceTree = "<group>"; };
 		F885F8A95056A831CDE7B512 /* ScheduleValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleValidator.swift; sourceTree = "<group>"; };
-		F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		F8AB7BC817F9F230AE992431 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F9138460973370757A950626 /* BasketballService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballService.swift; sourceTree = "<group>"; };
 		FAACB6357D02C25F3F4541A0 /* ScheduleGenerationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleGenerationView.swift; sourceTree = "<group>"; };
 		FBB5606768832CD31284D286 /* LearningModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningModule.swift; sourceTree = "<group>"; };
@@ -1165,6 +1167,7 @@
 				2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */,
 				23798FA0B131D274D6260D79 /* ImplementationIntentionService.swift */,
 				A72C1D5E3B84432188471411 /* LapseDetectionService.swift */,
+				22D97F0615C1D2C8E629C624 /* LogFeedbackCenter.swift */,
 				1C911AE0F6F2ABBA7558A305 /* MilestoneRegistry.swift */,
 				F05848408357125EDFCFDB85 /* PartnerService.swift */,
 				05D28643EE501CEAEE75175E /* PersonaBehavioralInference.swift */,
@@ -1577,7 +1580,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2650;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					64278B1349F1AAB7E16AFDA2 = {
 						DevelopmentTeam = "";
@@ -1814,6 +1817,7 @@
 				AD88BE9E2BDDECB2D60AE0F1 /* LiftSession.swift in Sources */,
 				C5BA41A3F3A0B7CF1D2B3770 /* LiftSessionView.swift in Sources */,
 				9DAA02CAB65E37762DBB85A0 /* LiftTemplates.swift in Sources */,
+				81B382CA02243FA5AFBFAC4D /* LogFeedbackCenter.swift in Sources */,
 				F41B28335A6D3E7106DE4A31 /* Logger+Categories.swift in Sources */,
 				571FF677C2495690ED8692FB /* MascotVariantPickerView.swift in Sources */,
 				B95C69DC0C8DFA2E050E53C8 /* MilestoneCelebrationSheet.swift in Sources */,
@@ -2136,7 +2140,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -2189,7 +2192,6 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -2286,7 +2288,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -2346,7 +2347,6 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = complete;

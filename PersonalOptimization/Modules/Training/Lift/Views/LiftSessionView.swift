@@ -383,6 +383,7 @@ struct LiftSessionView: View {
             try service.endSession(session, durationMinutes: durationMinutes)
             await WorkoutLiveActivityController.endAll()
             completionCount &+= 1
+            LogFeedbackCenter.shared.confirm(IdentityCopy.workoutLogged)
             dismiss()
         } catch {
             loadError = error.localizedDescription

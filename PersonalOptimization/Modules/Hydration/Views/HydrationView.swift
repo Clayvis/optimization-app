@@ -179,6 +179,7 @@ struct HydrationView: View {
                         _ = try? service.logBeverage(amountOz: oz, beverageType: customBeverage)  // MARK: try? justified - best-effort; failure logged inside the called function.
                         refreshTrigger += 1
                         celebrationTrigger += 1
+                        LogFeedbackCenter.shared.confirm(IdentityCopy.hydrationLogged)
                     } label: {
                         VStack(spacing: 2) {
                             Text("\(Int(oz))")
@@ -253,6 +254,7 @@ struct HydrationView: View {
                 _ = try? service.logElectrolyte()  // MARK: try? justified - best-effort; failure logged inside the called function.
                 refreshTrigger += 1
                 celebrationTrigger += 1
+                LogFeedbackCenter.shared.confirm(IdentityCopy.hydrationLogged)
             } label: {
                 Label("Log", systemImage: "plus.circle.fill")
                     .padding(.horizontal, 12)
@@ -327,6 +329,8 @@ struct HydrationView: View {
         }
         customAmount = 0
         refreshTrigger += 1
+        celebrationTrigger += 1
+        LogFeedbackCenter.shared.confirm(IdentityCopy.hydrationLogged)
     }
 
     private func iconFor(beverage: BeverageType) -> String {

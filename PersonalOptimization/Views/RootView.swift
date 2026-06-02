@@ -113,6 +113,8 @@ struct RootView: View {
                     Label("Settings", systemImage: "gearshape.fill")
                 }
         }
+        // Global in-the-moment log confirmation banner (identity copy + haptic).
+        .logFeedbackOverlay()
     }
 
     /// One-shot prompt: if the device's tz differs from the profile's pinned

@@ -93,6 +93,7 @@ struct LearningTimerView: View {
         // try? justified: SwiftData local write; failures already logged inside the
         // service and are not user-actionable in this UI.
         _ = try? service.logMinutes(module: module, minutes: minutes)  // MARK: try? justified - best-effort; failure logged inside the called function.
+        LogFeedbackCenter.shared.confirm(IdentityCopy.learningLogged)
     }
 
     private func openPimsleur() {

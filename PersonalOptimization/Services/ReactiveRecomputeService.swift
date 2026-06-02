@@ -35,10 +35,20 @@ final class ReactiveRecomputeService {
     func start(modelContainer: ModelContainer) {
         self.modelContainer = modelContainer
         stop()
+        // HealthKit fan-out is bursty, so the HK-sourced signal is throttled.
         observers.append(NotificationCenter.default.addObserver(
             forName: .dailyLogsRecomputed, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.runIfNotThrottled() }
+        })
+        // A foreground log (water, fast, learning, lift) is a rare, deliberate
+        // user action, so recompute the streak counters immediately with no
+        // throttle. This is what makes the streak chips and master metric move
+        // the instant the user taps, rather than on the next HealthKit sync.
+        observers.append(NotificationCenter.default.addObserver(
+            forName: .userStateChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.run() }
         })
     }
 
@@ -59,12 +69,19 @@ final class ReactiveRecomputeService {
         if let last = lastRunAt, Date().timeIntervalSince(last) < throttleWindow {
             return
         }
+        run()
+    }
+
+    /// Recomputes every streak domain from source. Call directly for foreground
+    /// user actions (no throttle); `runIfNotThrottled` gates the bursty HK path.
+    private func run() {
         lastRunAt = Date()
         guard let container = modelContainer else { return }
         let context = container.mainContext
 
-        // Recompute every streak domain so a late-arriving HK workout, sleep,
-        // or weight sample updates the persistent counter the UI reads from.
+        // Recompute every streak domain so a foreground log, or a late-arriving
+        // HK workout / sleep / weight sample, updates the persistent counter the
+        // UI reads from.
         let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz  // MARK: try? justified - best-effort decode/fetch; nil result is acceptable.
         let streakService = StreakService(
             modelContext: context,
@@ -73,6 +90,6 @@ final class ReactiveRecomputeService {
         for domain in StreakDomain.allCases {
             _ = try? streakService.recompute(domain: domain)  // MARK: try? justified - best-effort; failure logged inside the called function.
         }
-        logger.info("ReactiveRecomputeService recomputed \(StreakDomain.allCases.count, privacy: .public) streak domains after dailyLogsRecomputed.")
+        logger.info("ReactiveRecomputeService recomputed \(StreakDomain.allCases.count, privacy: .public) streak domains.")
     }
 }

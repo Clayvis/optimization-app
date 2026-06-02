@@ -6,6 +6,7 @@ struct TodayView: View {
     @Query private var profiles: [UserProfile]
     @State private var now: Date = Date()
     @State private var characterService = CharacterStateService.shared
+    @State private var logFeedback = LogFeedbackCenter.shared
     @State private var hkSyncService: HealthKitSyncService?
     @State private var showingProtocolDetail = false
     @State private var quoteService = DailyQuoteService()
@@ -366,6 +367,9 @@ struct TodayView: View {
     }
 
     private var masterMetricCard: some View {
+        // Rederive the instant a log is confirmed (LogFeedbackCenter bumps its
+        // token on every confirm), not only on the 60-second tick.
+        _ = logFeedback.token
         let tally = dailySummary.todayProtocol(asOf: now)
         return Button {
             showingProtocolDetail = true
@@ -399,6 +403,10 @@ struct TodayView: View {
     /// chips with active streaks; muted otherwise so non-streaks don't shout.
     @ViewBuilder
     private var streakStrip: some View {
+        // Rederive when a log is confirmed so the chips reflect the freshly
+        // recomputed StreakCounter rows (ReactiveRecomputeService runs on the
+        // same .userStateChanged signal).
+        let _ = logFeedback.token
         let counters = modelContext.fetchOrEmpty(FetchDescriptor<StreakCounter>())
         let workout = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
         let hydration = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0

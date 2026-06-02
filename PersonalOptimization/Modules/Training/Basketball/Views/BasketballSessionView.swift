@@ -113,6 +113,7 @@ struct BasketballSessionView: View {
                                           hydrationOz: hydrationOz)
             await WorkoutLiveActivityController.endAll()
             ended = true
+            LogFeedbackCenter.shared.confirm(IdentityCopy.workoutLogged)
             dismiss()
         } catch {
             // Logged inside service.

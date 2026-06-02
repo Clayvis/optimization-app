@@ -237,6 +237,7 @@ struct SwimSessionView: View {
             try service.endSession(session, durationMinutes: mins)
             await WorkoutLiveActivityController.endAll()
             completionCount &+= 1
+            LogFeedbackCenter.shared.confirm(IdentityCopy.workoutLogged)
             dismiss()
         } catch {
             // logged inside service

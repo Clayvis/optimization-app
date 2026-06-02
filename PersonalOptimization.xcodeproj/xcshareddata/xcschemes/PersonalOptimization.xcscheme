@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "2650"
-   version = "1.3">
+   LastUpgradeVersion = "2640"
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      runPostActionsOnFailure = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -38,15 +39,6 @@
             ReferencedContainer = "container:PersonalOptimization.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <CodeCoverageTargets>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "692B5EE5792A31D5D1CC07D5"
-            BuildableName = "PersonalOptimization.app"
-            BlueprintName = "PersonalOptimization"
-            ReferencedContainer = "container:PersonalOptimization.xcodeproj">
-         </BuildableReference>
-      </CodeCoverageTargets>
       <Testables>
          <TestableReference
             skipped = "NO"
@@ -60,6 +52,17 @@
             </BuildableReference>
          </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
+      <CodeCoverageTargets>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "692B5EE5792A31D5D1CC07D5"
+            BuildableName = "PersonalOptimization.app"
+            BlueprintName = "PersonalOptimization"
+            ReferencedContainer = "container:PersonalOptimization.xcodeproj">
+         </BuildableReference>
+      </CodeCoverageTargets>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -81,6 +84,8 @@
             ReferencedContainer = "container:PersonalOptimization.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -98,6 +103,8 @@
             ReferencedContainer = "container:PersonalOptimization.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

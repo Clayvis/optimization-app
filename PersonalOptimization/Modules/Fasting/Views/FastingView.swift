@@ -257,6 +257,7 @@ private struct ManualEndSheet: View {
                         _ = try? service.endManualFast(reason: reason.isEmpty ? nil : reason)  // MARK: try? justified - best-effort; failure logged inside the called function.
                         Task { await FastingLiveActivityController.endAll() }
                         onConfirm(reason.isEmpty ? nil : reason)
+                        LogFeedbackCenter.shared.confirm(reason.isEmpty ? IdentityCopy.fastClosed : IdentityCopy.fastBrokeEarly)
                         dismiss()
                     }
                 }
@@ -311,6 +312,7 @@ private struct EarlyBreakSheet: View {
         // unchanged state. Errors logged inside the service.
         try? service.logEarlyBreak(at: Date(), reason: reason, profile: profile)  // MARK: try? justified - best-effort; failure logged inside the called function.
         Task { await FastingLiveActivityController.endAll() }
+        LogFeedbackCenter.shared.confirm(IdentityCopy.fastBrokeEarly)
         dismiss()
     }
 }

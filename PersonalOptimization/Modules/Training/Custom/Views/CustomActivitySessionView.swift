@@ -137,6 +137,7 @@ struct CustomActivitySessionView: View {
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes
             )
             completionCount &+= 1
+            LogFeedbackCenter.shared.confirm(IdentityCopy.workoutLogged)
             dismiss()
         } catch {
             // Logged in service.
