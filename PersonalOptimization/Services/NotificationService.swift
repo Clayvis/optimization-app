@@ -221,7 +221,7 @@ final class NotificationService {
     /// user's `timezone`, not the device's. Setting `comps.timeZone` makes
     /// UNCalendarNotificationTrigger interpret the components in that zone, so a
     /// JST user on a non-JST device still gets the reminder at the intended hour.
-    private static func trigger(for date: Date, timezone: TimeZone) -> UNCalendarNotificationTrigger {
+    nonisolated private static func trigger(for date: Date, timezone: TimeZone) -> UNCalendarNotificationTrigger {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
         var comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: date)
@@ -229,21 +229,49 @@ final class NotificationService {
         return UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
     }
 
+    /// Builds the notification request entirely in a nonisolated context and
+    /// returns it `sending`, so the non-Sendable UNMutableNotificationContent /
+    /// UNNotificationRequest are never merged into the @MainActor region.
+    /// Handing the result to the nonisolated `center.add(_:)` then does not trip
+    /// Swift 6 region isolation ("Sending 'request' risks causing data races",
+    /// Xcode 26.5 Release archive, exit code 65). Inputs are all Sendable
+    /// (String/Date/TimeZone), so nothing crosses the boundary tainted.
+    nonisolated private static func makeRequest(
+        id: String,
+        title: String,
+        body: String,
+        category: String,
+        fireDate: Date,
+        timezone: TimeZone
+    ) -> sending UNNotificationRequest {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.categoryIdentifier = category
+        content.sound = .default
+        return UNNotificationRequest(
+            identifier: id,
+            content: content,
+            trigger: trigger(for: fireDate, timezone: timezone)
+        )
+    }
+
     // MARK: - Scheduling
 
     @discardableResult
     func scheduleFastStart(at date: Date, label: String, timezone: TimeZone) async throws -> String {
         let id = "fast.start.\(Self.localDayKey(date, timezone: timezone))"
-        let content = UNMutableNotificationContent()
-        content.title = IdentityCopy.Notification.fastStartTitle
-        content.body = IdentityCopy.Notification.fastStartBody(label: label)
-        content.categoryIdentifier = NotificationIdentifier.fastStartCategory
-        content.sound = .default
-
         // Cancel-before-schedule: stable behavior+day id makes re-scheduling
         // idempotent so launches/foregrounds never stack duplicate pings.
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        let request = UNNotificationRequest(identifier: id, content: content, trigger: Self.trigger(for: date, timezone: timezone))
+        let request = Self.makeRequest(
+            id: id,
+            title: IdentityCopy.Notification.fastStartTitle,
+            body: IdentityCopy.Notification.fastStartBody(label: label),
+            category: NotificationIdentifier.fastStartCategory,
+            fireDate: date,
+            timezone: timezone
+        )
         try await center.add(request)
         return id
     }
@@ -251,14 +279,15 @@ final class NotificationService {
     @discardableResult
     func scheduleFastEnd(at date: Date, label: String, timezone: TimeZone) async throws -> String {
         let id = "fast.end.\(Self.localDayKey(date, timezone: timezone))"
-        let content = UNMutableNotificationContent()
-        content.title = IdentityCopy.Notification.fastEndTitle
-        content.body = IdentityCopy.Notification.fastEndBody(label: label)
-        content.categoryIdentifier = NotificationIdentifier.fastEndCategory
-        content.sound = .default
-
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        let request = UNNotificationRequest(identifier: id, content: content, trigger: Self.trigger(for: date, timezone: timezone))
+        let request = Self.makeRequest(
+            id: id,
+            title: IdentityCopy.Notification.fastEndTitle,
+            body: IdentityCopy.Notification.fastEndBody(label: label),
+            category: NotificationIdentifier.fastEndCategory,
+            fireDate: date,
+            timezone: timezone
+        )
         try await center.add(request)
         return id
     }
@@ -289,14 +318,15 @@ final class NotificationService {
         // Per-slot id (day + HHmm) keeps multiple legitimate daily hydration
         // nudges idempotent: re-scheduling the same slot replaces it.
         let id = "hydration.\(Self.localDayKey(date, timezone: timezone)).\(Self.localTimeKey(date, timezone: timezone))"
-        let content = UNMutableNotificationContent()
-        content.title = IdentityCopy.Notification.hydrationTitle
-        content.body = IdentityCopy.Notification.hydrationBody(progressOz: progressOz, targetMaxOz: targetMaxOz)
-        content.categoryIdentifier = NotificationIdentifier.hydrationCategory
-        content.sound = .default
-
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        let request = UNNotificationRequest(identifier: id, content: content, trigger: Self.trigger(for: date, timezone: timezone))
+        let request = Self.makeRequest(
+            id: id,
+            title: IdentityCopy.Notification.hydrationTitle,
+            body: IdentityCopy.Notification.hydrationBody(progressOz: progressOz, targetMaxOz: targetMaxOz),
+            category: NotificationIdentifier.hydrationCategory,
+            fireDate: date,
+            timezone: timezone
+        )
         try await center.add(request)
         return id
     }
@@ -307,14 +337,15 @@ final class NotificationService {
                                   targetMinutes: Int,
                                   timezone: TimeZone) async throws -> String {
         let id = "learning.\(moduleName).\(Self.localDayKey(date, timezone: timezone)).\(Self.localTimeKey(date, timezone: timezone))"
-        let content = UNMutableNotificationContent()
-        content.title = IdentityCopy.Notification.learningTitle(moduleName: moduleName)
-        content.body = IdentityCopy.Notification.learningBody(moduleName: moduleName, targetMinutes: targetMinutes)
-        content.categoryIdentifier = NotificationIdentifier.learningCategory
-        content.sound = .default
-
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        let request = UNNotificationRequest(identifier: id, content: content, trigger: Self.trigger(for: date, timezone: timezone))
+        let request = Self.makeRequest(
+            id: id,
+            title: IdentityCopy.Notification.learningTitle(moduleName: moduleName),
+            body: IdentityCopy.Notification.learningBody(moduleName: moduleName, targetMinutes: targetMinutes),
+            category: NotificationIdentifier.learningCategory,
+            fireDate: date,
+            timezone: timezone
+        )
         try await center.add(request)
         return id
     }
