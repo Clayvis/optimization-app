@@ -411,6 +411,10 @@ struct TodayView: View {
         let workout = counters.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
         let hydration = counters.first { $0.domain == StreakDomain.hydration.rawValue }?.currentStreak ?? 0
         let learning = counters.first { $0.domain == StreakDomain.learning.rawValue }?.currentStreak ?? 0
+        let master = counters.first { $0.domain == StreakDomain.protocolAdherence.rawValue }
+        let masterStreak = master?.currentStreak ?? 0
+        let masterFreezes = master?.freezesAvailable ?? 0
+        let todayProtected = master?.lastCompletedDate.map { Calendar.current.isDateInToday($0) } ?? false
         // Design Principle 2 (streaks need mercy, made visible): smallest freeze
         // balance across the shown domains so the count never over-promises.
         let freezesLeft = [
@@ -419,20 +423,43 @@ struct TodayView: View {
             counters.first { $0.domain == StreakDomain.learning.rawValue }?.freezesAvailable
         ].compactMap { $0 }.min()
 
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 10) {
+            // Design Principle 6 (one master metric): the protocol streak is the
+            // single headline number; per-domain chips sit beneath it.
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Image(systemName: "flame.fill")
-                    .foregroundStyle(.orange)
-                Text("STREAKS")
-                    .font(.caption.weight(.bold))
+                    .foregroundStyle(masterStreak > 0 ? .orange : .secondary)
+                    .accessibilityHidden(true)
+                Text("\(masterStreak)")
+                    .font(.largeTitle.weight(.bold))
+                    .monospacedDigit()
+                Text("day protocol streak")
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
+                Spacer()
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(masterStreak) day protocol streak")
             HStack(spacing: 8) {
                 streakChip(label: "Workout", days: workout, systemImage: "figure.strengthtraining.traditional")
                 streakChip(label: "Hydration", days: hydration, systemImage: "drop.fill")
                 streakChip(label: "Learning", days: learning, systemImage: "book.fill")
             }
-            if let freezesLeft, freezesLeft > 0 {
+            if masterStreak > 0 && masterFreezes > 0 && !todayProtected {
+                Button {
+                    protectProtocolStreak()
+                } label: {
+                    Label("Protect today · \(masterFreezes) freeze\(masterFreezes == 1 ? "" : "s") left",
+                          systemImage: "shield.lefthalf.filled")
+                        .font(.caption.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color.blue.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Spends one streak freeze to keep today's protocol streak alive without faking a log.")
+            } else if let freezesLeft, freezesLeft > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "shield.lefthalf.filled")
                         .font(.caption2)
@@ -448,6 +475,18 @@ struct TodayView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    /// Spends one freeze on the master protocol streak to keep today alive
+    /// (design principle 2: mercy, never fake completion). applyFreeze records
+    /// an honest FreezeApplication; confirm() then refreshes the mascot,
+    /// counters, and this strip via .userStateChanged.
+    private func protectProtocolStreak() {
+        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz  // MARK: try? justified - best-effort decode; nil falls back to the default hydration floor.
+        let streaks = StreakService(modelContext: modelContext, hydrationTargets: targets)
+        if (try? streaks.applyFreeze(domain: .protocolAdherence)) != nil {  // MARK: try? justified - gated by the button; only throws noFreezesAvailable, logged inside the service.
+            LogFeedbackCenter.shared.confirm(IdentityCopy.streakProtected)
+        }
     }
 
     private func streakChip(label: String, days: Int, systemImage: String) -> some View {

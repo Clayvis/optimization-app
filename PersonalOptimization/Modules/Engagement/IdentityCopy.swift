@@ -59,6 +59,10 @@ enum IdentityCopy {
         return "\(count) streak \(noun) left this month. A missed day won't erase you."
     }
 
+    /// Shown after the user spends a freeze to protect today. Reassurance, not
+    /// pressure: the streak is preserved honestly and the day is covered.
+    static let streakProtected = "Streak protected. Rest easy."
+
     // MARK: - Mascot reasons (display-only, not load-bearing)
 
     static let mascotProudStreak = "You hit a streak milestone."
