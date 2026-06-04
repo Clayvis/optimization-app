@@ -42,12 +42,12 @@ final class LapseDetectionService {
         let cal = jstCalendar()
         let today = cal.startOfDay(for: date)
 
+        let lookback = cal.date(byAdding: .day, value: -30, to: today) ?? today
         let descriptor = FetchDescriptor<ActivityArchive>(
+            predicate: #Predicate<ActivityArchive> { $0.date >= lookback && $0.date <= today },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        let allArchives = modelContext.fetchOrEmpty(descriptor)
-        let lookback = cal.date(byAdding: .day, value: -30, to: today) ?? today
-        let recent = allArchives.filter { $0.date >= lookback && $0.date <= today }
+        let recent = modelContext.fetchOrEmpty(descriptor)
 
         var consecutiveLow = 0
         var lapseStart: Date? = nil

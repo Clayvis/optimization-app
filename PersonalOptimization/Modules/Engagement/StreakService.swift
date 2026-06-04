@@ -232,17 +232,17 @@ final class StreakService {
 
         switch domain {
         case .workout:
-            for event in try modelContext.fetch(FetchDescriptor<WorkoutEvent>()) {
+            for event in try modelContext.fetch(FetchDescriptor<WorkoutEvent>(predicate: #Predicate<WorkoutEvent> { $0.date >= earliest })) {
                 let day = cal.startOfDay(for: event.date)
                 if event.completed { history[day] = true }
             }
         case .fasting:
-            for log in try modelContext.fetch(FetchDescriptor<DailyLog>()) {
+            for log in try modelContext.fetch(FetchDescriptor<DailyLog>(predicate: #Predicate<DailyLog> { $0.date >= earliest && $0.supersededAt == nil })) {
                 let day = cal.startOfDay(for: log.date)
                 if log.fastEnd != nil { history[day] = true }
             }
         case .hydration:
-            for log in try modelContext.fetch(FetchDescriptor<DailyLog>()) {
+            for log in try modelContext.fetch(FetchDescriptor<DailyLog>(predicate: #Predicate<DailyLog> { $0.date >= earliest && $0.supersededAt == nil })) {
                 let day = cal.startOfDay(for: log.date)
                 let target = hydrationTargetMin(for: day)
                 if log.waterOz >= target { history[day] = true }
@@ -255,7 +255,7 @@ final class StreakService {
             // module clears its threshold OR total tracked minutes >= 20.
             // courseworkMinutes is included since the ScheduleEditor can
             // route generic learning blocks there.
-            for log in try modelContext.fetch(FetchDescriptor<DailyLog>()) {
+            for log in try modelContext.fetch(FetchDescriptor<DailyLog>(predicate: #Predicate<DailyLog> { $0.date >= earliest && $0.supersededAt == nil })) {
                 let day = cal.startOfDay(for: log.date)
                 let total = log.japaneseMinutes
                     + log.guitarMinutes
@@ -274,7 +274,7 @@ final class StreakService {
             // DailySummaryService; for now require both fasting and hydration done
             // (workout/learning are not always scheduled). DailySummaryService can
             // refine this once it lands.
-            for log in try modelContext.fetch(FetchDescriptor<DailyLog>()) {
+            for log in try modelContext.fetch(FetchDescriptor<DailyLog>(predicate: #Predicate<DailyLog> { $0.date >= earliest && $0.supersededAt == nil })) {
                 let day = cal.startOfDay(for: log.date)
                 let fastingDone = log.fastEnd != nil
                 let hydrationDone = log.waterOz >= hydrationTargetMin(for: day)
@@ -285,7 +285,7 @@ final class StreakService {
         // Apply freeze applications (non-workout domains write FreezeApplication;
         // workout domain freezes are encoded directly into WorkoutEvent above).
         if domain != .workout {
-            for freeze in try modelContext.fetch(FetchDescriptor<FreezeApplication>()) where freeze.domain == domain.rawValue {
+            for freeze in try modelContext.fetch(FetchDescriptor<FreezeApplication>(predicate: #Predicate<FreezeApplication> { $0.date >= earliest })) where freeze.domain == domain.rawValue {
                 history[cal.startOfDay(for: freeze.date)] = true
             }
         }

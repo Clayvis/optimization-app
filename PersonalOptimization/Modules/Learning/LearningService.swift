@@ -32,7 +32,7 @@ final class LearningService {
     /// rows in the store.
     @discardableResult
     func recomputeStreak(module: LearningModule, asOf: Date = Date()) throws -> LearningStreak {
-        let logs = try modelContext.fetch(FetchDescriptor<DailyLog>())
+        let logs = try modelContext.fetch(FetchDescriptor<DailyLog>(predicate: #Predicate<DailyLog> { $0.supersededAt == nil }))
         let history: [DailyMinutes] = logs.map { log in
             let m: Int
             switch module {

@@ -96,7 +96,7 @@ struct FastingView: View {
         }
         .sheet(isPresented: $showingManualEndSheet) {
             ManualEndSheet(service: service) { reason in
-                actionFeedback = "Fast ended \(reason == nil ? "" : "(\(reason!))")"
+                actionFeedback = "Fast ended \(reason.map { "(\($0))" } ?? "")"
             }
         }
     }
