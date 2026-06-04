@@ -344,7 +344,7 @@ Estimated effort: 20-26 hours of agent execution.
 
 ## M3.7: Coach v2 (Prescriptive) + Long-Term Log + Multi-Mascot
 
-Goal: turn Coach Mode from "daily insight commentary" into "prescriptive holistic optimizer" with year-plus historical context, ship long-term log infrastructure, add multi-mascot variant system (ninja_male default + ninja_female for wife). Source: M3.7_SPEC.md.
+Goal: turn Coach Mode from "daily insight commentary" into "prescriptive holistic optimizer" with year-plus historical context, ship long-term log infrastructure, add multi-mascot variant system (ninja_male default + ninja_female for wife). Source: docs/planning/M3.7_SPEC.md.
 
 Tasks:
 
