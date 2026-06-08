@@ -67,11 +67,29 @@ entitlement changes, and a CKShare spike (out of scope, irreversible infra).
   pre-flight so an impossible store path degrades to recovery instead of the
   SIGABRT ModelContainer raises on iOS 26.
 
-## Not built (documented gaps)
+## Added in the follow-up pass (commit 78cc2f2)
 
-- DailyGoal Live Activity rendering the goal-as-shape: the lock-screen surface
-  is partly covered by the new watch complication; a Live Activity is additive.
-- iOS Home Screen widget extension: a whole new target; deferred.
+- DailyGoal Live Activity: lock-screen + Dynamic Island completion ring with the
+  streak at center (DailyGoalActivityAttributes + DailyGoalLiveActivity +
+  DailyGoalLiveActivityController, wired from TodayView; starts on a real log,
+  auto-dismisses at day rollover).
+- iOS streak/goal widgets: new PersonalOptimizationWidgets extension
+  (accessoryCircular/Rectangular/Inline lock-screen + systemSmall Home Screen).
+- Shared ProtocolGoalSnapshot: single source of truth for the goal ring used by
+  BOTH the watch complication and the iOS widget (no drift). The watch
+  complication was refactored onto it.
+- Readiness-adjusted Move goal: DailyProgressBars scales the Move goal by the
+  RecoveryGate verdict (Gap 3 "adjusts the day's goal target").
+
+## Not built (deferred, with rationale)
+
+- LIVE CloudKit partner transport (CloudKitPartnerSharedZone): needs the paid
+  Apple Developer account + a CKShare spike (decision 007). The dyad logic + UI
+  are fully wired against the seam; only the transport is missing.
+- Variable/unpredictable AI reward (a surprise off-schedule insight): Pro-tier,
+  carries unpredictable token cost and annoyance risk, and the existing daily
+  CoachInsight + DailyQuote already supply AI-generated content. Left as an
+  explicit opt-in for a future pass rather than shipped silently.
 - `MilestoneType.appUsageDays`: left as-is. On inspection it is computed from
   DailyLog row count (days WITH a log), not raw app-opens, and no milestone
   definition awards it, so it is not a trivial-badge violation.
