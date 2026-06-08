@@ -94,4 +94,93 @@ final class RecoveryGateTests: XCTestCase {
         gate.recordOverride(profile: profile)
         XCTAssertEqual(profile.recoveryOverrideCountThisMonth, 2)
     }
+
+    // MARK: - evaluateDetailed (Gap 3 transparent breakdown)
+
+    private func cal() -> Calendar {
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = jst
+        return c
+    }
+
+    func test_detail_noData_hidesCard() throws {
+        let profile = UserProfile()
+        context.insert(profile)
+        try context.save()
+        let d = gate.evaluateDetailed(profile: profile)
+        XCTAssertFalse(d.hasData)
+        XCTAssertTrue(d.components.isEmpty)
+    }
+
+    func test_detail_hrvComponent_showsUnfavorableDownDirection() throws {
+        let profile = UserProfile()
+        context.insert(profile)
+        let c = cal()
+        let today = c.startOfDay(for: Date())
+        for i in 1...4 {
+            let log = DailyLog(date: c.date(byAdding: .day, value: -i, to: today)!)
+            log.hrvRmssd = 58
+            log.restingHR = 50
+            log.sleepHours = 7.5
+            context.insert(log)
+        }
+        let todayLog = DailyLog(date: today)
+        todayLog.hrvRmssd = 42
+        todayLog.restingHR = 50
+        todayLog.sleepHours = 7.5
+        context.insert(todayLog)
+        try context.save()
+
+        let d = gate.evaluateDetailed(profile: profile)
+        XCTAssertTrue(d.hasData)
+        let hrv = d.components.first { $0.label == "HRV" }
+        XCTAssertEqual(hrv?.direction, .down)
+        XCTAssertEqual(hrv?.isFavorable, false)
+    }
+
+    func test_detail_lowSleep_downgrade_reducesLoad() throws {
+        let profile = UserProfile()
+        context.insert(profile)
+        let log = DailyLog(date: cal().startOfDay(for: Date()))
+        log.sleepHours = 5.0
+        context.insert(log)
+        try context.save()
+
+        let d = gate.evaluateDetailed(profile: profile)
+        XCTAssertEqual(d.recommendation, .downgrade)
+        XCTAssertEqual(d.loadMultiplier, 0.7, accuracy: 0.001)
+        XCTAssertEqual(d.loadAdjustment, "Reduce today's load ~30%")
+        XCTAssertEqual(d.headline, "Ease off today")
+        let sleep = d.components.first { $0.label == "Sleep" }
+        XCTAssertEqual(sleep?.isFavorable, false)
+    }
+
+    func test_detail_veryLowSleep_rest_loadZero() throws {
+        let profile = UserProfile()
+        context.insert(profile)
+        let log = DailyLog(date: cal().startOfDay(for: Date()))
+        log.sleepHours = 4.0
+        context.insert(log)
+        try context.save()
+
+        let d = gate.evaluateDetailed(profile: profile)
+        XCTAssertEqual(d.recommendation, .rest)
+        XCTAssertEqual(d.loadMultiplier, 0.0, accuracy: 0.001)
+        XCTAssertEqual(d.headline, "Rest day")
+    }
+
+    func test_detail_normal_fullLoadAndData() throws {
+        let profile = UserProfile()
+        context.insert(profile)
+        let log = DailyLog(date: cal().startOfDay(for: Date()))
+        log.sleepHours = 7.5
+        context.insert(log)
+        try context.save()
+
+        let d = gate.evaluateDetailed(profile: profile)
+        XCTAssertEqual(d.recommendation, .normal)
+        XCTAssertEqual(d.loadMultiplier, 1.0, accuracy: 0.001)
+        XCTAssertEqual(d.headline, "Recovered")
+        XCTAssertTrue(d.hasData)
+    }
 }

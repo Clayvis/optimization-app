@@ -29,12 +29,14 @@ struct DiagnosticsView: View {
     @State private var rollupResult: String?
     @State private var logExportURL: URL?
     @State private var logExportInFlight = false
+    @State private var metrics: EngagementMetrics?
 
     enum APIKeyStatus { case unknown, set, missing }
 
     var body: some View {
         Form {
             schemaSection
+            instrumentationSection
             healthKitSection
             apiKeySection
             tokenUsageSection
@@ -50,6 +52,15 @@ struct DiagnosticsView: View {
             }
             try? AchievementService(modelContext: modelContext).unlockImperative("diagnostics_clean")  // MARK: try? justified - best-effort; failure logged inside the called function.
         }
+        .task { await computeMetrics() }
+    }
+
+    /// Recomputes the 30-day instrumentation snapshot. Pulls the partner's
+    /// current streak from the shared zone when paired (nil for the single-user
+    /// reality of v1.0) so the joint-streak indicator is correct.
+    private func computeMetrics() async {
+        let partnerStreak = (try? await PartnerService(modelContext: modelContext).partnerSnapshot())?.currentStreak
+        metrics = EngagementMetricsService(modelContext: modelContext).compute(partnerCurrentStreak: partnerStreak)
     }
 
     @ViewBuilder
@@ -62,6 +73,124 @@ struct DiagnosticsView: View {
                 Text("\(v.major).\(v.minor).\(v.patch)").monospacedDigit().font(.caption)
             }
         }
+    }
+
+    @ViewBuilder
+    private var instrumentationSection: some View {
+        Section {
+            if let m = metrics {
+                metricRow("Days since first launch", "\(m.daysSinceFirstLaunch)")
+
+                // 1. 7-day streak establishment (primary success metric).
+                metricRow(
+                    "7-day streak",
+                    establishmentText(m),
+                    tint: m.establishedInWeekOne ? .green : (m.establishedSevenDayStreak ? .orange : .secondary)
+                )
+
+                // 2. Day-over-day return rate (local CURR).
+                metricRow(
+                    "Day-over-day return",
+                    m.dayOverDayReturnRate.map { "\(Int(($0 * 100).rounded()))% · \(m.activeDaysCount) active days" } ?? "not enough data",
+                    tint: (m.dayOverDayReturnRate ?? 0) >= 0.5 ? .green : .secondary
+                )
+
+                // 3. Grace-day usage.
+                metricRow(
+                    "Grace days used",
+                    graceText(m)
+                )
+
+                // 4. Joint-streak survival.
+                metricRow(
+                    "Joint streak",
+                    m.partnerPaired ? "joint \(m.jointStreak ?? 0) · solo \(m.soloStreak)" : "no partner paired"
+                )
+
+                // 5. Insight engagement.
+                metricRow(
+                    "Insight engagement",
+                    insightText(m),
+                    tint: m.insightsShown == 0 ? .secondary : (m.meetsInsightGate ? .green : .orange)
+                )
+
+                // 6. Qualitative week-4 check.
+                week4Row(m)
+            } else {
+                ProgressView()
+            }
+        } header: {
+            Text("Test instrumentation (30-day)")
+        } footer: {
+            Text("Leading indicators that predict retention, computed on-device from your own data. Primary target: establish a 7-day streak in week one. Freeze pools are per domain.")
+        }
+    }
+
+    private func metricRow(_ label: String, _ value: String, tint: Color = .secondary) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text(value)
+                .font(.caption)
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(tint)
+        }
+    }
+
+    private func establishmentText(_ m: EngagementMetrics) -> String {
+        if m.establishedInWeekOne { return "established in week one ✓" }
+        if m.establishedSevenDayStreak {
+            if let d = m.daysToEstablishment { return "established (day \(d))" }
+            return "established"
+        }
+        if m.anyDomainReachedSeven { return "a domain hit 7, protocol not yet" }
+        return "not yet"
+    }
+
+    private func graceText(_ m: EngagementMetrics) -> String {
+        let remaining = "\(m.freezesRemainingThisMonth) freezes left"
+        guard m.graceDaysApplied > 0 else { return "0 · \(remaining)" }
+        let breakdown = m.graceBySource
+            .sorted { $0.key < $1.key }
+            .map { "\($0.key) \($0.value)" }
+            .joined(separator: ", ")
+        return "\(m.graceDaysApplied) days (\(breakdown)) · \(remaining)"
+    }
+
+    private func insightText(_ m: EngagementMetrics) -> String {
+        guard m.insightsShown > 0 else { return "none shown yet" }
+        let rate = m.insightInteractionRate.map { "\(Int(($0 * 100).rounded()))% engaged" } ?? "—"
+        let gate = m.meetsInsightGate ? "gate ✓" : "gate ✗"
+        return "\(m.insightsShown) shown · \(rate) · \(m.insightHelpful)↑/\(m.insightUnhelpful)↓ · \(gate)"
+    }
+
+    @ViewBuilder
+    private func week4Row(_ m: EngagementMetrics) -> some View {
+        if m.week4Captured {
+            metricRow(
+                "Week-4 check",
+                (m.week4FeelsMotivating ?? false) ? "still motivating ✓" : "feels like an obligation",
+                tint: (m.week4FeelsMotivating ?? false) ? .green : .orange
+            )
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Does this still feel motivating, or like an obligation?")
+                    .font(.subheadline)
+                HStack {
+                    Button("Still motivating") { recordWeek4(true) }
+                        .buttonStyle(.borderedProminent)
+                    Button("Feels like an obligation") { recordWeek4(false) }
+                        .buttonStyle(.bordered)
+                }
+                .font(.caption)
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func recordWeek4(_ motivating: Bool) {
+        Week4CheckIn.record(feelsMotivating: motivating)
+        Task { await computeMetrics() }
     }
 
     @ViewBuilder

@@ -67,4 +67,29 @@ enum IdentityCopy {
 
     static let mascotProudStreak = "You hit a streak milestone."
     static let mascotAchievementPR = "You set a new personal record."
+
+    // MARK: - Durability handoff (design principle: identity outlasts the streak)
+
+    /// Identity statement for the user's most-proven domain, used once the app
+    /// shifts the headline away from a raw streak count (Gap 1 durability). The
+    /// frame is "who you are," not "what you did," because identity-based habits
+    /// survive a broken streak where goal-based ones do not.
+    static func identityStatement(topDomain: StreakDomain?) -> String {
+        switch topDomain {
+        case .workout:           return "You are a consistent mover."
+        case .hydration:         return "Staying hydrated is just who you are now."
+        case .learning:          return "You are a daily learner."
+        case .fasting:           return "Discipline with food is your default."
+        case .protocolAdherence: return "You are someone who keeps their word."
+        case nil:                return "You are building who you are, one day at a time."
+        }
+    }
+
+    /// Fallback trend line when no pattern has been detected yet but the user is
+    /// past the bootstrap window. Keeps the headline about the record they are
+    /// building rather than a single fragile number.
+    static func trendFallback(streakDays: Int) -> String {
+        guard streakDays > 0 else { return "Every day you log is a day on the record." }
+        return "\(streakDays) days on the record, and the habit is yours now."
+    }
 }

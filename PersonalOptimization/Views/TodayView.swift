@@ -125,6 +125,13 @@ struct TodayView: View {
                 }
 
                 Section {
+                    RecoveryCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
                     PrescribedWorkoutCard()
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -423,23 +430,56 @@ struct TodayView: View {
             counters.first { $0.domain == StreakDomain.learning.rawValue }?.freezesAvailable
         ].compactMap { $0 }.min()
 
+        // Gap 1 durability handoff: past the bootstrap window the headline shifts
+        // from the raw streak count to an identity + trend narrative, and the
+        // streak is demoted so the user is not solely streak-dependent.
+        let durability = DurabilityHeadlineService(modelContext: modelContext).headline(asOf: now)
+
         VStack(alignment: .leading, spacing: 10) {
-            // Design Principle 6 (one master metric): the protocol streak is the
-            // single headline number; per-domain chips sit beneath it.
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Image(systemName: "flame.fill")
-                    .foregroundStyle(masterStreak > 0 ? .orange : .secondary)
-                    .accessibilityHidden(true)
-                Text("\(masterStreak)")
-                    .font(.largeTitle.weight(.bold))
-                    .monospacedDigit()
-                Text("day protocol streak")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
+            // Design Principle 6 (one master metric): one headline, per-domain
+            // chips beneath. Bootstrap weeks lead with the streak number; once
+            // established, identity leads and the streak demotes to a chip.
+            if durability.phase == .established {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(durability.identityLine)
+                        .font(.title3.weight(.bold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let trend = durability.trendLine {
+                        Text(trend)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .font(.caption2)
+                            .foregroundStyle(masterStreak > 0 ? .orange : .secondary)
+                            .accessibilityHidden(true)
+                        Text("\(masterStreak)-day protocol streak")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(masterStreak) day protocol streak")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Image(systemName: "flame.fill")
+                        .foregroundStyle(masterStreak > 0 ? .orange : .secondary)
+                        .accessibilityHidden(true)
+                    Text("\(masterStreak)")
+                        .font(.largeTitle.weight(.bold))
+                        .monospacedDigit()
+                    Text("day protocol streak")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(masterStreak) day protocol streak")
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(masterStreak) day protocol streak")
             HStack(spacing: 8) {
                 streakChip(label: "Workout", days: workout, systemImage: "figure.strengthtraining.traditional")
                 streakChip(label: "Hydration", days: hydration, systemImage: "drop.fill")

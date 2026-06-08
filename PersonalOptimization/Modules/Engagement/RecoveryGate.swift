@@ -27,8 +27,19 @@ struct RecoveryGate {
     }
 
     /// Evaluates today's recovery and returns a recommendation + reason.
-    /// Pure read; does not mutate state.
+    /// Pure read; does not mutate state. Thin wrapper over `evaluateDetailed`.
     func evaluate(profile: UserProfile, asOf date: Date = Date()) -> RecoveryStatus {
+        let detail = evaluateDetailed(profile: profile, asOf: date)
+        return RecoveryStatus(recommendation: detail.recommendation, reason: detail.reason)
+    }
+
+    /// Transparent readiness breakdown (Gap 3: opaque scores). Returns the same
+    /// recommendation the Coach honors PLUS the component inputs (HRV, resting
+    /// HR, sleep) with their direction vs the 7-day baseline, and a concrete
+    /// training-load adjustment. No false precision: the headline is qualitative
+    /// ("Ease off today"), never a fabricated "73.4% recovered". Differentiator
+    /// against black-box wearable scores: the user sees what moved the verdict.
+    func evaluateDetailed(profile: UserProfile, asOf date: Date = Date()) -> RecoveryDetail {
         let log = todaysLog(asOf: date)
         let baseline = sevenDayBaseline(endingBefore: date)
 
@@ -42,40 +53,129 @@ struct RecoveryGate {
         } ?? 0
         let achillesPain = log?.achillesPain ?? 0
 
+        let (recommendation, reason) = classify(
+            hrvDelta: hrvDelta,
+            sleepHours: sleepHours,
+            restingHRDelta: restingHRDelta,
+            achillesPain: achillesPain
+        )
+        let components = buildComponents(log: log, baseline: baseline)
+        let (loadText, loadMultiplier) = loadAdjustment(for: recommendation)
+        return RecoveryDetail(
+            recommendation: recommendation,
+            headline: Self.headline(for: recommendation),
+            reason: reason,
+            components: components,
+            loadAdjustment: loadText,
+            loadMultiplier: loadMultiplier,
+            hasData: !components.isEmpty
+        )
+    }
+
+    /// The recommendation thresholds. Order matters: rest rules are checked
+    /// before downgrade rules so the strongest signal wins. Reason strings are
+    /// identity-framed and surface verbatim in the recovery card.
+    private func classify(
+        hrvDelta: Double,
+        sleepHours: Double,
+        restingHRDelta: Double,
+        achillesPain: Int
+    ) -> (RecoveryRecommendation, String) {
         // Hard rest-day rules — any one trips it.
         if hrvDelta < -0.30 {
-            return RecoveryStatus(recommendation: .rest,
-                                  reason: "HRV is \(Int((-hrvDelta) * 100))% below your 7-day baseline.")
+            return (.rest, "HRV is \(Int((-hrvDelta) * 100))% below your 7-day baseline.")
         }
         if sleepHours > 0 && sleepHours < 4.5 {
-            return RecoveryStatus(recommendation: .rest,
-                                  reason: "Sleep last night was \(formatSleep(sleepHours)). Below the 4.5h floor.")
+            return (.rest, "Sleep last night was \(formatSleep(sleepHours)). Below the 4.5h floor.")
         }
         if achillesPain >= 7 {
-            return RecoveryStatus(recommendation: .rest,
-                                  reason: "Achilles pain logged at \(achillesPain)/10. The injury talks; listen.")
+            return (.rest, "Achilles pain logged at \(achillesPain)/10. The injury talks; listen.")
         }
 
         // Downgrade rules — any one trips it (after rest rules above).
         if hrvDelta < -0.20 {
-            return RecoveryStatus(recommendation: .downgrade,
-                                  reason: "HRV trending \(Int((-hrvDelta) * 100))% below baseline.")
+            return (.downgrade, "HRV trending \(Int((-hrvDelta) * 100))% below baseline.")
         }
         if sleepHours > 0 && sleepHours < 5.5 {
-            return RecoveryStatus(recommendation: .downgrade,
-                                  reason: "Sleep last night was \(formatSleep(sleepHours)).")
+            return (.downgrade, "Sleep last night was \(formatSleep(sleepHours)).")
         }
         if restingHRDelta > 0.10 {
-            return RecoveryStatus(recommendation: .downgrade,
-                                  reason: "Resting HR is \(Int(restingHRDelta * 100))% above baseline.")
+            return (.downgrade, "Resting HR is \(Int(restingHRDelta * 100))% above baseline.")
         }
         if achillesPain >= 5 {
-            return RecoveryStatus(recommendation: .downgrade,
-                                  reason: "Achilles pain at \(achillesPain)/10 — keep the load light.")
+            return (.downgrade, "Achilles pain at \(achillesPain)/10 — keep the load light.")
         }
 
-        return RecoveryStatus(recommendation: .normal,
-                              reason: "Recovery markers within range.")
+        return (.normal, "Recovery markers within range.")
+    }
+
+    /// Builds the visible input components (HRV, resting HR, sleep) with today's
+    /// value, the 7-day baseline, and whether the direction is favorable. Only
+    /// components with real data are included; the card hides when this is empty
+    /// so the gate stays quiet on cold start rather than showing false precision.
+    private func buildComponents(log: DailyLog?, baseline: Baseline) -> [RecoveryComponent] {
+        var components: [RecoveryComponent] = []
+
+        if let hrv = log?.hrvRmssd ?? baseline.hrvMean {
+            let baselineMean = baseline.hrvMean
+            let favorable = baselineMean.map { hrv >= $0 } ?? true
+            components.append(RecoveryComponent(
+                label: "HRV",
+                valueText: "\(Int(hrv.rounded())) ms",
+                baselineText: baselineMean.map { "7-day avg \(Int($0.rounded())) ms" },
+                direction: direction(value: hrv, baseline: baselineMean, higherIsBetter: true),
+                isFavorable: favorable
+            ))
+        }
+        if let rhr = log?.restingHR.map(Double.init) ?? baseline.restingHRMean {
+            let baselineMean = baseline.restingHRMean
+            let favorable = baselineMean.map { rhr <= $0 } ?? true
+            components.append(RecoveryComponent(
+                label: "Resting HR",
+                valueText: "\(Int(rhr.rounded())) bpm",
+                baselineText: baselineMean.map { "7-day avg \(Int($0.rounded())) bpm" },
+                direction: direction(value: rhr, baseline: baselineMean, higherIsBetter: false),
+                isFavorable: favorable
+            ))
+        }
+        if let sleep = log?.sleepHours {
+            let favorable = sleep >= 6.5
+            components.append(RecoveryComponent(
+                label: "Sleep",
+                valueText: formatSleep(sleep),
+                baselineText: "7-day avg \(formatSleep(baseline.sleepMean))",
+                direction: direction(value: sleep, baseline: baseline.sleepMean, higherIsBetter: true),
+                isFavorable: favorable
+            ))
+        }
+        return components
+    }
+
+    private func direction(value: Double, baseline: Double?, higherIsBetter: Bool) -> RecoveryComponent.Direction {
+        guard let baseline else { return .flat }
+        let delta = value - baseline
+        // 3% deadband so noise reads as flat, not a trend (expert guidance:
+        // ignore night-to-night jitter, watch larger moves).
+        let threshold = abs(baseline) * 0.03
+        if delta > threshold { return .up }
+        if delta < -threshold { return .down }
+        return .flat
+    }
+
+    private func loadAdjustment(for recommendation: RecoveryRecommendation) -> (String, Double) {
+        switch recommendation {
+        case .normal:    return ("Full training load", 1.0)
+        case .downgrade: return ("Reduce today's load ~30%", 0.7)
+        case .rest:      return ("Rest day", 0.0)
+        }
+    }
+
+    private static func headline(for recommendation: RecoveryRecommendation) -> String {
+        switch recommendation {
+        case .normal:    return "Recovered"
+        case .downgrade: return "Ease off today"
+        case .rest:      return "Rest day"
+        }
     }
 
     /// Records that the user manually overrode the gate's downgrade/rest
@@ -159,4 +259,38 @@ enum RecoveryRecommendation: String, Codable, CaseIterable, Sendable {
     case normal
     case downgrade
     case rest
+}
+
+/// One transparent input behind the readiness verdict: the value, its 7-day
+/// baseline, and whether the direction is favorable. Surfaced so the user sees
+/// what moved the score, the opposite of a black-box wearable number.
+struct RecoveryComponent: Sendable, Equatable, Identifiable {
+    enum Direction: String, Sendable, Equatable { case up, down, flat }
+
+    let label: String
+    let valueText: String
+    let baselineText: String?
+    let direction: Direction
+    /// True when this component is pushing readiness up (HRV up, RHR down,
+    /// sleep long). Drives the green/orange tint.
+    let isFavorable: Bool
+
+    var id: String { label }
+}
+
+/// Full readiness breakdown: the recommendation plus everything needed to render
+/// a transparent, actionable recovery card (Gap 3). `headline` is qualitative on
+/// purpose, never a fabricated percentage.
+struct RecoveryDetail: Sendable, Equatable {
+    let recommendation: RecoveryRecommendation
+    let headline: String
+    let reason: String
+    let components: [RecoveryComponent]
+    /// Concrete action paired with the verdict ("Reduce today's load ~30%").
+    let loadAdjustment: String
+    /// Training-load scalar a consumer can multiply a target by (1.0 / 0.7 / 0.0).
+    let loadMultiplier: Double
+    /// False on cold start (no HRV / RHR / sleep yet); the card hides instead of
+    /// showing false precision.
+    let hasData: Bool
 }

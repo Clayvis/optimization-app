@@ -100,9 +100,17 @@ final class HandoffCorrectnessTests: XCTestCase {
         // Dedupe under the user's pinned (JST) calendar collapses them.
         try DailyLogStore(modelContext: ctx, calendar: jstCal).dedupe()
         let afterDedupe = try ctx.fetch(FetchDescriptor<DailyLog>())
-        XCTAssertEqual(afterDedupe.count, 1,
-                       "Dedupe should leave a single row keyed to the user's calendar.")
-        XCTAssertEqual(afterDedupe.first?.date, jstCal.startOfDay(for: jstDay),
+        // Non-destructive dedupe (decision 013, 2026-05-30): the duplicate is
+        // NOT deleted. It is merged into the canonical row, neutralized, and
+        // stamped `supersededAt`, so the physical row count stays 2 while
+        // exactly one canonical (non-superseded) row remains. Retention is
+        // load-bearing per CLAUDE.md, so the tombstone must survive.
+        XCTAssertEqual(afterDedupe.count, 2,
+                       "Dedupe is non-destructive: the duplicate is retained as a neutralized tombstone, not deleted.")
+        let canonical = afterDedupe.filter { $0.supersededAt == nil }
+        XCTAssertEqual(canonical.count, 1,
+                       "Exactly one canonical (non-superseded) row should remain for the user's calendar day.")
+        XCTAssertEqual(canonical.first?.date, jstCal.startOfDay(for: jstDay),
                        "Canonical row should be pinned to JST startOfDay.")
     }
 

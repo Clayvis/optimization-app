@@ -93,6 +93,15 @@ final class StreakService {
         return counter
     }
 
+    /// Public read of the completed-day set for `domain` (start-of-day keys in
+    /// the user's calendar). Reuses the exact completion rules `recompute` uses
+    /// so instrumentation (EngagementMetricsService) never drifts from the
+    /// streak engine. Pure read; does not mutate or persist.
+    func completedDays(domain: StreakDomain, asOf: Date = Date()) throws -> Set<Date> {
+        let history = try buildCompletionHistory(domain: domain, asOf: asOf)
+        return Set(history.compactMap { $0.value ? $0.key : nil })
+    }
+
     /// Spends one freeze on `domain` to mark today completed.
     @discardableResult
     func applyFreeze(domain: StreakDomain, asOf: Date = Date()) throws -> StreakCounter {

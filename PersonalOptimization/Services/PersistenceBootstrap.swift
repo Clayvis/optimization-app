@@ -75,11 +75,70 @@ struct PersistenceBootstrap {
         let resolvedURL = storeURL
             ?? URL.applicationSupportDirectory.appending(path: "default.store")
 
+        // Disk rungs 1 and 2 are attempted only when the store's parent
+        // directory is usable; if both throw (or the directory is impossible)
+        // we fall through to the in-memory recovery rung.
+        if ensureStoreDirectory(for: resolvedURL, logger: logger),
+           let disk = openDiskStore(
+               schema: schema,
+               migrationPlan: migrationPlan,
+               url: resolvedURL,
+               cloudKitContainerID: cloudKitContainerID,
+               logger: logger
+           ) {
+            return disk
+        }
+
+        // Rung 3: throwaway in-memory store. The on-disk store and its iCloud
+        // copy are NOT touched (no delete, no migration write), so a future
+        // launch can still recover them. Lets the app reach a recovery screen
+        // instead of crashing.
+        logger.fault("Launching in recovery mode (in-memory). On-disk store preserved, not opened.")
+        let container = PersistenceBootstrap.inMemory(schema: schema, logger: logger)
+        return PersistenceBootstrap(
+            container: container,
+            mode: .recovery(reason: "The database could not be opened this launch. Your saved data has not been changed. Please close the app fully and reopen it.")
+        )
+    }
+
+    /// Ensures the store's parent directory exists before SwiftData opens it.
+    /// Returns false when the path is structurally impossible (e.g. a parent
+    /// that is not a directory, as in `/dev/null/...`). This matters because on
+    /// iOS 26 / Xcode 26 `ModelContainer(...)` aborts (SIGABRT) rather than
+    /// throwing on such a path, which would defeat the whole recovery ladder.
+    /// Pre-flighting the directory keeps the failure catchable so the caller can
+    /// degrade to recovery. `withIntermediateDirectories: true` is a no-op when
+    /// the directory already exists, so production launches are unaffected.
+    @MainActor
+    private static func ensureStoreDirectory(for url: URL, logger: Logger) -> Bool {
+        do {
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            return true
+        } catch {
+            logger.fault("Store parent directory not creatable: \(error.localizedDescription, privacy: .public). Skipping disk rungs, degrading to recovery.")
+            return false
+        }
+    }
+
+    /// Attempts the two on-disk rungs against `url`. Returns the opened
+    /// container + mode, or nil when both throw (caller degrades to in-memory
+    /// recovery). The on-disk bytes are never deleted on either failure.
+    @MainActor
+    private static func openDiskStore(
+        schema: Schema,
+        migrationPlan: (any SchemaMigrationPlan.Type)?,
+        url: URL,
+        cloudKitContainerID: String,
+        logger: Logger
+    ) -> PersistenceBootstrap? {
         // Rung 1: full configuration (App Group + migration + CloudKit).
         do {
             let config = ModelConfiguration(
                 schema: schema,
-                url: resolvedURL,
+                url: url,
                 cloudKitDatabase: .private(cloudKitContainerID)
             )
             let container = try ModelContainer(
@@ -99,7 +158,7 @@ struct PersistenceBootstrap {
         do {
             let config = ModelConfiguration(
                 schema: schema,
-                url: resolvedURL,
+                url: url,
                 cloudKitDatabase: .none
             )
             let container = try ModelContainer(
@@ -116,16 +175,7 @@ struct PersistenceBootstrap {
             logger.fault("Store open failed (local-only): \(error.localizedDescription, privacy: .public). Falling back to in-memory recovery.")
         }
 
-        // Rung 3: throwaway in-memory store. The on-disk store and its iCloud
-        // copy are NOT touched (no delete, no migration write), so a future
-        // launch can still recover them. Lets the app reach a recovery screen
-        // instead of crashing.
-        logger.fault("Launching in recovery mode (in-memory). On-disk store preserved, not opened.")
-        let container = PersistenceBootstrap.inMemory(schema: schema, logger: logger)
-        return PersistenceBootstrap(
-            container: container,
-            mode: .recovery(reason: "The database could not be opened this launch. Your saved data has not been changed. Please close the app fully and reopen it.")
-        )
+        return nil
     }
 
     /// Build an in-memory container over the app schema (no disk, no CloudKit,
