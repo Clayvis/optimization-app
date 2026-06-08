@@ -198,6 +198,13 @@ struct TodayView: View {
                 }
 
                 Section {
+                    SurpriseInsightCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+                }
+
+                Section {
                     CoachInsightCard()
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
