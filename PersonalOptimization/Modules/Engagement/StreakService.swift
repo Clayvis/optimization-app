@@ -158,6 +158,10 @@ final class StreakService {
         // Only protect a real chain: the streak must have been alive through the
         // day before yesterday. Otherwise this is a fresh miss, not a save.
         guard streakAlive(endingAt: dayBefore, history: history, restDays: restDays, calendar: cal) else { return nil }
+        // Don't extend grace through a day that was itself only kept alive by
+        // grace. Auto-grace bridges a SINGLE off-day after a genuinely completed
+        // day; it must not silently cover a multi-day lapse and drain the pool.
+        if dayIsGraceCovered(domain: domain, day: dayBefore) { return nil }
 
         if domain == .workout {
             modelContext.insert(WorkoutEvent(date: yesterday, completed: true, source: .freeze))
@@ -170,6 +174,32 @@ final class StreakService {
         try recompute(domain: domain, asOf: asOf)
         logger.info("Auto-grace protected \(domain.rawValue, privacy: .public) for yesterday; freezes left=\(counter.freezesAvailable, privacy: .public)")
         return yesterday
+    }
+
+    /// True when `day` was kept alive by a grace mechanism (a FreezeApplication
+    /// for non-workout domains, or a grace-sourced WorkoutEvent for the workout
+    /// domain) rather than a genuine completion. Used so auto-grace cannot anchor
+    /// on a previously-graced day and chain through a multi-day lapse.
+    private func dayIsGraceCovered(domain: StreakDomain, day: Date) -> Bool {
+        let cal = jstCalendar()
+        let d = cal.startOfDay(for: day)
+        if domain == .workout {
+            let graceSources: Set<String> = [
+                WorkoutEventSource.freeze.rawValue,
+                WorkoutEventSource.travel.rawValue,
+                WorkoutEventSource.sickDay.rawValue
+            ]
+            let events = modelContext.fetchOrEmpty(
+                FetchDescriptor<WorkoutEvent>(predicate: #Predicate<WorkoutEvent> { $0.date == d })
+            )
+            return events.contains { graceSources.contains($0.source) }
+        } else {
+            let key = domain.rawValue
+            let freezes = modelContext.fetchOrEmpty(
+                FetchDescriptor<FreezeApplication>(predicate: #Predicate<FreezeApplication> { $0.domain == key && $0.date == d })
+            )
+            return !freezes.isEmpty
+        }
     }
 
     /// True when `domain`'s chain was alive ending at `day`: either `day` is

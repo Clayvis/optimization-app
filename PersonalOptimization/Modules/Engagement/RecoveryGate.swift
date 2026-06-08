@@ -116,7 +116,10 @@ struct RecoveryGate {
     private func buildComponents(log: DailyLog?, baseline: Baseline) -> [RecoveryComponent] {
         var components: [RecoveryComponent] = []
 
-        if let hrv = log?.hrvRmssd ?? baseline.hrvMean {
+        // Gate HRV / RHR on TODAY's actual reading, never the baseline mean.
+        // Showing the 7-day average as if it were a same-day measurement would be
+        // exactly the false precision this surface exists to avoid.
+        if let hrv = log?.hrvRmssd {
             let baselineMean = baseline.hrvMean
             let favorable = baselineMean.map { hrv >= $0 } ?? true
             components.append(RecoveryComponent(
@@ -127,7 +130,8 @@ struct RecoveryGate {
                 isFavorable: favorable
             ))
         }
-        if let rhr = log?.restingHR.map(Double.init) ?? baseline.restingHRMean {
+        if let rhrInt = log?.restingHR {
+            let rhr = Double(rhrInt)
             let baselineMean = baseline.restingHRMean
             let favorable = baselineMean.map { rhr <= $0 } ?? true
             components.append(RecoveryComponent(
@@ -199,7 +203,7 @@ struct RecoveryGate {
         let cal = jstCalendar()
         let day = cal.startOfDay(for: date)
         let descriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
+            predicate: #Predicate<DailyLog> { $0.date == day && $0.supersededAt == nil }
         )
         return modelContext.fetchFirstOrNil(descriptor)
     }

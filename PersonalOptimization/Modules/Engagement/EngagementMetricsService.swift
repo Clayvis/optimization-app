@@ -113,12 +113,18 @@ struct EngagementMetricsService {
         guard let establishmentDay = earliestSevenDayRunEnd(protocolDays) else {
             return (false, false, nil)
         }
-        let daysTo = calendar.dateComponents([.day], from: firstDay, to: establishmentDay).day
+        let rawDaysTo = calendar.dateComponents([.day], from: firstDay, to: establishmentDay).day
         // Week-one establishment: the seventh consecutive day landed within the
         // first 7 days since first launch (Duolingo optimizes this leading
-        // indicator rather than 30-day retention directly).
-        let inWeekOne = (daysTo ?? Int.max) <= 7
-        return (true, inWeekOne, daysTo)
+        // indicator rather than 30-day retention directly). firstDay is day 0,
+        // so those days are offsets 0...6; the earliest perfect-start run ends at
+        // offset 6. A negative offset means the run predates this install (e.g.
+        // imported history): established, but not THIS user's week one.
+        let inWeekOne = (rawDaysTo ?? Int.min) >= 0 && (rawDaysTo ?? Int.min) <= 6
+        // Clamp the reported offset so imported pre-install history never shows a
+        // negative "established on day -N".
+        let reportedDaysTo = rawDaysTo.map { max(0, $0) }
+        return (true, inWeekOne, reportedDaysTo)
     }
 
     /// Returns the END date of the earliest 7-consecutive-calendar-day run within
@@ -185,10 +191,16 @@ struct EngagementMetricsService {
         return set
     }
 
-    /// P(active tomorrow | active today). Only days strictly before today are
-    /// eligible, because "tomorrow" must be observable. nil when no eligible day.
+    /// P(active tomorrow | active today). A day is eligible only when its
+    /// "tomorrow" is a fully past, observable day (strictly before today).
+    /// Yesterday's tomorrow is today, still in progress, so counting it would
+    /// depress the rate every morning before the user logs anything. nil when no
+    /// eligible day.
     private func dayOverDayReturnRate(activeDays: Set<Date>, today: Date) -> Double? {
-        let eligible = activeDays.filter { $0 < today }
+        let eligible = activeDays.filter {
+            guard let next = calendar.date(byAdding: .day, value: 1, to: $0) else { return false }
+            return next < today
+        }
         guard !eligible.isEmpty else { return nil }
         var returned = 0
         for day in eligible {

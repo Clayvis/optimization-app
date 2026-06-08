@@ -43,30 +43,54 @@ struct ProtocolGoalTimelineProvider: TimelineProvider {
         cal.timeZone = .current
         let day = cal.startOfDay(for: date)
         let tomorrow = cal.date(byAdding: .day, value: 1, to: day) ?? day
+        let raw = cal.component(.weekday, from: date)
+        let weekday = raw == 1 ? 7 : raw - 1
 
         let key = StreakDomain.protocolAdherence.rawValue
-        let streak = (try? context.fetch(
+        let streak = context.fetchOrEmpty(
             FetchDescriptor<StreakCounter>(predicate: #Predicate { $0.domain == key })
-        ))?.first?.currentStreak ?? 0
+        ).first?.currentStreak ?? 0
 
-        let log = (try? context.fetch(
+        let log = context.fetchOrEmpty(
             FetchDescriptor<DailyLog>(predicate: #Predicate { $0.date == day && $0.supersededAt == nil })
-        ))?.first
+        ).first
 
-        let workoutDone = ((try? context.fetch(
+        // Travel/sick grace marks every scheduled domain complete (mirrors
+        // DailySummaryService.todayProtocol so the ring agrees with the streak).
+        let profile = context.fetchOrEmpty(FetchDescriptor<UserProfile>()).first
+        let graceCovered = (profile?.travelModeActiveUntil ?? .distantPast) >= date
+            || (profile?.sickDayActiveUntil ?? .distantPast) >= date
+
+        // Workout is scheduled only on days with a training block, so on a rest
+        // day it leaves both numerator and denominator, letting the ring close.
+        let blocks = context.fetchOrEmpty(
+            FetchDescriptor<ScheduleBlock>(predicate: #Predicate { $0.dayOfWeek == weekday && $0.isOverride == false })
+        )
+        let workoutScheduled = blocks.contains { $0.type == .training && $0.module != nil }
+        let workoutDone = (context.fetchOrEmpty(
             FetchDescriptor<WorkoutEvent>(predicate: #Predicate { $0.date >= day && $0.date < tomorrow && $0.completed })
-        ))?.isEmpty == false)
-        let fastingDone = log?.fastEnd != nil
-        let hydrationDone = (log?.waterOz ?? 0) >= dayHydrationTarget(for: date)
-        let learningDone: Bool = {
-            guard let l = log else { return false }
-            let total = l.japaneseMinutes + l.guitarMinutes + l.courseworkMinutes + l.musicMinutes
-            return l.japaneseMinutes >= 30 || l.guitarMinutes >= 20
-                || l.courseworkMinutes >= 20 || l.musicMinutes >= 20 || total >= 20
-        }()
-        let completed = [workoutDone, fastingDone, hydrationDone, learningDone].filter { $0 }.count
+        ).isEmpty == false) || graceCovered
 
-        return ProtocolGoalEntry(date: date, streak: streak, completedDomains: completed, totalDomains: 4)
+        let fastingDone = (log?.fastEnd != nil) || graceCovered
+        let hydrationDone = ((log?.waterOz ?? 0) >= dayHydrationTarget(for: date)) || graceCovered
+        let learningDone: Bool = {
+            let jp = log?.japaneseMinutes ?? 0
+            let gtr = log?.guitarMinutes ?? 0
+            let mus = log?.musicMinutes ?? 0
+            let work = log?.courseworkMinutes ?? 0
+            return jp >= 30 || gtr >= 20 || mus >= 20 || work >= 20 || (jp + gtr + mus + work) >= 20 || graceCovered
+        }()
+
+        // Count only scheduled domains in the denominator.
+        var completed = 0
+        var total = 0
+        for (scheduled, done) in [(workoutScheduled, workoutDone), (true, fastingDone), (true, hydrationDone), (true, learningDone)] {
+            if scheduled {
+                total += 1
+                if done { completed += 1 }
+            }
+        }
+        return ProtocolGoalEntry(date: date, streak: streak, completedDomains: completed, totalDomains: total)
     }
 
     @MainActor

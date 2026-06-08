@@ -77,7 +77,7 @@ final class DailySummaryService {
         // DailyLog: one row for the day. Predicate keyed on equality so
         // SwiftData hits exactly one record instead of streaming the table.
         let logDescriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
+            predicate: #Predicate<DailyLog> { $0.date == day && $0.supersededAt == nil }
         )
         let log = modelContext.fetchFirstOrNil(logDescriptor)
 

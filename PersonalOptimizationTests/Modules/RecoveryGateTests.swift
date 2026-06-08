@@ -169,6 +169,29 @@ final class RecoveryGateTests: XCTestCase {
         XCTAssertEqual(d.headline, "Rest day")
     }
 
+    func test_detail_doesNotFabricateHRVorRHRfromBaseline() throws {
+        let profile = UserProfile()
+        context.insert(profile)
+        let c = cal()
+        let today = c.startOfDay(for: Date())
+        for i in 1...4 {
+            let log = DailyLog(date: c.date(byAdding: .day, value: -i, to: today)!)
+            log.hrvRmssd = 58
+            log.restingHR = 50
+            log.sleepHours = 7.5
+            context.insert(log)
+        }
+        let todayLog = DailyLog(date: today)
+        todayLog.sleepHours = 7.5   // sleep synced today, but no HRV/RHR sample
+        context.insert(todayLog)
+        try context.save()
+
+        let d = gate.evaluateDetailed(profile: profile)
+        XCTAssertNil(d.components.first { $0.label == "HRV" }, "No HRV reading today; must not fabricate from baseline.")
+        XCTAssertNil(d.components.first { $0.label == "Resting HR" })
+        XCTAssertNotNil(d.components.first { $0.label == "Sleep" })
+    }
+
     func test_detail_normal_fullLoadAndData() throws {
         let profile = UserProfile()
         context.insert(profile)

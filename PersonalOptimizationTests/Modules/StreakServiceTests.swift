@@ -284,6 +284,22 @@ final class StreakServiceTests: XCTestCase {
         XCTAssertNil(try service.autoApplyGraceIfNeeded(domain: .workout, asOf: asOf))
     }
 
+    func test_autoGrace_doesNotCoverMultiDayLapse() throws {
+        // Mon + Tue trained, then Wed AND Thu both missed.
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 4, 10, 0), source: .lift)
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 5, 10, 0), source: .lift)
+
+        // First launch (Thu) protects Wed (anchor Tue is genuine).
+        XCTAssertNotNil(try service.autoApplyGraceIfNeeded(domain: .workout, asOf: jstDate(2026, 5, 7, 9, 0)))
+        // Next launch (Fri): yesterday=Thu missed, dayBefore=Wed is now grace-
+        // covered, so the lapse must NOT be extended and the streak breaks.
+        XCTAssertNil(try service.autoApplyGraceIfNeeded(domain: .workout, asOf: jstDate(2026, 5, 8, 9, 0)),
+                     "A second consecutive miss anchored on a graced day must not auto-grace.")
+        let counter = try service.recompute(domain: .workout, asOf: jstDate(2026, 5, 8, 9, 0))
+        XCTAssertEqual(counter.freezesAvailable, 1, "Only one freeze spent across the 2-day lapse.")
+        XCTAssertEqual(counter.currentStreak, 0, "The unprotected second miss breaks the streak.")
+    }
+
     func test_autoGrace_isIdempotent() throws {
         try service.recordWorkoutLedger(date: jstDate(2026, 5, 4, 10, 0), source: .lift)
         try service.recordWorkoutLedger(date: jstDate(2026, 5, 5, 10, 0), source: .lift)

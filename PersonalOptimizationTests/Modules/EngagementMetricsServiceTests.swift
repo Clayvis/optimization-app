@@ -108,7 +108,8 @@ final class EngagementMetricsServiceTests: XCTestCase {
 
     func test_dayOverDayReturnRate_computesConditionalProbability() throws {
         let ctx = try makeContext()
-        // Active days {0,1,2,5}; today = day 6 (not active).
+        // Active days {0,1,2,5}; today = day 7 so every eligible day's tomorrow
+        // is a fully past, observable day.
         for i in [0, 1, 2, 5] {
             let log = DailyLog(date: day(i), calendar: cal)
             log.waterOz = 16
@@ -116,10 +117,23 @@ final class EngagementMetricsServiceTests: XCTestCase {
         }
         try ctx.save()
 
-        let m = service(ctx).compute(asOf: day(6))
+        let m = service(ctx).compute(asOf: day(7))
         XCTAssertEqual(m.activeDaysCount, 4)
-        // Eligible (before today): {0,1,2,5}. Returned next-day: 0->1, 1->2 only.
+        // Eligible (tomorrow < today): {0,1,2,5}. Returned next-day: 0->1, 1->2.
         XCTAssertEqual(m.dayOverDayReturnRate ?? -1, 0.5, accuracy: 0.0001)
+    }
+
+    func test_establishment_notWeekOne_whenSeventhDayLandsOnDay8() throws {
+        let ctx = try makeContext()
+        // User skipped day 0; protocol-complete on offsets 1..7. The 7-run ends
+        // on offset 7 (the 8th calendar day of use), outside week one.
+        for i in 1...7 { seedProtocolDay(ctx, offset: i) }
+        try ctx.save()
+
+        let m = service(ctx).compute(asOf: day(10))
+        XCTAssertTrue(m.establishedSevenDayStreak)
+        XCTAssertFalse(m.establishedInWeekOne, "Seventh day on offset 7 is the 8th day, outside week one.")
+        XCTAssertEqual(m.daysToEstablishment, 7)
     }
 
     func test_returnRate_nilWhenNoEligibleDays() throws {

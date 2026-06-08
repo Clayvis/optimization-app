@@ -249,7 +249,7 @@ final class CharacterStateService {
         // Scoped fetch: predicate on date == day so we only pull the one row
         // instead of streaming the entire DailyLog table every recompute.
         let todayLogDescriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
+            predicate: #Predicate<DailyLog> { $0.date == day && $0.supersededAt == nil }
         )
         let todayLog = modelContext.fetchFirstOrNil(todayLogDescriptor)
         let scheduleService = ScheduleService(modelContext: modelContext, timezone: timezone)

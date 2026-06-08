@@ -263,7 +263,7 @@ final class FastingService {
         cal.timeZone = timezone
         let day = cal.startOfDay(for: date)
         let descriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
+            predicate: #Predicate<DailyLog> { $0.date == day && $0.supersededAt == nil }
         )
         return modelContext.fetchFirstOrNil(descriptor)
     }
