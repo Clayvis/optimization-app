@@ -106,6 +106,56 @@ final class PartnerService {
         try await zone.fetchPartnerSnapshot()
     }
 
+    /// Sends a single-tap nudge to the partner. Cheap, high-signal, no feed:
+    /// the cooperative-dyad answer to Strava kudos at n=2.
+    func sendNudge(message: String = "Thinking of you. Close your day.") async throws {
+        try await zone.sendNudge(PartnerNudge(message: message))
+        logger.info("Sent partner nudge")
+    }
+
+    /// Reads the most recent nudge the partner sent, if any.
+    func pendingNudge() async throws -> PartnerNudge? {
+        try await zone.fetchPendingNudge()
+    }
+
+    /// Computes the cooperative joint streak from the user's own streak and the
+    /// partner's published snapshot. The joint streak is the strongest novel
+    /// hook a solo app cannot replicate: it survives only while BOTH chains are
+    /// alive, so its length is bounded by the shorter of the two. Pure function;
+    /// safe to unit test without CloudKit.
+    static func jointStatus(
+        ownStreak: Int,
+        ownClosedToday: Bool,
+        partner: PartnerSharedRecord?,
+        calendar: Calendar,
+        asOf: Date = Date()
+    ) -> JointStreakStatus {
+        guard let partner else {
+            return JointStreakStatus(
+                partnerPaired: false,
+                ownStreak: ownStreak,
+                partnerStreak: nil,
+                jointStreak: 0,
+                bothClosedToday: false,
+                partnerMascotState: nil,
+                partnerMasterMetric: nil
+            )
+        }
+        // Partner "closed today" when their snapshot is from today and their
+        // master metric reached 1.0 (every scheduled domain done).
+        let partnerClosedToday = calendar.isDate(partner.lastUpdate, inSameDayAs: asOf)
+            && partner.masterMetric >= 1.0
+        return JointStreakStatus(
+            partnerPaired: true,
+            ownStreak: ownStreak,
+            partnerStreak: partner.currentStreak,
+            jointStreak: max(0, min(ownStreak, partner.currentStreak)),
+            bothClosedToday: ownClosedToday && partnerClosedToday,
+            partnerMascotState: partner.mascotState,
+            partnerMasterMetric: partner.masterMetric
+        )
+    }
+
     /// Generates a 6-character alphanumeric code. Excludes 0/O/1/I to avoid
     /// confusion when typing on a phone keyboard.
     static func makeCode() -> String {
@@ -122,4 +172,17 @@ enum PartnerError: LocalizedError {
         case .invalidCode: return "Pairing codes are six characters."
         }
     }
+}
+
+/// The cooperative spouse-dyad state for shared visibility (section 3). Frames
+/// the relationship as "we both closed today," never "you beat her by 200."
+struct JointStreakStatus: Sendable, Equatable {
+    let partnerPaired: Bool
+    let ownStreak: Int
+    let partnerStreak: Int?
+    /// min(own, partner): alive only while both chains are.
+    let jointStreak: Int
+    let bothClosedToday: Bool
+    let partnerMascotState: String?
+    let partnerMasterMetric: Double?
 }

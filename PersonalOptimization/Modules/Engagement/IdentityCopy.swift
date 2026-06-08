@@ -63,6 +63,10 @@ enum IdentityCopy {
     /// pressure: the streak is preserved honestly and the day is covered.
     static let streakProtected = "Streak protected. Rest easy."
 
+    /// Shown when auto-grace spent a freeze on the user's behalf to protect a
+    /// would-break streak. Identity-framed: mercy, never a faked completion.
+    static let streakAutoProtected = "Grace day auto-applied. Your streak is safe. Mercy, not a faked log."
+
     // MARK: - Mascot reasons (display-only, not load-bearing)
 
     static let mascotProudStreak = "You hit a streak milestone."

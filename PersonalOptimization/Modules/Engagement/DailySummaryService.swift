@@ -28,6 +28,14 @@ struct ProtocolAdherenceTally: Sendable {
         guard total > 0 else { return "Nothing scheduled today." }
         return "\(completedCount)/\(total) of today's protocol complete"
     }
+
+    /// The single scheduled-but-incomplete domain when exactly one remains.
+    /// Drives the goal-gradient "one more to close" nudge: motivation rises near
+    /// the finish, so the final-stretch prompt names exactly what is left.
+    var oneMoreToClose: ProtocolDomainResult? {
+        let remaining = domains.filter { $0.scheduled && !$0.completed }
+        return remaining.count == 1 ? remaining.first : nil
+    }
 }
 
 /// Computes "Today's Protocol Adherence" — the single roll-up shown on TodayView.

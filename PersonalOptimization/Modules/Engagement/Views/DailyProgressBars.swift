@@ -145,6 +145,19 @@ struct DailyProgressBars: View {
                     .frame(width: 18)
                 Text(label)
                     .font(.subheadline.weight(.medium))
+                // Goal-gradient cue: emphasize the final stretch so motivation
+                // rises near the finish, without distorting the accurate fill.
+                if progress >= 1.0 {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(tint)
+                        .accessibilityHidden(true)
+                } else if progress >= 0.8 {
+                    Text("almost")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(tint)
+                        .accessibilityHidden(true)
+                }
                 Spacer()
                 Text(detail)
                     .font(.caption.monospacedDigit())

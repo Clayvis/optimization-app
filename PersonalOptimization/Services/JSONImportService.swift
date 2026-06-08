@@ -37,6 +37,14 @@ enum JSONImportService {
         try wipe(modelContext: modelContext)
         try insertAll(from: payload, into: modelContext)
         try modelContext.save()
+        // Streak-integrity safeguard: an import file may carry two DailyLog rows
+        // that collapse to the same calendar day under the user's calendar.
+        // Non-destructive dedupe merges them into one canonical row so the
+        // imported streak counts cannot be corrupted by duplicate-date entries.
+        // MARK: try? justified - import already succeeded; a dedupe hiccup is a
+        // persistence diagnostic logged inside the store, not a reason to fail
+        // the whole restore.
+        try? DailyLogStore.forUser(modelContext: modelContext).dedupe()
         Logger.persistence.info("Restore complete: \(payload.scheduleBlocks.count, privacy: .public) blocks, \(payload.dailyLogs.count, privacy: .public) logs")
     }
 

@@ -118,6 +118,13 @@ struct TodayView: View {
                 }
 
                 Section {
+                    PartnerStatusCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
                     DailyProgressBars()
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -338,19 +345,25 @@ struct TodayView: View {
 
     @ViewBuilder
     private var graceBannerSection: some View {
-        if let profile {
-            if let until = profile.travelModeActiveUntil, until >= now {
-                Section {
-                    graceBanner(text: IdentityCopy.travelBanner,
-                                systemImage: "airplane",
-                                accent: .blue)
-                }
-            } else if let until = profile.sickDayActiveUntil, until >= now {
-                Section {
-                    graceBanner(text: IdentityCopy.sickBanner,
-                                systemImage: "thermometer.medium",
-                                accent: .orange)
-                }
+        if let profile, let until = profile.travelModeActiveUntil, until >= now {
+            Section {
+                graceBanner(text: IdentityCopy.travelBanner,
+                            systemImage: "airplane",
+                            accent: .blue)
+            }
+        } else if let profile, let until = profile.sickDayActiveUntil, until >= now {
+            Section {
+                graceBanner(text: IdentityCopy.sickBanner,
+                            systemImage: "thermometer.medium",
+                            accent: .orange)
+            }
+        } else if let applied = AutoGraceLog.lastApplied(), Calendar.current.isDateInToday(applied) {
+            // Forgiveness made visible (design principle 2): a freeze was
+            // auto-spent to protect the streak, never a faked completion.
+            Section {
+                graceBanner(text: IdentityCopy.streakAutoProtected,
+                            systemImage: "shield.lefthalf.filled",
+                            accent: .blue)
             }
         }
     }
@@ -391,6 +404,16 @@ struct TodayView: View {
                 if tally.scheduledCount > 0 {
                     ProgressView(value: Double(tally.completedCount), total: Double(tally.scheduledCount))
                         .tint(.green)
+                }
+                // Goal-gradient: in the final stretch (exactly one domain left)
+                // name what closes the day. Motivation rises near the finish.
+                if let one = tally.oneMoreToClose {
+                    HStack(spacing: 4) {
+                        Image(systemName: "target")
+                        Text("One more to close: \(one.label)")
+                    }
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.orange)
                 }
             }
             .padding(16)

@@ -8,5 +8,6 @@ struct ComplicationBundle: WidgetBundle {
         FastCountdownComplication()
         MascotComplication()
         HydrationComplication()
+        ProtocolGoalComplication()
     }
 }

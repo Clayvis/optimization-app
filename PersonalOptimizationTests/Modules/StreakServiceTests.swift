@@ -230,6 +230,72 @@ final class StreakServiceTests: XCTestCase {
         XCTAssertEqual(counter.longestStreak, 5)
     }
 
+    // MARK: - Auto-grace (forgiveness from day one)
+
+    func test_autoGrace_protectsYesterday_whenStreakWouldBreak() throws {
+        // Mon + Tue trained, Wed missed, "today" is Thu morning.
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 4, 10, 0), source: .lift)
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 5, 10, 0), source: .lift)
+        let asOf = jstDate(2026, 5, 7, 9, 0)
+
+        let protectedDay = try service.autoApplyGraceIfNeeded(domain: .workout, asOf: asOf)
+        XCTAssertNotNil(protectedDay, "Wednesday's miss should be auto-protected.")
+
+        // A freeze-sourced event now covers Wednesday and a freeze was spent.
+        let counter = try service.recompute(domain: .workout, asOf: asOf)
+        XCTAssertEqual(counter.freezesAvailable, 1)
+        XCTAssertEqual(counter.freezesUsedThisMonth, 1)
+        XCTAssertEqual(counter.currentStreak, 3, "Mon, Tue, and the protected Wed keep the chain alive.")
+    }
+
+    func test_autoGrace_noOp_whenYesterdayAlreadyCompleted() throws {
+        for offset in 0..<3 {
+            try service.recordWorkoutLedger(date: jstDate(2026, 5, 4 + offset, 10, 0), source: .lift)
+        }
+        let asOf = jstDate(2026, 5, 7, 9, 0)
+        XCTAssertNil(try service.autoApplyGraceIfNeeded(domain: .workout, asOf: asOf))
+        let counter = try service.recompute(domain: .workout, asOf: asOf)
+        XCTAssertEqual(counter.freezesAvailable, 2, "No freeze spent when yesterday was completed.")
+    }
+
+    func test_autoGrace_noOp_whenNoLiveStreakToSave() throws {
+        // Only Monday trained; Tue and Wed missed. The chain already broke at
+        // Tue, so protecting Wed would not save anything.
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 4, 10, 0), source: .lift)
+        let asOf = jstDate(2026, 5, 7, 9, 0)
+        XCTAssertNil(try service.autoApplyGraceIfNeeded(domain: .workout, asOf: asOf))
+        let counter = try service.recompute(domain: .workout, asOf: asOf)
+        XCTAssertEqual(counter.freezesAvailable, 2)
+    }
+
+    func test_autoGrace_noOp_whenNoFreezesAvailable() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = jst
+        let asOf = jstDate(2026, 5, 7, 9, 0)
+        let monthAnchor = cal.date(from: cal.dateComponents([.year, .month], from: asOf))!
+        let counter = StreakCounter(domain: .workout)
+        counter.freezesAvailable = 0
+        counter.freezeMonthAnchor = monthAnchor
+        context.insert(counter)
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 4, 10, 0), source: .lift)
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 5, 10, 0), source: .lift)
+        try context.save()
+
+        XCTAssertNil(try service.autoApplyGraceIfNeeded(domain: .workout, asOf: asOf))
+    }
+
+    func test_autoGrace_isIdempotent() throws {
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 4, 10, 0), source: .lift)
+        try service.recordWorkoutLedger(date: jstDate(2026, 5, 5, 10, 0), source: .lift)
+        let asOf = jstDate(2026, 5, 7, 9, 0)
+
+        XCTAssertNotNil(try service.autoApplyGraceIfNeeded(domain: .workout, asOf: asOf))
+        XCTAssertNil(try service.autoApplyGraceIfNeeded(domain: .workout, asOf: asOf),
+                     "A second run finds yesterday already covered.")
+        let counter = try service.recompute(domain: .workout, asOf: asOf)
+        XCTAssertEqual(counter.freezesAvailable, 1, "Only one freeze spent across two runs.")
+    }
+
     private func jstDate(_ y: Int, _ mo: Int, _ d: Int, _ h: Int, _ mi: Int) -> Date {
         var c = DateComponents()
         c.year = y; c.month = mo; c.day = d; c.hour = h; c.minute = mi

@@ -126,6 +126,68 @@ final class StreakService {
         return try recompute(domain: domain, asOf: asOf)
     }
 
+    /// Duolingo-style auto-grace (build sheet Gap 2: forgiveness from day one).
+    /// If YESTERDAY would otherwise break `domain`'s streak and a freeze is
+    /// available, spends one freeze to protect it. Honest by construction: it
+    /// records a `FreezeApplication` (or a `WorkoutEvent` source=.freeze for the
+    /// workout domain), never a fake completion; it draws from the finite monthly
+    /// pool; and it returns the protected day so the UI can surface it. Run once
+    /// at launch.
+    ///
+    /// Only fires when it actually SAVES a chain: it requires the streak to have
+    /// been alive through the day before yesterday, so it never spends a freeze
+    /// on a zero streak or revives a multi-day lapse. Idempotent: a day already
+    /// completed or grace-covered is skipped.
+    @discardableResult
+    func autoApplyGraceIfNeeded(domain: StreakDomain = .protocolAdherence, asOf: Date = Date()) throws -> Date? {
+        let counter = upsertCounter(domain: domain)
+        applyMonthlyResetIfNeeded(counter: counter, asOf: asOf)
+        guard counter.freezesAvailable > 0 else { return nil }
+
+        let cal = jstCalendar()
+        let today = cal.startOfDay(for: asOf)
+        guard let yesterday = cal.date(byAdding: .day, value: -1, to: today),
+              let dayBefore = cal.date(byAdding: .day, value: -2, to: today) else { return nil }
+
+        let history = try buildCompletionHistory(domain: domain, asOf: asOf)
+        let restDays = autoRestDays(domain: domain)
+
+        // Nothing to protect if yesterday is already done/covered or is a rest day.
+        if history[yesterday] == true { return nil }
+        if restDays.contains(isoWeekday(for: yesterday)) { return nil }
+        // Only protect a real chain: the streak must have been alive through the
+        // day before yesterday. Otherwise this is a fresh miss, not a save.
+        guard streakAlive(endingAt: dayBefore, history: history, restDays: restDays, calendar: cal) else { return nil }
+
+        if domain == .workout {
+            modelContext.insert(WorkoutEvent(date: yesterday, completed: true, source: .freeze))
+        } else {
+            modelContext.insert(FreezeApplication(domain: domain, date: yesterday))
+        }
+        counter.freezesAvailable -= 1
+        counter.freezesUsedThisMonth += 1
+        try modelContext.save()
+        try recompute(domain: domain, asOf: asOf)
+        logger.info("Auto-grace protected \(domain.rawValue, privacy: .public) for yesterday; freezes left=\(counter.freezesAvailable, privacy: .public)")
+        return yesterday
+    }
+
+    /// True when `domain`'s chain was alive ending at `day`: either `day` is
+    /// completed, or it is a rest day that bridges back to a completed day.
+    private func streakAlive(endingAt day: Date, history: [Date: Bool], restDays: Set<Int>, calendar: Calendar) -> Bool {
+        var cursor = day
+        for _ in 0..<730 {
+            if history[cursor] == true { return true }
+            if restDays.contains(isoWeekday(for: cursor)) {
+                guard let prev = calendar.date(byAdding: .day, value: -1, to: cursor) else { return false }
+                cursor = prev
+                continue
+            }
+            return false
+        }
+        return false
+    }
+
     /// Resets the per-month freeze counter when the calendar month changes.
     /// Idempotent within the same month.
     func resetMonthlyFreezes(asOf: Date = Date()) throws {
@@ -407,5 +469,20 @@ final class StreakService {
         cal.timeZone = timezone
         let raw = cal.component(.weekday, from: date)
         return raw == 1 ? 7 : raw - 1
+    }
+}
+
+/// Records when auto-grace last protected the streak so TodayView can surface a
+/// one-time "grace day applied" note. UserDefaults (not SwiftData) because it is
+/// transient UI state, not activity history; injectable for tests.
+enum AutoGraceLog {
+    private static let key = "\(BuildConfig.bundlePrefix).autoGrace.lastAppliedAt"
+
+    static func record(at date: Date = Date(), into defaults: UserDefaults = .standard) {
+        defaults.set(date, forKey: key)
+    }
+
+    static func lastApplied(from defaults: UserDefaults = .standard) -> Date? {
+        defaults.object(forKey: key) as? Date
     }
 }

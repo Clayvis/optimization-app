@@ -74,6 +74,23 @@ struct PersonalOptimizationApp: App {
             // with inconsistent timezone keys before DailyLogStore landed.
             // UserDefaults-gated, no-op on subsequent launches.
             DailyLogDedupeOnce.runIfNeeded(modelContext: context)
+
+            // Forgiveness from day one (build sheet Gap 2): refresh the monthly
+            // freeze pool on month rollover, then auto-spend one freeze to
+            // protect the protocol streak if yesterday would otherwise have
+            // broken it. Honest mercy: records a FreezeApplication, never a fake
+            // completion, and only fires when it actually saves a live chain.
+            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
+            let streaks = StreakService(modelContext: context, hydrationTargets: targets)
+            do {
+                try streaks.resetMonthlyFreezes()
+                if try streaks.autoApplyGraceIfNeeded() != nil {
+                    AutoGraceLog.record()
+                    NotificationCenter.default.post(name: .userStateChanged, object: nil)
+                }
+            } catch {
+                Logger.app.error("Auto-grace / monthly reset failed: \(error.localizedDescription, privacy: .public)")
+            }
         }
         DevSecretsBootstrap.bootstrapIfNeeded()
         FirstLaunchTracker.shared.recordIfNeeded()

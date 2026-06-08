@@ -174,6 +174,7 @@
 		6A38102552172AE1DAC72035 /* IdentityCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */; };
 		6B73F0CDF2A914042F1F0EC1 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044790DF6858E05D889E8DA3 /* NotificationService.swift */; };
 		6C76728BFC40EC9BAF5ED504 /* StreakDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B56E873F82EA629BB4C40F /* StreakDomain.swift */; };
+		6C9B3E87BC15FA4FF4F0AED0 /* ProtocolGoalComplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FDAEACF6E7BD19DCB489A5 /* ProtocolGoalComplication.swift */; };
 		6DA533024D06C1998A640171 /* BuildConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E7C9764A9D195C10496DDE /* BuildConfig.swift */; };
 		6EC0A2082A8A627A1B2086DB /* RecoveryGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 908DCE315AB371A354909F0F /* RecoveryGate.swift */; };
 		6F3798E21919A4DA4CF40418 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2980B95DAC2C5D2BF8D46211 /* ContentView.swift */; };
@@ -219,6 +220,7 @@
 		82082086900D7DA033787E62 /* HandoffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4974834FAD6CC2D925CB5C13 /* HandoffService.swift */; };
 		821C7E7785DC12B4770D9BC8 /* SchemaV6.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55921DCD58DBE8640AF42118 /* SchemaV6.swift */; };
 		82CED799C08A2A19FDA0D1C5 /* AdminTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961232791C8824387CFFBCE /* AdminTask.swift */; };
+		8431A5BE306567CD42D52043 /* ProtocolAdherenceTallyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB066DB5EFCD1728DA590409 /* ProtocolAdherenceTallyTests.swift */; };
 		847D1AF8A4548B50E794DEF8 /* HandoffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4974834FAD6CC2D925CB5C13 /* HandoffService.swift */; };
 		86067350BA1F20E19A896AE1 /* PrescribedWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F855A3A3402581056CD01C9 /* PrescribedWorkout.swift */; };
 		86CE01A81BD8C89A0F0920B6 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3E8E2C56CA679596E1AC22 /* RootView.swift */; };
@@ -356,6 +358,7 @@
 		CA48EEAB9F4C7F17C2BDCE99 /* ScheduleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F31266DF504D0F540B369D /* ScheduleBlock.swift */; };
 		CB71A84938642342BA0EEB8F /* CustomActivityTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABE8CF412E9DF87820B2ED41 /* CustomActivityTemplate.swift */; };
 		CC72E0AC0A58B671E376E8EF /* FreezeApplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072974B3FC3533149FC8CAF2 /* FreezeApplication.swift */; };
+		CCE23FE72ACB3CC6FD7BFD04 /* PartnerStatusCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB601ED12239384DB0F30713 /* PartnerStatusCard.swift */; };
 		CE52C2638478B24A49D2F88E /* ScheduleAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D25AAB0086EEE975F73A476 /* ScheduleAIService.swift */; };
 		CE6F2FD880777F4FC48C85F8 /* SchemaV9.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0FDED3EF727D9B15FC65D5 /* SchemaV9.swift */; };
 		CEEBF7E2CEC5F3F45775EA8D /* SchemaV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758596BD9C49AD3F4EEAFB95 /* SchemaV2.swift */; };
@@ -722,6 +725,7 @@
 		A8FEC052CD852E3744F42807 /* TokenBudgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenBudgetService.swift; sourceTree = "<group>"; };
 		A9D1853B432177F68D4B8C3B /* WeeklyProgram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyProgram.swift; sourceTree = "<group>"; };
 		AAFBD30EE98B4C356DAD8AA8 /* HealthKitSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitSyncServiceTests.swift; sourceTree = "<group>"; };
+		AB601ED12239384DB0F30713 /* PartnerStatusCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartnerStatusCard.swift; sourceTree = "<group>"; };
 		ABE8CF412E9DF87820B2ED41 /* CustomActivityTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomActivityTemplate.swift; sourceTree = "<group>"; };
 		AC731AE7F389773B89F13EB0 /* CoachMemoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachMemoryService.swift; sourceTree = "<group>"; };
 		ADD6AE4177CF18D51EC8EA5E /* AdaptiveNotificationTimingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveNotificationTimingTests.swift; sourceTree = "<group>"; };
@@ -730,6 +734,7 @@
 		AFF13531E1C84E1B6271EB29 /* StreakCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCounter.swift; sourceTree = "<group>"; };
 		B12078C7513677476A637F58 /* LiftServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftServiceTests.swift; sourceTree = "<group>"; };
 		B1BE0215BE0309E16D9B655A /* PartnerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartnerServiceTests.swift; sourceTree = "<group>"; };
+		B1FDAEACF6E7BD19DCB489A5 /* ProtocolGoalComplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolGoalComplication.swift; sourceTree = "<group>"; };
 		B28A27D744ACD4EEB946572B /* WeeklyReflectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReflectionService.swift; sourceTree = "<group>"; };
 		B2BA26E7796EB71FC1E0CB0A /* DailyProgressBars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyProgressBars.swift; sourceTree = "<group>"; };
 		B51542D012807C71EE967904 /* HydrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationView.swift; sourceTree = "<group>"; };
@@ -754,6 +759,7 @@
 		C8F222D2CE0A22931521B4A6 /* DevSecretsBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevSecretsBootstrap.swift; sourceTree = "<group>"; };
 		CA2773372A4E5001F3A6F618 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
 		CAF4652FE69EA281396290FC /* SchemaV5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV5.swift; sourceTree = "<group>"; };
+		CB066DB5EFCD1728DA590409 /* ProtocolAdherenceTallyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolAdherenceTallyTests.swift; sourceTree = "<group>"; };
 		CE5F407DE69792F708AAA331 /* SchemaV10.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV10.swift; sourceTree = "<group>"; };
 		CEBEF298E4B2B2C50CE9BA61 /* SchemaV3ThroughV9MigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV3ThroughV9MigrationTests.swift; sourceTree = "<group>"; };
 		CEE759FC5B3BDC3B6248856B /* LiftWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftWatchView.swift; sourceTree = "<group>"; };
@@ -947,6 +953,7 @@
 				0D9AFB3C8ECAD32069E3A4CE /* PersonaServiceInferenceTests.swift */,
 				4C802AE0A1D4D1234655109C /* PersonaServiceTests.swift */,
 				78B6CBBB02D87C77CA3EF209 /* PimsleurDeepLinkTests.swift */,
+				CB066DB5EFCD1728DA590409 /* ProtocolAdherenceTallyTests.swift */,
 				2EFF0733536CD0A979649998 /* RecoveryGateTests.swift */,
 				9ED2ACA0962070F6E75BCD94 /* SchedulePlannerTests.swift */,
 				1D07E40975A5EFFC26755ECF /* ScheduleSeedTests.swift */,
@@ -992,6 +999,7 @@
 				982F36D565A3047BD1C17677 /* MilestoneCelebrationSheet.swift */,
 				DB52D73FEB5A6C1575F26C46 /* MilestoneShareSheet.swift */,
 				A17FB8A4BB496CEA2762528C /* PartnerSettingsView.swift */,
+				AB601ED12239384DB0F30713 /* PartnerStatusCard.swift */,
 				7ADDE6CEC857609895C90F4C /* PersonaQuestionnaireView.swift */,
 				362C651F9DE544A3FC0B9808 /* PersonaSignalCard.swift */,
 				8A3343AA25058AC2791C4DB8 /* PersonaWeeklyQuestionCard.swift */,
@@ -1391,6 +1399,7 @@
 				107F1D4D82B6EB9F1FC2EF78 /* Info.plist */,
 				AFE3C14010480A8A180A4158 /* MascotComplication.swift */,
 				D336D7B9EFE5E76B62ADDB3F /* PersonalOptimizationWatchComplications.entitlements */,
+				B1FDAEACF6E7BD19DCB489A5 /* ProtocolGoalComplication.swift */,
 			);
 			path = PersonalOptimizationWatchComplications;
 			sourceTree = "<group>";
@@ -1722,6 +1731,7 @@
 				AA84CC8D1BDF4EB9E10BCE89 /* PimsleurDeepLinkTests.swift in Sources */,
 				1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */,
 				3C145031C9AAB2895B356800 /* ProfileServiceTests.swift in Sources */,
+				8431A5BE306567CD42D52043 /* ProtocolAdherenceTallyTests.swift in Sources */,
 				179ABA5B9DFB19C505B9A078 /* ReactiveRecomputeServiceTests.swift in Sources */,
 				AF02DB40855E1C6D5719104A /* RecoveryGateTests.swift in Sources */,
 				C563367AB44E0A78A2FDE417 /* ScheduleAIServiceTests.swift in Sources */,
@@ -1852,6 +1862,7 @@
 				9F6122B6432265FEB3222A66 /* PartnerService.swift in Sources */,
 				00284E75632C7BB1BD6A2181 /* PartnerSettingsView.swift in Sources */,
 				BCB417D0BD121292F18F7477 /* PartnerSharedZone.swift in Sources */,
+				CCE23FE72ACB3CC6FD7BFD04 /* PartnerStatusCard.swift in Sources */,
 				03DAEBD67838553F0DDB3255 /* PersistenceBootstrap.swift in Sources */,
 				06E5901C338725EB2C1BBEC2 /* PersistenceRecoveryView.swift in Sources */,
 				462D730EFE881DBAEBF69992 /* PersonaBehavioralInference.swift in Sources */,
@@ -1979,6 +1990,7 @@
 				EE958E9C6131A4E89EB57A0D /* PrescribedWorkout.swift in Sources */,
 				170E95E49F9B10235C37B18B /* ProfileService.swift in Sources */,
 				2732AB89C3CA4CA9A702EE98 /* ProtocolEntry.swift in Sources */,
+				6C9B3E87BC15FA4FF4F0AED0 /* ProtocolGoalComplication.swift in Sources */,
 				DC3598DF9C384F7BBA1D00C9 /* ScheduleBlock.swift in Sources */,
 				FBE012E8CC00A4B68F92A687 /* ScheduleConfig.swift in Sources */,
 				B03C2BA23FD92471FF04F367 /* ScheduleGenerationDTO.swift in Sources */,

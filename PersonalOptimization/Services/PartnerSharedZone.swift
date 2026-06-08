@@ -24,6 +24,23 @@ protocol PartnerSharedZone: Sendable {
     /// caller). Returns nil if the partner hasn't published one yet or
     /// the link is broken.
     func fetchPartnerSnapshot() async throws -> PartnerSharedRecord?
+    /// Sends a gentle nudge to the partner. Single tap, no feed: the
+    /// cooperative-dyad version of Strava kudos at n=2.
+    func sendNudge(_ nudge: PartnerNudge) async throws
+    /// Fetches the most recent nudge the partner sent, if any.
+    func fetchPendingNudge() async throws -> PartnerNudge?
+}
+
+/// A one-tap "thinking of you, close your day" prompt. At n=2 the sender is
+/// implicit (the only partner), so no identity field is needed.
+struct PartnerNudge: Codable, Sendable, Equatable {
+    let message: String
+    let sentAt: Date
+
+    init(message: String, sentAt: Date = Date()) {
+        self.message = message
+        self.sentAt = sentAt
+    }
 }
 
 /// Lightweight record passed through the zone. Codable so the live
@@ -58,6 +75,8 @@ final class NoopPartnerSharedZone: PartnerSharedZone {
     func write(record: PartnerSharedRecord) async throws { /* no-op */ }
     func deleteAll() async throws { /* no-op */ }
     func fetchPartnerSnapshot() async throws -> PartnerSharedRecord? { nil }
+    func sendNudge(_ nudge: PartnerNudge) async throws { /* no-op */ }
+    func fetchPendingNudge() async throws -> PartnerNudge? { nil }
 }
 
 #if DEBUG
@@ -72,6 +91,9 @@ final class MemoryPartnerSharedZone: PartnerSharedZone {
     private(set) var writeCalls = 0
     private(set) var deleteAllCalls = 0
     private(set) var fetchCalls = 0
+    private(set) var nudgeCalls = 0
+    private(set) var sentNudges: [PartnerNudge] = []
+    var pendingNudge: PartnerNudge?
     var failNextWrite: Error?
     var failNextDeleteAll: Error?
     var failNextFetch: Error?
@@ -107,6 +129,20 @@ final class MemoryPartnerSharedZone: PartnerSharedZone {
         return records.values
             .filter { $0.userID != callerUserID }
             .max(by: { $0.lastUpdate < $1.lastUpdate })
+    }
+
+    func sendNudge(_ nudge: PartnerNudge) async throws {
+        nudgeCalls += 1
+        sentNudges.append(nudge)
+    }
+
+    func fetchPendingNudge() async throws -> PartnerNudge? {
+        pendingNudge
+    }
+
+    /// Synchronous seeding for previews and tests that cannot await `write`.
+    func preloadPartner(_ record: PartnerSharedRecord) {
+        records[record.userID] = record
     }
 }
 #endif

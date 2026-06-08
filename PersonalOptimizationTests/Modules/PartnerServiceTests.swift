@@ -76,4 +76,66 @@ final class PartnerServiceTests: XCTestCase {
         XCTAssertNil(profile.partnerRecordID)
         XCTAssertNil(profile.partnerLinkedAt)
     }
+
+    // MARK: - Joint streak + nudge (cooperative dyad)
+
+    private func jstCalendar() -> Calendar {
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+        return c
+    }
+
+    func test_jointStatus_unpaired_whenNoPartner() {
+        let status = PartnerService.jointStatus(
+            ownStreak: 5, ownClosedToday: true, partner: nil, calendar: jstCalendar()
+        )
+        XCTAssertFalse(status.partnerPaired)
+        XCTAssertEqual(status.jointStreak, 0)
+        XCTAssertNil(status.partnerStreak)
+    }
+
+    func test_jointStatus_isMinOfBothStreaks() {
+        let partner = PartnerSharedRecord(userID: "p", currentStreak: 12, masterMetric: 0.5, mascotState: "neutral", lastUpdate: Date())
+        let status = PartnerService.jointStatus(
+            ownStreak: 5, ownClosedToday: false, partner: partner, calendar: jstCalendar()
+        )
+        XCTAssertTrue(status.partnerPaired)
+        XCTAssertEqual(status.partnerStreak, 12)
+        XCTAssertEqual(status.jointStreak, 5, "Joint streak is bounded by the shorter chain.")
+    }
+
+    func test_jointStatus_bothClosedToday_whenPartnerFreshAndComplete() {
+        let cal = jstCalendar()
+        let partner = PartnerSharedRecord(userID: "p", currentStreak: 8, masterMetric: 1.0, mascotState: "proud", lastUpdate: Date())
+        let status = PartnerService.jointStatus(
+            ownStreak: 8, ownClosedToday: true, partner: partner, calendar: cal
+        )
+        XCTAssertTrue(status.bothClosedToday)
+    }
+
+    func test_jointStatus_notBothClosed_whenPartnerSnapshotStale() {
+        let cal = jstCalendar()
+        let yesterday = cal.date(byAdding: .day, value: -1, to: Date())!
+        let partner = PartnerSharedRecord(userID: "p", currentStreak: 8, masterMetric: 1.0, mascotState: "proud", lastUpdate: yesterday)
+        let status = PartnerService.jointStatus(
+            ownStreak: 8, ownClosedToday: true, partner: partner, calendar: cal
+        )
+        XCTAssertFalse(status.bothClosedToday, "A stale partner snapshot does not count as closed today.")
+    }
+
+    func test_sendNudge_callsZone() async throws {
+        let zone = MemoryPartnerSharedZone()
+        let svc = PartnerService(modelContext: context, zone: zone)
+        try await svc.sendNudge(message: "Close your day.")
+        XCTAssertEqual(zone.nudgeCalls, 1)
+        XCTAssertEqual(zone.sentNudges.first?.message, "Close your day.")
+    }
+
+    func test_pendingNudge_returnsZoneNudge() async throws {
+        let zone = MemoryPartnerSharedZone()
+        zone.pendingNudge = PartnerNudge(message: "Thinking of you.")
+        let svc = PartnerService(modelContext: context, zone: zone)
+        let nudge = try await svc.pendingNudge()
+        XCTAssertEqual(nudge?.message, "Thinking of you.")
+    }
 }
