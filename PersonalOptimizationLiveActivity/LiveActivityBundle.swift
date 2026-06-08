@@ -6,5 +6,6 @@ struct LiveActivityBundle: WidgetBundle {
     var body: some Widget {
         FastingLiveActivity()
         WorkoutLiveActivity()
+        DailyGoalLiveActivity()
     }
 }

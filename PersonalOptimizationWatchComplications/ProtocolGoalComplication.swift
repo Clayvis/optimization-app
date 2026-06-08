@@ -38,59 +38,14 @@ struct ProtocolGoalTimelineProvider: TimelineProvider {
         guard let container = sharedContainer() else {
             return ProtocolGoalEntry(date: date, streak: 0, completedDomains: 0, totalDomains: 4)
         }
-        let context = container.mainContext
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = .current
-        let day = cal.startOfDay(for: date)
-        let tomorrow = cal.date(byAdding: .day, value: 1, to: day) ?? day
-        let raw = cal.component(.weekday, from: date)
-        let weekday = raw == 1 ? 7 : raw - 1
-
-        let key = StreakDomain.protocolAdherence.rawValue
-        let streak = context.fetchOrEmpty(
-            FetchDescriptor<StreakCounter>(predicate: #Predicate { $0.domain == key })
-        ).first?.currentStreak ?? 0
-
-        let log = context.fetchOrEmpty(
-            FetchDescriptor<DailyLog>(predicate: #Predicate { $0.date == day && $0.supersededAt == nil })
-        ).first
-
-        // Travel/sick grace marks every scheduled domain complete (mirrors
-        // DailySummaryService.todayProtocol so the ring agrees with the streak).
-        let profile = context.fetchOrEmpty(FetchDescriptor<UserProfile>()).first
-        let graceCovered = (profile?.travelModeActiveUntil ?? .distantPast) >= date
-            || (profile?.sickDayActiveUntil ?? .distantPast) >= date
-
-        // Workout is scheduled only on days with a training block, so on a rest
-        // day it leaves both numerator and denominator, letting the ring close.
-        let blocks = context.fetchOrEmpty(
-            FetchDescriptor<ScheduleBlock>(predicate: #Predicate { $0.dayOfWeek == weekday && $0.isOverride == false })
+        // Shared computation so the ring never drifts from the in-app metric.
+        let snap = ProtocolGoalSnapshot.make(modelContext: container.mainContext, asOf: date)
+        return ProtocolGoalEntry(
+            date: date,
+            streak: snap.streak,
+            completedDomains: snap.completedDomains,
+            totalDomains: snap.totalDomains
         )
-        let workoutScheduled = blocks.contains { $0.type == .training && $0.module != nil }
-        let workoutDone = (context.fetchOrEmpty(
-            FetchDescriptor<WorkoutEvent>(predicate: #Predicate { $0.date >= day && $0.date < tomorrow && $0.completed })
-        ).isEmpty == false) || graceCovered
-
-        let fastingDone = (log?.fastEnd != nil) || graceCovered
-        let hydrationDone = ((log?.waterOz ?? 0) >= dayHydrationTarget(for: date)) || graceCovered
-        let learningDone: Bool = {
-            let jp = log?.japaneseMinutes ?? 0
-            let gtr = log?.guitarMinutes ?? 0
-            let mus = log?.musicMinutes ?? 0
-            let work = log?.courseworkMinutes ?? 0
-            return jp >= 30 || gtr >= 20 || mus >= 20 || work >= 20 || (jp + gtr + mus + work) >= 20 || graceCovered
-        }()
-
-        // Count only scheduled domains in the denominator.
-        var completed = 0
-        var total = 0
-        for (scheduled, done) in [(workoutScheduled, workoutDone), (true, fastingDone), (true, hydrationDone), (true, learningDone)] {
-            if scheduled {
-                total += 1
-                if done { completed += 1 }
-            }
-        }
-        return ProtocolGoalEntry(date: date, streak: streak, completedDomains: completed, totalDomains: total)
     }
 
     @MainActor
@@ -102,20 +57,6 @@ struct ProtocolGoalTimelineProvider: TimelineProvider {
             cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
         )
         return try? ModelContainer(for: schema, migrationPlan: AppSchema.migrationPlan, configurations: [config])
-    }
-
-    private static func dayHydrationTarget(for date: Date) -> Double {
-        // try? justified because: bundled resource; on failure fall back to the
-        // 64oz floor so the ring renders rather than breaking.
-        guard let targets = try? ScheduleConfigLoader.load().hydrationTargetsOz else { return 64 }
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = .current
-        let raw = cal.component(.weekday, from: date)
-        let weekday = raw == 1 ? 7 : raw - 1
-        if targets.basketball.appliesTo.contains(weekday) { return targets.basketball.min }
-        if targets.swim.appliesTo.contains(weekday) { return targets.swim.min }
-        if targets.lift.appliesTo.contains(weekday) { return targets.lift.min }
-        return targets.rest.min
     }
 }
 

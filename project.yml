@@ -128,6 +128,7 @@ targets:
     dependencies:
       - target: PersonalOptimizationWatch
       - target: PersonalOptimizationLiveActivity
+      - target: PersonalOptimizationWidgets
 
   PersonalOptimizationWatch:
     type: application
@@ -245,6 +246,7 @@ targets:
           - "**/.DS_Store"
       - path: PersonalOptimization/Modules/Fasting/LiveActivity/FastingActivityAttributes.swift
       - path: PersonalOptimization/Modules/Training/LiveActivity/WorkoutActivityAttributes.swift
+      - path: PersonalOptimization/Modules/Engagement/LiveActivity/DailyGoalActivityAttributes.swift
     info:
       path: PersonalOptimizationLiveActivity/Info.plist
       properties:
@@ -293,6 +295,8 @@ targets:
         name: SharedCharacter
       - path: PersonalOptimization/Modules/Engagement/AdaptiveNotificationTiming.swift
         name: SharedEngagement
+      - path: PersonalOptimization/Modules/Engagement/ProtocolGoalSnapshot.swift
+        name: SharedEngagement
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/SwiftDataHelpers.swift
       - path: PersonalOptimization/Services/ProfileService.swift
@@ -326,6 +330,57 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.watchkitapp.complications
         TARGETED_DEVICE_FAMILY: "4"
+        INFOPLIST_KEY_CFBundlePackageType: XPC!
+        ENABLE_PREVIEWS: YES
+
+  PersonalOptimizationWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      # Minimal dependency closure for ProtocolGoalSnapshot only. Deliberately
+      # excludes the Fasting/Hydration/Character service modules: on iOS their
+      # #if os(iOS) / #if !os(watchOS) code paths reference StreakService and
+      # FastingLiveActivityController, which this widget does not need.
+      - path: PersonalOptimizationWidgets
+        excludes:
+          - "**/.DS_Store"
+      - path: PersonalOptimization/Models
+        name: WidgetModels
+      - path: PersonalOptimization/Modules/Schedule/ScheduleConfig.swift
+        name: WidgetSchedule
+      - path: PersonalOptimization/Modules/Engagement/ProtocolGoalSnapshot.swift
+        name: WidgetEngagement
+      - path: PersonalOptimization/Services/Logger+Categories.swift
+      - path: PersonalOptimization/Services/SwiftDataHelpers.swift
+      - path: PersonalOptimization/Services/BuildConfig.swift
+      - path: PersonalOptimization/Services/AppGroupContainer.swift
+      - path: PersonalOptimization/Services/UserCalendar.swift
+    resources:
+      - path: PersonalOptimization/Resources
+        name: WidgetResources
+    info:
+      path: PersonalOptimizationWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Widgets
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: PersonalOptimizationWidgets/PersonalOptimizationWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.rawlins.PersonalOptimization
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.rawlins.PersonalOptimization
+        com.apple.developer.icloud-services:
+          - CloudKit
+        com.apple.developer.ubiquity-container-identifiers: []
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.widgets
+        TARGETED_DEVICE_FAMILY: "1"
         INFOPLIST_KEY_CFBundlePackageType: XPC!
         ENABLE_PREVIEWS: YES
 

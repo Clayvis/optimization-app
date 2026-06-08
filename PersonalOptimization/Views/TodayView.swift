@@ -267,6 +267,14 @@ struct TodayView: View {
                 characterService.start(modelContext: modelContext)
                 Task { await loadDailyQuote() }
                 refreshLapseAndMilestones()
+                // Update an already-running daily-goal Live Activity, but do not
+                // spawn one just for opening the app (startIfNeeded: false).
+                Task { await refreshDailyGoalActivity(startIfNeeded: false) }
+            }
+            .onChange(of: logFeedback.token) { _, _ in
+                // A real log happened: surface / refresh the daily-goal Live
+                // Activity so today's shape updates on the lock screen.
+                Task { await refreshDailyGoalActivity(startIfNeeded: true) }
             }
             .onDisappear {
                 characterService.stop()
@@ -550,6 +558,21 @@ struct TodayView: View {
         if (try? streaks.applyFreeze(domain: .protocolAdherence)) != nil {  // MARK: try? justified - gated by the button; only throws noFreezesAvailable, logged inside the service.
             LogFeedbackCenter.shared.confirm(IdentityCopy.streakProtected)
         }
+    }
+
+    /// Reflects today's protocol tally on the daily-goal Live Activity (the goal
+    /// as a shape on the lock screen). `startIfNeeded` is true only when a real
+    /// log occurred, so opening the app never spawns an activity on its own.
+    private func refreshDailyGoalActivity(startIfNeeded: Bool) async {
+        let tally = dailySummary.todayProtocol(asOf: Date())
+        let counters = modelContext.fetchOrEmpty(FetchDescriptor<StreakCounter>())
+        let streak = counters.first { $0.domain == StreakDomain.protocolAdherence.rawValue }?.currentStreak ?? 0
+        await DailyGoalLiveActivityController.refresh(
+            completedDomains: tally.completedCount,
+            totalDomains: tally.scheduledCount,
+            streak: streak,
+            startIfNeeded: startIfNeeded
+        )
     }
 
     private func streakChip(label: String, days: Int, systemImage: String) -> some View {

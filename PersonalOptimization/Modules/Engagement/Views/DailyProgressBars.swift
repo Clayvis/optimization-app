@@ -18,6 +18,11 @@ struct DailyProgressBars: View {
     @Query private var customSessions: [CustomActivitySession]
 
     @State private var hydrationTargetMin: Double = 64
+    /// Readiness-adjusted Move goal multiplier (Gap 3: a low-readiness day gets a
+    /// reduced "restore" goal, a normal day keeps the full "stretch" goal). 1.0
+    /// until RecoveryGate resolves in `.task`.
+    @State private var moveGoalMultiplier: Double = 1.0
+    @State private var moveGoalNote: String?
 
     private var todayLog: DailyLog? {
         var cal = Calendar(identifier: .gregorian)
@@ -70,9 +75,10 @@ struct DailyProgressBars: View {
     }
 
     private var calorieGoal: Double {
-        // Match Apple Watch's "Move" default of 500 kcal as a sane starting goal
-        // until we wire user-configured calorie targets.
-        500
+        // Base 500 kcal (Apple Watch "Move" default), scaled by today's readiness
+        // so a low-recovery day becomes a winnable restore goal instead of an
+        // unreachable stretch goal. Rounded to the nearest 10.
+        (500 * moveGoalMultiplier / 10).rounded() * 10
     }
 
     private var hydrationProgress: Double {
@@ -124,12 +130,41 @@ struct DailyProgressBars: View {
                 tint: .green,
                 systemImage: "book.fill"
             )
+
+            if let moveGoalNote {
+                Text(moveGoalNote)
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .task { await loadHydrationTarget() }
+        .task {
+            await loadHydrationTarget()
+            loadReadiness()
+        }
+    }
+
+    /// Scales the Move goal by today's readiness (Gap 3: the score adjusts the
+    /// goal target, not just suggests). High readiness keeps the stretch goal;
+    /// low readiness drops it to a winnable restore goal.
+    private func loadReadiness() {
+        guard let profile = profiles.first else { return }
+        let detail = RecoveryGate(modelContext: modelContext).evaluateDetailed(profile: profile)
+        switch detail.recommendation {
+        case .normal:
+            moveGoalMultiplier = 1.0
+            moveGoalNote = nil
+        case .downgrade:
+            moveGoalMultiplier = 0.7
+            moveGoalNote = "Readiness low: Move goal eased to \(Int(calorieGoal)) kcal."
+        case .rest:
+            moveGoalMultiplier = 0.5
+            moveGoalNote = "Rest day: Move goal set to a light \(Int(calorieGoal)) kcal."
+        }
     }
 
     @ViewBuilder
