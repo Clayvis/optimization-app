@@ -31,6 +31,7 @@ struct SurpriseInsightService {
     private let defaults: UserDefaults
 
     private static let lastShownKey = "\(BuildConfig.bundlePrefix).surpriseInsight.lastShownAt"
+    private static let lastShownBodyKey = "\(BuildConfig.bundlePrefix).surpriseInsight.lastShownBody"
 
     init(modelContext: ModelContext,
          calendar: Calendar? = nil,
@@ -57,7 +58,11 @@ struct SurpriseInsightService {
         if let last = lastShown() {
             let lastDay = calendar.startOfDay(for: last)
             if lastDay == today {
-                // Already surfaced today: keep showing today's surprise.
+                // Already surfaced today: keep showing the SAME surprise (cached
+                // body), so the card is stable even if data shifts mid-day.
+                if let cached = defaults.string(forKey: Self.lastShownBodyKey) {
+                    return SurpriseInsight(body: cached)
+                }
                 return makeBody(asOf: asOf).map(SurpriseInsight.init)
             }
             let gap = calendar.dateComponents([.day], from: lastDay, to: today).day ?? Int.max
@@ -69,8 +74,11 @@ struct SurpriseInsightService {
         return makeBody(asOf: asOf).map(SurpriseInsight.init)
     }
 
-    func markShown(asOf: Date = Date()) {
+    /// Records that today's surprise was surfaced, caching its body so the
+    /// shown-today path returns the identical text on later renders.
+    func markShown(asOf: Date = Date(), body: String) {
         defaults.set(asOf, forKey: Self.lastShownKey)
+        defaults.set(body, forKey: Self.lastShownBodyKey)
     }
 
     func lastShown() -> Date? {

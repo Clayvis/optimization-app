@@ -152,6 +152,19 @@ struct RecoveryGate {
                 isFavorable: favorable
             ))
         }
+        // Achilles pain is a today-logged signal that can drive a downgrade, so
+        // surface it as a component. This also makes hasData true for an
+        // achilles-only day, so the card explains the verdict (and the Move-goal
+        // easing, which gates on hasData, has a visible cause).
+        if let pain = log?.achillesPain, pain > 0 {
+            components.append(RecoveryComponent(
+                label: "Achilles",
+                valueText: "\(pain)/10",
+                baselineText: nil,
+                direction: .flat,
+                isFavorable: pain < 5
+            ))
+        }
         return components
     }
 

@@ -38,7 +38,7 @@ struct SurpriseInsightCard: View {
         let service = SurpriseInsightService(modelContext: modelContext)
         if let s = service.surpriseForToday() {
             surprise = s
-            service.markShown()
+            service.markShown(body: s.body)
         }
     }
 

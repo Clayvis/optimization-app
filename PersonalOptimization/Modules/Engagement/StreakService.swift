@@ -158,10 +158,15 @@ final class StreakService {
         // Only protect a real chain: the streak must have been alive through the
         // day before yesterday. Otherwise this is a fresh miss, not a save.
         guard streakAlive(endingAt: dayBefore, history: history, restDays: restDays, calendar: cal) else { return nil }
-        // Don't extend grace through a day that was itself only kept alive by
-        // grace. Auto-grace bridges a SINGLE off-day after a genuinely completed
-        // day; it must not silently cover a multi-day lapse and drain the pool.
-        if dayIsGraceCovered(domain: domain, day: dayBefore) { return nil }
+        // The chain actually leans on the most recent COMPLETED day at/behind
+        // dayBefore (rest days only bridge). Auto-grace bridges a SINGLE off-day
+        // after a GENUINELY completed day; if that anchor was itself only kept
+        // alive by grace, refuse, so a multi-day lapse cannot chain through and
+        // drain the pool even when a rest day separates the two misses.
+        if let anchor = resolveAnchor(from: dayBefore, history: history, restDays: restDays, calendar: cal),
+           dayIsGraceCovered(domain: domain, day: anchor) {
+            return nil
+        }
 
         if domain == .workout {
             modelContext.insert(WorkoutEvent(date: yesterday, completed: true, source: .freeze))
@@ -200,6 +205,24 @@ final class StreakService {
             )
             return !freezes.isEmpty
         }
+    }
+
+    /// Walks rest days back from `day` to the most recent COMPLETED day the chain
+    /// leans on (mirrors `streakAlive`'s traversal). Returns nil when no completed
+    /// anchor is reachable. For domains without rest days this just returns `day`
+    /// when it is completed.
+    private func resolveAnchor(from day: Date, history: [Date: Bool], restDays: Set<Int>, calendar: Calendar) -> Date? {
+        var cursor = day
+        for _ in 0..<730 {
+            if history[cursor] == true { return cursor }
+            if restDays.contains(isoWeekday(for: cursor)) {
+                guard let prev = calendar.date(byAdding: .day, value: -1, to: cursor) else { return nil }
+                cursor = prev
+                continue
+            }
+            return nil
+        }
+        return nil
     }
 
     /// True when `domain`'s chain was alive ending at `day`: either `day` is

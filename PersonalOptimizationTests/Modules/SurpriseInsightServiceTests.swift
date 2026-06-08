@@ -80,7 +80,7 @@ final class SurpriseInsightServiceTests: XCTestCase {
         try ctx.save()
         let defaults = freshDefaults()
         let svc = service(ctx, defaults: defaults)
-        svc.markShown(asOf: day(9))   // shown yesterday
+        svc.markShown(asOf: day(9), body: "cached surprise")   // shown yesterday
         XCTAssertNil(svc.surpriseForToday(asOf: day(10), rollOverride: 0.10), "Within cooldown after a recent surprise.")
     }
 
@@ -90,7 +90,7 @@ final class SurpriseInsightServiceTests: XCTestCase {
         try ctx.save()
         let defaults = freshDefaults()
         let svc = service(ctx, defaults: defaults)
-        svc.markShown(asOf: day(5))   // shown 5 days ago, cooldown is 3
+        svc.markShown(asOf: day(5), body: "cached surprise")   // shown 5 days ago, cooldown is 3
         XCTAssertNotNil(svc.surpriseForToday(asOf: day(10), rollOverride: 0.10))
     }
 
@@ -100,9 +100,11 @@ final class SurpriseInsightServiceTests: XCTestCase {
         try ctx.save()
         let defaults = freshDefaults()
         let svc = service(ctx, defaults: defaults)
-        svc.markShown(asOf: day(10))  // already surfaced today
-        // Even with a high roll, today's surprise keeps showing so the card is stable.
-        XCTAssertNotNil(svc.surpriseForToday(asOf: day(10), rollOverride: 0.99))
+        svc.markShown(asOf: day(10), body: "cached surprise")  // already surfaced today
+        // Even with a high roll, today's surprise keeps showing the SAME cached
+        // body so the card is stable across re-renders.
+        let s = svc.surpriseForToday(asOf: day(10), rollOverride: 0.99)
+        XCTAssertEqual(s?.body, "cached surprise")
     }
 
     func test_dailyRoll_isStableAcrossCalls() throws {

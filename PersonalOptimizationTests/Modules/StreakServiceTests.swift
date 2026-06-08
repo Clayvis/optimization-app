@@ -300,6 +300,24 @@ final class StreakServiceTests: XCTestCase {
         XCTAssertEqual(counter.currentStreak, 0, "The unprotected second miss breaks the streak.")
     }
 
+    func test_autoGrace_doesNotChainThroughRestDayToGracedAnchor() throws {
+        // Fri already graced (freeze). Sat/Sun are auto rest days (no schedule
+        // seeded). Mon missed, "today" is Tue. The chain only survives because
+        // Fri was graced, so auto-grace must refuse to also protect Mon, even
+        // though the day before Mon (Sun) is a rest day with no grace marker.
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = jst
+        let friday = cal.startOfDay(for: jstDate(2026, 5, 8, 10, 0))
+        context.insert(WorkoutEvent(date: friday, completed: true, source: .freeze))
+        try context.save()
+
+        let tuesday = jstDate(2026, 5, 12, 9, 0)
+        XCTAssertNil(try service.autoApplyGraceIfNeeded(domain: .workout, asOf: tuesday),
+                     "Auto-grace must not chain through a rest day to a graced anchor.")
+        let counter = try service.recompute(domain: .workout, asOf: tuesday)
+        XCTAssertEqual(counter.freezesAvailable, 2, "No freeze spent when the anchor was already graced.")
+    }
+
     func test_autoGrace_isIdempotent() throws {
         try service.recordWorkoutLedger(date: jstDate(2026, 5, 4, 10, 0), source: .lift)
         try service.recordWorkoutLedger(date: jstDate(2026, 5, 5, 10, 0), source: .lift)

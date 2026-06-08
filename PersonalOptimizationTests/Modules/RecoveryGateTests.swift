@@ -192,6 +192,20 @@ final class RecoveryGateTests: XCTestCase {
         XCTAssertNotNil(d.components.first { $0.label == "Sleep" })
     }
 
+    func test_detail_achillesOnly_isDataAndComponentShown() throws {
+        let profile = UserProfile()
+        context.insert(profile)
+        let log = DailyLog(date: cal().startOfDay(for: Date()))
+        log.achillesPain = 6   // no HRV/RHR/sleep today, only achilles
+        context.insert(log)
+        try context.save()
+
+        let d = gate.evaluateDetailed(profile: profile)
+        XCTAssertTrue(d.hasData, "Achilles pain is same-day data, so the card renders.")
+        XCTAssertNotNil(d.components.first { $0.label == "Achilles" })
+        XCTAssertEqual(d.recommendation, .downgrade)
+    }
+
     func test_detail_normal_fullLoadAndData() throws {
         let profile = UserProfile()
         context.insert(profile)

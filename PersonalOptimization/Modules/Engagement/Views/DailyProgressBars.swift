@@ -154,6 +154,14 @@ struct DailyProgressBars: View {
     private func loadReadiness() {
         guard let profile = profiles.first else { return }
         let detail = RecoveryGate(modelContext: modelContext).evaluateDetailed(profile: profile)
+        // No same-day readiness signal (HRV / RHR / sleep / achilles): keep the
+        // full stretch goal. Never assert a verdict from a purely historical
+        // baseline, which would ease the goal on a day with nothing logged.
+        guard detail.hasData else {
+            moveGoalMultiplier = 1.0
+            moveGoalNote = nil
+            return
+        }
         switch detail.recommendation {
         case .normal:
             moveGoalMultiplier = 1.0

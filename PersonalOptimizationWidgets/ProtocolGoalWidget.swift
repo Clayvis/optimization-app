@@ -52,9 +52,14 @@ struct ProtocolGoalWidgetProvider: TimelineProvider {
     @MainActor
     private static func sharedContainer() -> ModelContainer? {
         let schema = AppSchema.schema()
+        // Open the SAME App-Group store the app writes to (mirrors
+        // PersistenceBootstrap), so the ring reflects the latest local data
+        // instead of waiting on a CloudKit sync cycle in a separate sandbox.
+        let storeURL = AppGroupContainer.storeURL()
+            ?? URL.applicationSupportDirectory.appending(path: "default.store")
         let config = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false,
+            url: storeURL,
             cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
         )
         return try? ModelContainer(for: schema, migrationPlan: AppSchema.migrationPlan, configurations: [config])
