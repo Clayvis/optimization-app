@@ -81,15 +81,27 @@ entitlement changes, and a CKShare spike (out of scope, irreversible infra).
 - Readiness-adjusted Move goal: DailyProgressBars scales the Move goal by the
   RecoveryGate verdict (Gap 3 "adjusts the day's goal target").
 
+## Added in the third pass (commits e859aa0, 61f74ec)
+
+- Variable/unpredictable surprise reward: SurpriseInsightService surfaces an
+  occasional surprise insight OFF the fixed daily schedule (stable per-day roll +
+  3-day cooldown + 7-day warm-up), drawing content from the top DetectedPattern
+  so it costs no extra API call. SurpriseInsightCard renders it distinctly.
+- A second adversarial review of all the new surfaces found and fixed 11
+  edge-case bugs (Live Activity registry reconciliation + stale-date threading,
+  readiness easing gated on hasData + achilles component, widget/complication
+  reading the App-Group store, surprise body caching, auto-grace anchor
+  resolution through rest days).
+
+With the surprise reward built, every mechanic in the build sheet is now
+implemented. Full suite: 662 tests, 0 failures; all four targets build clean.
+
 ## Not built (deferred, with rationale)
 
 - LIVE CloudKit partner transport (CloudKitPartnerSharedZone): needs the paid
   Apple Developer account + a CKShare spike (decision 007). The dyad logic + UI
-  are fully wired against the seam; only the transport is missing.
-- Variable/unpredictable AI reward (a surprise off-schedule insight): Pro-tier,
-  carries unpredictable token cost and annoyance risk, and the existing daily
-  CoachInsight + DailyQuote already supply AI-generated content. Left as an
-  explicit opt-in for a future pass rather than shipped silently.
+  are fully wired against the seam; only the transport is missing. THIS IS THE
+  ONLY REMAINING BUILD-SHEET ITEM, and it is externally gated.
 - `MilestoneType.appUsageDays`: left as-is. On inspection it is computed from
   DailyLog row count (days WITH a log), not raw app-opens, and no milestone
   definition awards it, so it is not a trivial-badge violation.
