@@ -370,13 +370,12 @@ targets:
     entitlements:
       path: PersonalOptimizationWidgets/PersonalOptimizationWidgets.entitlements
       properties:
+        # App Group only (mirrors the Live Activity extension, which exports
+        # cleanly). The widget reads the App-Group store LOCALLY, so it needs no
+        # iCloud capability; adding one to a brand-new App ID broke the
+        # distribution re-sign (no provisioned iCloud container for the new id).
         com.apple.security.application-groups:
           - group.com.rawlins.PersonalOptimization
-        com.apple.developer.icloud-container-identifiers:
-          - iCloud.com.rawlins.PersonalOptimization
-        com.apple.developer.icloud-services:
-          - CloudKit
-        com.apple.developer.ubiquity-container-identifiers: []
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.widgets

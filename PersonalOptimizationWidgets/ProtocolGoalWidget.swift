@@ -52,15 +52,18 @@ struct ProtocolGoalWidgetProvider: TimelineProvider {
     @MainActor
     private static func sharedContainer() -> ModelContainer? {
         let schema = AppSchema.schema()
-        // Open the SAME App-Group store the app writes to (mirrors
-        // PersistenceBootstrap), so the ring reflects the latest local data
-        // instead of waiting on a CloudKit sync cycle in a separate sandbox.
+        // Read the SAME App-Group store the app writes to, but LOCALLY (no
+        // CloudKit). The on-disk rows are already there from the app + its sync,
+        // so the ring reflects the latest local data, and the widget needs no
+        // iCloud entitlement (which would require a provisioned container for the
+        // widget's own App ID and breaks the distribution export). A failed open
+        // degrades to the 0/total placeholder via try?, never a crash.
         let storeURL = AppGroupContainer.storeURL()
             ?? URL.applicationSupportDirectory.appending(path: "default.store")
         let config = ModelConfiguration(
             schema: schema,
             url: storeURL,
-            cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
+            cloudKitDatabase: .none
         )
         return try? ModelContainer(for: schema, migrationPlan: AppSchema.migrationPlan, configurations: [config])
     }
