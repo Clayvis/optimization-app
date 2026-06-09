@@ -44,6 +44,12 @@ final class DailyLog {
     var timeInDaylightMinutes: Int?
     var stepCount: Int?
 
+    /// Total active energy burned today from HealthKit (the Apple Watch /
+    /// Fitness "Move" number). Lets the Move track reflect a workout the watch
+    /// tracked even when no session was logged in the app. Additive optional;
+    /// rides SchemaV10 via lightweight migration like the other M4.2 HK fields.
+    var activeEnergyBurnedKcal: Double?
+
     /// Timestamp of the last HealthKitSyncService write. Used to throttle
     /// repeated pulls and surface "last refreshed" in the UI.
     var healthKitSyncedAt: Date?

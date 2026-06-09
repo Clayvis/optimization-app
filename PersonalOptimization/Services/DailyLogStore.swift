@@ -139,6 +139,7 @@ final class DailyLogStore {
         if target.caffeineMg == nil { target.caffeineMg = source.caffeineMg }
         if target.timeInDaylightMinutes == nil { target.timeInDaylightMinutes = source.timeInDaylightMinutes }
         if target.stepCount == nil { target.stepCount = source.stepCount }
+        if target.activeEnergyBurnedKcal == nil { target.activeEnergyBurnedKcal = source.activeEnergyBurnedKcal }
         if target.healthKitSyncedAt == nil { target.healthKitSyncedAt = source.healthKitSyncedAt }
     }
 
@@ -183,6 +184,7 @@ final class DailyLogStore {
         log.caffeineMg = nil
         log.timeInDaylightMinutes = nil
         log.stepCount = nil
+        log.activeEnergyBurnedKcal = nil
         log.healthKitSyncedAt = nil
         log.metadataBlob = nil
     }

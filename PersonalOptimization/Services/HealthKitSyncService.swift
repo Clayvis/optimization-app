@@ -108,6 +108,9 @@ final class HealthKitSyncService {
         if let exercise = await tryFetchSum(.appleExerciseTime, unit: .minute(), for: date) {
             log.appleExerciseMinutes = Int(exercise.rounded())
         }
+        if let activeEnergy = await tryFetchSum(.activeEnergyBurned, unit: .kilocalorie(), for: date) {
+            log.activeEnergyBurnedKcal = activeEnergy
+        }
         if let distance = await tryFetchSum(.distanceWalkingRunning, unit: .meter(), for: date) {
             log.distanceMeters = distance
         }

@@ -40,11 +40,18 @@ struct DailyProgressBars: View {
         return log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes + log.musicMinutes
     }
 
-    /// Active calories burned today. We don't yet ingest the live HK quantity
-    /// (M3.7 scope). Use a deterministic estimate: lift volume → kcal at
-    /// ~0.04 kcal/lb-rep, basketball/swim/custom → minutes × intensity factor.
-    /// Surfacing this as motivating progress is more important than precision.
+    /// Active calories shown on the Move track. Prefers HealthKit's measured
+    /// active energy (the Apple Watch / Fitness "Move" number, which already
+    /// counts workouts the watch tracked even when nothing was logged in-app),
+    /// and never undercounts an in-app session HealthKit hasn't picked up yet.
     private var caloriesBurned: Double {
+        max(todayLog?.activeEnergyBurnedKcal ?? 0, sessionCaloriesEstimate)
+    }
+
+    /// Fallback estimate from in-app logged sessions, used when HealthKit has no
+    /// active-energy data (no watch / not authorized): lift volume → kcal at
+    /// ~0.04 kcal/lb-rep, basketball/swim/custom → minutes × intensity factor.
+    private var sessionCaloriesEstimate: Double {
         var total: Double = 0
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone.current
