@@ -96,6 +96,24 @@ entitlement changes, and a CKShare spike (out of scope, irreversible infra).
 With the surprise reward built, every mechanic in the build sheet is now
 implemented. Full suite: 662 tests, 0 failures; all four targets build clean.
 
+## Removed: iOS Home Screen / lock-screen widget (commit bd2d46a)
+
+The standalone `PersonalOptimizationWidgets` extension was removed because its
+brand-new bundle ID broke the Xcode Cloud archive export:
+
+    error: exportArchive Automatic signing cannot register bundle identifier
+           "com.rawlins.PersonalOptimization.widgets".
+    error: exportArchive No profiles for '...widgets' were found
+
+Xcode Cloud's automatic signing could not register the new App ID (prior builds
+passed because that bundle ID did not exist), so the distribution export failed.
+The goal-as-shape surface is still covered by the watch `ProtocolGoalComplication`
+(kept; still uses the shared `ProtocolGoalSnapshot`) and the DailyGoal Live
+Activity on the lock screen. TO RESTORE the Home Screen widget: register an App ID
+for `com.rawlins.PersonalOptimization.widgets` (with the App Groups capability,
+assigned to `group.com.rawlins.PersonalOptimization`) in the Developer portal
+first, then re-add the target + the two widget source files.
+
 ## Not built (deferred, with rationale)
 
 - LIVE CloudKit partner transport (CloudKitPartnerSharedZone): needs the paid
