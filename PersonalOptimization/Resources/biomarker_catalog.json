@@ -1,0 +1,938 @@
+{
+  "albumin": {
+    "category": "Liver",
+    "name": "Albumin",
+    "normal": [
+      3.5,
+      5.5
+    ],
+    "optimal": [
+      4.3,
+      5
+    ],
+    "unit": "g/dL"
+  },
+  "alk_phos": {
+    "category": "Liver",
+    "name": "Alkaline Phosphatase",
+    "normal": [
+      35,
+      130
+    ],
+    "optimal": [
+      40,
+      100
+    ],
+    "unit": "U/L"
+  },
+  "alt": {
+    "category": "Liver",
+    "name": "ALT",
+    "normal": [
+      7,
+      40
+    ],
+    "optimal": [
+      10,
+      25
+    ],
+    "unit": "U/L"
+  },
+  "apob": {
+    "category": "Cardiovascular",
+    "name": "ApoB",
+    "normal": [
+      0,
+      100
+    ],
+    "optimal": [
+      0,
+      80
+    ],
+    "unit": "mg/dL"
+  },
+  "ast": {
+    "category": "Liver",
+    "name": "AST",
+    "normal": [
+      10,
+      40
+    ],
+    "optimal": [
+      10,
+      25
+    ],
+    "unit": "U/L"
+  },
+  "bilirubin": {
+    "category": "Liver",
+    "name": "Total Bilirubin",
+    "normal": [
+      0.2,
+      1.2
+    ],
+    "optimal": [
+      0.3,
+      1
+    ],
+    "unit": "mg/dL"
+  },
+  "bun": {
+    "category": "Kidney",
+    "name": "BUN",
+    "normal": [
+      7,
+      25
+    ],
+    "optimal": [
+      10,
+      18
+    ],
+    "unit": "mg/dL"
+  },
+  "calcium": {
+    "category": "Electrolytes",
+    "name": "Calcium",
+    "normal": [
+      8.5,
+      10.5
+    ],
+    "optimal": [
+      9.2,
+      10
+    ],
+    "unit": "mg/dL"
+  },
+  "cortisol_am": {
+    "category": "Hormones",
+    "name": "Cortisol (AM)",
+    "normal": [
+      6,
+      22
+    ],
+    "optimal": [
+      10,
+      18
+    ],
+    "unit": "ug/dL"
+  },
+  "creatinine": {
+    "category": "Kidney",
+    "name": "Creatinine",
+    "normal": [
+      0.6,
+      1.3
+    ],
+    "optimal": [
+      0.7,
+      1.1
+    ],
+    "unit": "mg/dL"
+  },
+  "cystatin_c": {
+    "category": "Kidney",
+    "name": "Cystatin C",
+    "normal": [
+      0.5,
+      1
+    ],
+    "optimal": [
+      0.5,
+      0.9
+    ],
+    "unit": "mg/L"
+  },
+  "dhea_s": {
+    "category": "Hormones",
+    "name": "DHEA-S",
+    "normal": [
+      100,
+      600
+    ],
+    "optimal": [
+      250,
+      450
+    ],
+    "unit": "ug/dL"
+  },
+  "egfr": {
+    "category": "Kidney",
+    "name": "eGFR",
+    "normal": [
+      60,
+      130
+    ],
+    "optimal": [
+      90,
+      130
+    ],
+    "unit": "mL/min/1.73m\u00b2"
+  },
+  "esr": {
+    "category": "Inflammation",
+    "name": "ESR",
+    "normal": [
+      0,
+      20
+    ],
+    "optimal": [
+      0,
+      10
+    ],
+    "unit": "mm/hr"
+  },
+  "estradiol_f": {
+    "category": "Hormones",
+    "name": "Estradiol",
+    "normal": [
+      15,
+      350
+    ],
+    "optimal": [
+      30,
+      200
+    ],
+    "sex": "female",
+    "unit": "pg/mL"
+  },
+  "estradiol_m": {
+    "category": "Hormones",
+    "name": "Estradiol",
+    "normal": [
+      10,
+      50
+    ],
+    "optimal": [
+      20,
+      40
+    ],
+    "sex": "male",
+    "unit": "pg/mL"
+  },
+  "ferritin_f": {
+    "category": "Inflammation",
+    "name": "Ferritin",
+    "normal": [
+      15,
+      200
+    ],
+    "optimal": [
+      40,
+      120
+    ],
+    "sex": "female",
+    "unit": "ng/mL"
+  },
+  "ferritin_m": {
+    "category": "Inflammation",
+    "name": "Ferritin",
+    "normal": [
+      30,
+      300
+    ],
+    "optimal": [
+      50,
+      150
+    ],
+    "sex": "male",
+    "unit": "ng/mL"
+  },
+  "fibrinogen": {
+    "category": "Inflammation",
+    "name": "Fibrinogen",
+    "normal": [
+      200,
+      450
+    ],
+    "optimal": [
+      200,
+      350
+    ],
+    "unit": "mg/dL"
+  },
+  "folate": {
+    "category": "Nutrients",
+    "name": "Folate",
+    "normal": [
+      5,
+      25
+    ],
+    "optimal": [
+      10,
+      20
+    ],
+    "unit": "ng/mL"
+  },
+  "free_t3": {
+    "category": "Thyroid",
+    "name": "Free T3",
+    "normal": [
+      2.3,
+      4.2
+    ],
+    "optimal": [
+      3,
+      4
+    ],
+    "unit": "pg/mL"
+  },
+  "free_t4": {
+    "category": "Thyroid",
+    "name": "Free T4",
+    "normal": [
+      0.8,
+      1.8
+    ],
+    "optimal": [
+      1.1,
+      1.5
+    ],
+    "unit": "ng/dL"
+  },
+  "fsh": {
+    "category": "Hormones",
+    "name": "FSH",
+    "normal": [
+      1,
+      12
+    ],
+    "optimal": [
+      2,
+      8
+    ],
+    "unit": "mIU/mL"
+  },
+  "ggt": {
+    "category": "Liver",
+    "name": "GGT",
+    "normal": [
+      5,
+      45
+    ],
+    "optimal": [
+      5,
+      25
+    ],
+    "unit": "U/L"
+  },
+  "glucose": {
+    "category": "Metabolic",
+    "name": "Fasting Glucose",
+    "normal": [
+      70,
+      99
+    ],
+    "optimal": [
+      70,
+      89
+    ],
+    "unit": "mg/dL"
+  },
+  "hba1c": {
+    "category": "Metabolic",
+    "name": "HbA1c",
+    "normal": [
+      4,
+      5.6
+    ],
+    "optimal": [
+      4.8,
+      5.3
+    ],
+    "unit": "%"
+  },
+  "hdl_f": {
+    "category": "Cardiovascular",
+    "name": "HDL Cholesterol",
+    "normal": [
+      50,
+      120
+    ],
+    "optimal": [
+      60,
+      120
+    ],
+    "sex": "female",
+    "unit": "mg/dL"
+  },
+  "hdl_m": {
+    "category": "Cardiovascular",
+    "name": "HDL Cholesterol",
+    "normal": [
+      40,
+      100
+    ],
+    "optimal": [
+      50,
+      100
+    ],
+    "sex": "male",
+    "unit": "mg/dL"
+  },
+  "hematocrit": {
+    "category": "CBC",
+    "name": "Hematocrit",
+    "normal": [
+      38,
+      50
+    ],
+    "optimal": [
+      42,
+      48
+    ],
+    "unit": "%"
+  },
+  "hemoglobin": {
+    "category": "CBC",
+    "name": "Hemoglobin",
+    "normal": [
+      12.5,
+      17
+    ],
+    "optimal": [
+      14,
+      16
+    ],
+    "unit": "g/dL"
+  },
+  "homa_ir": {
+    "calculated": true,
+    "category": "Metabolic",
+    "name": "HOMA-IR (calculated)",
+    "normal": [
+      0,
+      1.9
+    ],
+    "optimal": [
+      0,
+      1
+    ],
+    "unit": "index"
+  },
+  "homocysteine": {
+    "category": "Inflammation",
+    "name": "Homocysteine",
+    "normal": [
+      4,
+      11
+    ],
+    "optimal": [
+      5,
+      8
+    ],
+    "unit": "umol/L"
+  },
+  "hs_crp": {
+    "category": "Inflammation",
+    "name": "hs-CRP",
+    "normal": [
+      0,
+      3
+    ],
+    "optimal": [
+      0,
+      0.8
+    ],
+    "unit": "mg/L"
+  },
+  "insulin": {
+    "category": "Metabolic",
+    "name": "Fasting Insulin",
+    "normal": [
+      2,
+      9
+    ],
+    "optimal": [
+      2,
+      5
+    ],
+    "unit": "uIU/mL"
+  },
+  "iron": {
+    "category": "Nutrients",
+    "name": "Iron",
+    "normal": [
+      60,
+      170
+    ],
+    "optimal": [
+      85,
+      150
+    ],
+    "unit": "ug/dL"
+  },
+  "iron_sat": {
+    "category": "Nutrients",
+    "name": "Iron Saturation",
+    "normal": [
+      15,
+      50
+    ],
+    "optimal": [
+      25,
+      40
+    ],
+    "unit": "%"
+  },
+  "ldl": {
+    "category": "Cardiovascular",
+    "name": "LDL Cholesterol",
+    "normal": [
+      0,
+      129
+    ],
+    "optimal": [
+      0,
+      99
+    ],
+    "unit": "mg/dL"
+  },
+  "ldl_p": {
+    "category": "Cardiovascular",
+    "name": "LDL-P (Particle Number)",
+    "normal": [
+      0,
+      1300
+    ],
+    "optimal": [
+      0,
+      1000
+    ],
+    "unit": "nmol/L"
+  },
+  "lh": {
+    "category": "Hormones",
+    "name": "LH",
+    "normal": [
+      1,
+      12
+    ],
+    "optimal": [
+      2,
+      8
+    ],
+    "unit": "mIU/mL"
+  },
+  "lpa": {
+    "category": "Cardiovascular",
+    "name": "Lipoprotein(a)",
+    "normal": [
+      0,
+      125
+    ],
+    "optimal": [
+      0,
+      75
+    ],
+    "unit": "nmol/L"
+  },
+  "lymphocyte_pct": {
+    "category": "CBC",
+    "name": "Lymphocyte %",
+    "normal": [
+      20,
+      45
+    ],
+    "optimal": [
+      30,
+      40
+    ],
+    "unit": "%"
+  },
+  "magnesium": {
+    "category": "Electrolytes",
+    "name": "Magnesium",
+    "normal": [
+      1.7,
+      2.5
+    ],
+    "optimal": [
+      2,
+      2.4
+    ],
+    "unit": "mg/dL"
+  },
+  "mch": {
+    "category": "CBC",
+    "name": "MCH",
+    "normal": [
+      27,
+      33
+    ],
+    "optimal": [
+      28,
+      32
+    ],
+    "unit": "pg"
+  },
+  "mchc": {
+    "category": "CBC",
+    "name": "MCHC",
+    "normal": [
+      32,
+      36
+    ],
+    "optimal": [
+      33,
+      35
+    ],
+    "unit": "g/dL"
+  },
+  "mcv": {
+    "category": "CBC",
+    "name": "MCV",
+    "normal": [
+      80,
+      100
+    ],
+    "optimal": [
+      85,
+      95
+    ],
+    "unit": "fL"
+  },
+  "neutrophil_pct": {
+    "category": "CBC",
+    "name": "Neutrophil %",
+    "normal": [
+      40,
+      70
+    ],
+    "optimal": [
+      45,
+      60
+    ],
+    "unit": "%"
+  },
+  "non_hdl": {
+    "category": "Cardiovascular",
+    "name": "Non-HDL Cholesterol",
+    "normal": [
+      0,
+      159
+    ],
+    "optimal": [
+      0,
+      129
+    ],
+    "unit": "mg/dL"
+  },
+  "omega_3": {
+    "category": "Nutrients",
+    "name": "Omega-3 Index",
+    "normal": [
+      4,
+      12
+    ],
+    "optimal": [
+      8,
+      12
+    ],
+    "unit": "%"
+  },
+  "platelets": {
+    "category": "CBC",
+    "name": "Platelets",
+    "normal": [
+      150,
+      450
+    ],
+    "optimal": [
+      200,
+      350
+    ],
+    "unit": "K/uL"
+  },
+  "potassium": {
+    "category": "Electrolytes",
+    "name": "Potassium",
+    "normal": [
+      3.5,
+      5
+    ],
+    "optimal": [
+      4,
+      4.5
+    ],
+    "unit": "mmol/L"
+  },
+  "progesterone_f": {
+    "category": "Hormones",
+    "name": "Progesterone",
+    "normal": [
+      0.2,
+      25
+    ],
+    "optimal": [
+      1,
+      20
+    ],
+    "sex": "female",
+    "unit": "ng/mL"
+  },
+  "psa": {
+    "category": "Hormones",
+    "name": "PSA (Total)",
+    "normal": [
+      0,
+      4
+    ],
+    "optimal": [
+      0,
+      1
+    ],
+    "sex": "male",
+    "unit": "ng/mL"
+  },
+  "rbc": {
+    "category": "CBC",
+    "name": "RBC",
+    "normal": [
+      4,
+      5.9
+    ],
+    "optimal": [
+      4.5,
+      5.5
+    ],
+    "unit": "M/uL"
+  },
+  "rdw": {
+    "category": "CBC",
+    "name": "RDW",
+    "normal": [
+      11,
+      15
+    ],
+    "optimal": [
+      11.5,
+      13
+    ],
+    "unit": "%"
+  },
+  "reverse_t3": {
+    "category": "Thyroid",
+    "name": "Reverse T3",
+    "normal": [
+      8,
+      25
+    ],
+    "optimal": [
+      10,
+      18
+    ],
+    "unit": "ng/dL"
+  },
+  "selenium": {
+    "category": "Nutrients",
+    "name": "Selenium",
+    "normal": [
+      70,
+      200
+    ],
+    "optimal": [
+      120,
+      180
+    ],
+    "unit": "ug/L"
+  },
+  "shbg_m": {
+    "category": "Hormones",
+    "name": "SHBG",
+    "normal": [
+      10,
+      57
+    ],
+    "optimal": [
+      20,
+      45
+    ],
+    "sex": "male",
+    "unit": "nmol/L"
+  },
+  "sodium": {
+    "category": "Electrolytes",
+    "name": "Sodium",
+    "normal": [
+      135,
+      145
+    ],
+    "optimal": [
+      138,
+      142
+    ],
+    "unit": "mmol/L"
+  },
+  "testosterone_free_m": {
+    "category": "Hormones",
+    "name": "Free Testosterone",
+    "normal": [
+      9,
+      30
+    ],
+    "optimal": [
+      15,
+      25
+    ],
+    "sex": "male",
+    "unit": "pg/mL"
+  },
+  "testosterone_total_f": {
+    "category": "Hormones",
+    "name": "Total Testosterone",
+    "normal": [
+      15,
+      70
+    ],
+    "optimal": [
+      30,
+      60
+    ],
+    "sex": "female",
+    "unit": "ng/dL"
+  },
+  "testosterone_total_m": {
+    "category": "Hormones",
+    "name": "Total Testosterone",
+    "normal": [
+      300,
+      1000
+    ],
+    "optimal": [
+      600,
+      900
+    ],
+    "sex": "male",
+    "unit": "ng/dL"
+  },
+  "tibc": {
+    "category": "Nutrients",
+    "name": "TIBC",
+    "normal": [
+      240,
+      450
+    ],
+    "optimal": [
+      250,
+      400
+    ],
+    "unit": "ug/dL"
+  },
+  "total_cholesterol": {
+    "category": "Cardiovascular",
+    "name": "Total Cholesterol",
+    "normal": [
+      100,
+      240
+    ],
+    "optimal": [
+      150,
+      199
+    ],
+    "unit": "mg/dL"
+  },
+  "tpo_ab": {
+    "category": "Thyroid",
+    "name": "TPO Antibodies",
+    "normal": [
+      0,
+      34
+    ],
+    "optimal": [
+      0,
+      9
+    ],
+    "unit": "IU/mL"
+  },
+  "triglycerides": {
+    "category": "Cardiovascular",
+    "name": "Triglycerides",
+    "normal": [
+      0,
+      149
+    ],
+    "optimal": [
+      0,
+      99
+    ],
+    "unit": "mg/dL"
+  },
+  "tsh": {
+    "category": "Thyroid",
+    "name": "TSH",
+    "normal": [
+      0.4,
+      4
+    ],
+    "optimal": [
+      1,
+      2
+    ],
+    "unit": "uIU/mL"
+  },
+  "uric_acid": {
+    "category": "Metabolic",
+    "name": "Uric Acid",
+    "normal": [
+      3,
+      7
+    ],
+    "optimal": [
+      3.5,
+      5.5
+    ],
+    "unit": "mg/dL"
+  },
+  "vit_b12": {
+    "category": "Nutrients",
+    "name": "Vitamin B12",
+    "normal": [
+      250,
+      1100
+    ],
+    "optimal": [
+      500,
+      900
+    ],
+    "unit": "pg/mL"
+  },
+  "vit_d": {
+    "category": "Nutrients",
+    "name": "Vitamin D (25-OH)",
+    "normal": [
+      30,
+      80
+    ],
+    "optimal": [
+      40,
+      60
+    ],
+    "unit": "ng/mL"
+  },
+  "wbc": {
+    "category": "CBC",
+    "name": "WBC",
+    "normal": [
+      3.4,
+      10.8
+    ],
+    "optimal": [
+      4,
+      6.5
+    ],
+    "unit": "K/uL"
+  },
+  "zinc": {
+    "category": "Nutrients",
+    "name": "Zinc",
+    "normal": [
+      70,
+      150
+    ],
+    "optimal": [
+      90,
+      130
+    ],
+    "unit": "ug/dL"
+  }
+}

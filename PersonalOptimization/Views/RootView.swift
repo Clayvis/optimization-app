@@ -108,6 +108,10 @@ struct RootView: View {
                 .tabItem {
                     Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
                 }
+            BiomarkersView()
+                .tabItem {
+                    Label("Labs", systemImage: "testtube.2")
+                }
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
@@ -115,6 +119,9 @@ struct RootView: View {
         }
         // Global in-the-moment log confirmation banner (identity copy + haptic).
         .logFeedbackOverlay()
+        // Dojo theme: kurenai (crimson) accent everywhere a control reads the
+        // environment tint — tab items, buttons, toggles, links, pickers.
+        .tint(Theme.kurenai)
     }
 
     /// One-shot prompt: if the device's tz differs from the profile's pinned
