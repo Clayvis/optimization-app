@@ -227,27 +227,28 @@ For v1, use `#Preview` macros with seeded data and visually verify on simulator.
 
 ## CI Integration
 
-GitHub Actions workflow `.github/workflows/test.yml` runs on every PR:
+NOTE (2026-06-11 docs-truth pass): the GitHub Actions workflow previously
+described here NEVER existed in the repo. GitHub-hosted macOS images also lag
+the Xcode 26.x toolchain this project uses. The enforced gate today is a LOCAL
+pre-push hook (audit Theme 3).
 
-```yaml
-name: Tests
+Install once per clone:
 
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.0.app
-      - name: Build
-        run: xcodebuild -scheme PersonalOptimization -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
-      - name: Test
-        run: xcodebuild test -scheme PersonalOptimizationTests -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -enableCodeCoverage YES
-      - name: Coverage
-        run: xcrun xccov view --report --json *.xcresult > coverage.json
+```sh
+sh scripts/install_git_hooks.sh
 ```
+
+`scripts/pre_push_test_gate.sh` then runs on every `git push`: schema-parity
+guard, asset guard, the full unit suite, and a zero-warning check. A red suite
+or any build warning blocks the push.
+
+- Bypass once (use sparingly): `git push --no-verify`
+- Fast push, parity guards only: `SKIP_TESTS=1 git push`
+- Override the simulator: `TEST_SIM='platform=iOS Simulator,name=iPhone 17 Pro' git push`
+
+If a self-hosted macOS runner with the matching Xcode becomes available, the
+same `xcodebuild ... test` invocation can move into a GitHub Actions job
+verbatim; until then the pre-push hook is the source of truth.
 
 ## Manual Test Checklist (per milestone)
 

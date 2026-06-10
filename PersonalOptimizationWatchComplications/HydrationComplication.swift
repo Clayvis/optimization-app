@@ -47,11 +47,11 @@ struct HydrationTimelineProvider: TimelineProvider {
         let cal = UserCalendar.current(modelContext: context)
         let day = cal.startOfDay(for: date)
         let descriptor = FetchDescriptor<DailyLog>(
-            predicate: #Predicate<DailyLog> { $0.date == day }
+            predicate: #Predicate<DailyLog> { $0.date == day && $0.supersededAt == nil }
         )
-        let log = (try? context.fetch(descriptor))?.first
+        let log = (try? context.fetch(descriptor))?.first  // MARK: try? justified - complication renders the 0/64 placeholder on a failed fetch.
         let intake = log?.waterOz ?? 0
-        let target = (try? ScheduleConfigLoader.loadCached().hydrationTargetsOz)
+        let target = (try? ScheduleConfigLoader.loadCached().hydrationTargetsOz)  // MARK: try? justified - bundled resource; nil falls back to the 64oz floor.
             .map { dayTargetMin(for: date, targets: $0, calendar: cal) } ?? 64
         let progress: Double = target > 0 ? min(1.0, intake / target) : 0
         return HydrationComplicationEntry(
@@ -68,12 +68,7 @@ struct HydrationTimelineProvider: TimelineProvider {
     }
 
     private static func dayTargetMin(for date: Date, targets: HydrationTargetsOz, calendar: Calendar) -> Double {
-        let raw = calendar.component(.weekday, from: date)
-        let weekday = raw == 1 ? 7 : raw - 1
-        if targets.basketball.appliesTo.contains(weekday) { return targets.basketball.min }
-        if targets.swim.appliesTo.contains(weekday) { return targets.swim.min }
-        if targets.lift.appliesTo.contains(weekday) { return targets.lift.min }
-        return targets.rest.min
+        ProtocolRules.hydrationTargetMin(for: date, targets: targets, calendar: calendar)
     }
 }
 

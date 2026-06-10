@@ -99,12 +99,9 @@ final class DailySummaryService {
         let guitarMin = log?.guitarMinutes ?? 0
         let musicMin = log?.musicMinutes ?? 0
         let courseworkMin = log?.courseworkMinutes ?? 0
-        let totalLearningMin = japaneseMin + guitarMin + musicMin + courseworkMin
-        let learningDone = japaneseMin >= 30
-            || guitarMin >= 20
-            || musicMin >= 20
-            || courseworkMin >= 20
-            || totalLearningMin >= 20
+        let learningDone = ProtocolRules.learningDone(
+            japanese: japaneseMin, guitar: guitarMin, coursework: courseworkMin, music: musicMin
+        )
 
         // Travel/sick day grace: treat all scheduled domains as completed when active.
         let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>())
@@ -236,18 +233,14 @@ final class DailySummaryService {
     }
 
     private func hydrationFloor(for date: Date) -> Double {
-        guard let targets = hydrationTargets else { return 64 }
-        let weekday = isoWeekday(for: date)
-        if targets.basketball.appliesTo.contains(weekday) { return targets.basketball.min }
-        if targets.swim.appliesTo.contains(weekday) { return targets.swim.min }
-        if targets.lift.appliesTo.contains(weekday) { return targets.lift.min }
-        return targets.rest.min
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = timezone
+        return ProtocolRules.hydrationTargetMin(for: date, targets: hydrationTargets, calendar: cal)
     }
 
     private func isoWeekday(for date: Date) -> Int {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
-        let raw = cal.component(.weekday, from: date)
-        return raw == 1 ? 7 : raw - 1
+        return ProtocolRules.isoWeekday(for: date, calendar: cal)
     }
 }

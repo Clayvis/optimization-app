@@ -4,6 +4,17 @@ Native iOS 18+ and watchOS 11+ app for daily protocol tracking. Single user. Zer
 
 Built with Claude Code following the documents in this folder. The whole package is designed to be paste-into-Claude-Code-and-go.
 
+## Current State (2026-06-11)
+
+Shipped and on `main` at `v1.0.0-rc3+`. The original M1-M7 plan was reorganized after M3 into a faster engagement/retention pivot (see `PIVOT_SPEC.md`); the milestones below are the as-built state, not the original sequence.
+
+- **Targets:** iOS app, watch app, watch Complications extension, Live Activity extension. (The iOS Home Screen widget extension was removed; it broke Xcode Cloud archive signing. The goal-as-shape surface lives on the watch complication + the DailyGoal Live Activity.)
+- **Built:** schedule, fasting, hydration, training (lift/basketball/swim/custom with live `HKWorkoutSession`), learning, the engagement layer (streaks with freezes + auto-grace, coach v2, recovery/readiness, mascot, durability handoff, partner dyad at the seam), **M5 biomarkers** (71-marker catalog, Levine PhenoAge, PDFKit+Vision lab parser, Swift Charts trends, opt-in Claude interpretation), and the ninja/samurai "dojo" design system (`Components/Theme.swift`).
+- **Tests:** ~700, green; zero build warnings on all targets.
+- **Externally gated:** live partner-dyad CloudKit transport, TestFlight, and re-adding the iOS widget all need a paid Apple Developer account.
+- **Design system:** all colors/typography/surfaces are tokens in `PersonalOptimization/Components/Theme.swift` + `DojoComponents.swift`.
+- **Latest repo audit:** `docs/audits/AUDIT_2026-06-10.md`.
+
 ## Quick Start
 
 ```bash

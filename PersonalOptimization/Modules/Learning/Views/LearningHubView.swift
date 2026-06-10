@@ -46,7 +46,7 @@ private struct ModuleCard: View {
 
     var body: some View {
         let today = Calendar.current.startOfDay(for: Date())
-        let todayLog = logs.first { Calendar.current.isDate($0.date, inSameDayAs: today) }
+        let todayLog = logs.first { $0.supersededAt == nil && Calendar.current.isDate($0.date, inSameDayAs: today) }
         let minutes: Int = {
             switch module {
             case .japanese: return todayLog?.japaneseMinutes ?? 0

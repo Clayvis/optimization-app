@@ -223,7 +223,7 @@ struct ScheduleGenerationView: View {
     /// hydrates next time the user opens it. Cheap — runs on each field edit.
     private func persistIntake(_ intake: ScheduleIntake) {
         guard let profile = profiles.first else { return }
-        // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
+        // MARK: try? justified - encoding a value type of primitives cannot fail; guard satisfies the API shape.
         guard let data = try? JSONEncoder().encode(intake),
               let json = String(data: data, encoding: .utf8) else { return }
         profile.lastIntakeJSON = json

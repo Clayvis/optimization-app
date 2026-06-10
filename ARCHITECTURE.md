@@ -71,14 +71,23 @@ iOS 18 baseline gives access to: SwiftData with CloudKit sync, ActivityKit Live 
 - Lock screen presentation included.
 - Activity attributes use ContentState pattern with start/end dates so OS can compute progress without app updates.
 
-## Widgets (M6 onward)
+## Glanceable surfaces (as-built)
 
-- WidgetKit framework.
-- Home screen sizes: small, medium, large.
-- Lock screen sizes: circular, rectangular, inline.
-- Smart Stack ranking via TimelineProvider relevance scores.
-- Configuration via App Intents (iOS 17+ pattern).
-- Widget kinds: hydration progress, fast countdown, today's schedule, current streaks.
+The original standalone iOS Home Screen widget extension was REMOVED (commit
+bd2d46a): a new extension bundle ID broke Xcode Cloud archive auto-signing.
+Re-adding it requires registering the App ID (with App Groups) in the Developer
+portal first. The glanceable surfaces that shipped instead, with no new bundle
+IDs:
+
+- **Watch Complications extension** (`PersonalOptimizationWatchComplications`):
+  WidgetKit timeline providers for hydration progress, fast countdown, current
+  block, the protocol-goal ring, and the mascot. Share one process-lifetime
+  `ComplicationStore` container and read the App-Group store with device-tz day
+  boundaries.
+- **Live Activity extension** (`PersonalOptimizationLiveActivity`): the fasting
+  timer and the DailyGoal "goal as a shape" on the lock screen + Dynamic Island.
+- A future re-introduced iOS widget would render the same `ProtocolGoalSnapshot`
+  the complication uses, so the number can never drift.
 
 ## Secrets
 

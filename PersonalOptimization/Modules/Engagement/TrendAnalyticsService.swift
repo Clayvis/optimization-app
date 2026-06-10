@@ -149,7 +149,7 @@ final class TrendAnalyticsService {
             for log in logs {
                 let day = startOfDay(for: log.date)
                 guard out[day] != nil else { continue }
-                out[day]! += Double(log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes + log.musicMinutes)
+                out[day]! += Double(ProtocolRules.learningMinutes(log: log))
             }
         case .fasting:
             let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
@@ -416,7 +416,7 @@ final class TrendAnalyticsService {
         var byWeek: [Date: Double] = [:]
         for log in inRange {
             let weekStart = mondayOfWeek(containing: log.date)
-            byWeek[weekStart, default: 0] += Double(log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes + log.musicMinutes)
+            byWeek[weekStart, default: 0] += Double(ProtocolRules.learningMinutes(log: log))
         }
         return byWeek
     }
@@ -468,8 +468,7 @@ final class TrendAnalyticsService {
     }
 
     private func isoWeekday(for date: Date) -> Int {
-        let raw = calendar().component(.weekday, from: date)
-        return raw == 1 ? 7 : raw - 1
+        ProtocolRules.isoWeekday(for: date, calendar: calendar())
     }
 
     private func calendar() -> Calendar {
@@ -483,12 +482,7 @@ final class TrendAnalyticsService {
     }
 
     private func hydrationTargetMin(for day: Date) -> Double {
-        guard let targets = hydrationTargets else { return 64 }
-        let weekday = isoWeekday(for: day)
-        if targets.basketball.appliesTo.contains(weekday) { return targets.basketball.min }
-        if targets.swim.appliesTo.contains(weekday) { return targets.swim.min }
-        if targets.lift.appliesTo.contains(weekday) { return targets.lift.min }
-        return targets.rest.min
+        ProtocolRules.hydrationTargetMin(for: day, targets: hydrationTargets, calendar: calendar())
     }
 
     private func computeEntropy(counts: [Int], total: Int) -> Double {

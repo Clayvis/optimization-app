@@ -162,7 +162,7 @@ actor BiomarkerPDFParser {
     nonisolated static func extractDate(from lines: [String]) -> Date? {
         for line in lines {
             for pattern in datePatterns {
-                guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
+                guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),  // MARK: try? justified - patterns are compile-time literals; failure is impossible at runtime.
                       let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
                       let range = Range(match.range, in: line) else { continue }
                 if let date = parseDateToken(String(line[range])) {
@@ -195,7 +195,7 @@ actor BiomarkerPDFParser {
     private nonisolated static let genericNumberPattern = #"[-+]?\d+\.?\d+|\d+"#
 
     private nonisolated static func firstNumber(in text: String, pattern: String) -> Double? {
-        guard let regex = try? NSRegularExpression(pattern: pattern),
+        guard let regex = try? NSRegularExpression(pattern: pattern),  // MARK: try? justified - patterns are compile-time literals; failure is impossible at runtime.
               let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
               let range = Range(match.range, in: text) else { return nil }
         return Double(text[range])

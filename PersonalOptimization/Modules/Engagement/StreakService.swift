@@ -20,8 +20,9 @@ enum StreakServiceError: LocalizedError {
 /// - workout: a `WorkoutEvent.completed == true` row exists for that day
 /// - fasting: `DailyLog.fastEnd != nil` for that day
 /// - hydration: `DailyLog.waterOz` >= the day's hydration target minimum
-/// - learning: `DailyLog.japaneseMinutes` >= 30 OR `DailyLog.guitarMinutes` >= 20
+/// - learning: ProtocolRules.learningDone (any module clears its threshold, or 20 total minutes)
 /// - protocolAdherence: every other domain that was scheduled for that day completed
+///   (fasting + hydration + learning + workout-on-training-weekdays; decision 018)
 ///
 /// Grace mechanisms (any of these also count a day as completed):
 /// - `userProfile.sickDayActiveUntil` covers the day
@@ -60,7 +61,7 @@ final class StreakService {
         applyMonthlyResetIfNeeded(counter: counter, asOf: asOf)
 
         let history = try buildCompletionHistory(domain: domain, asOf: asOf)
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let today = cal.startOfDay(for: asOf)
         let restDays = autoRestDays(domain: domain)
 
@@ -110,7 +111,7 @@ final class StreakService {
         guard counter.freezesAvailable > 0 else {
             throw StreakServiceError.noFreezesAvailable
         }
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let today = cal.startOfDay(for: asOf)
 
         if domain == .workout {
@@ -144,7 +145,7 @@ final class StreakService {
         applyMonthlyResetIfNeeded(counter: counter, asOf: asOf)
         guard counter.freezesAvailable > 0 else { return nil }
 
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let today = cal.startOfDay(for: asOf)
         guard let yesterday = cal.date(byAdding: .day, value: -1, to: today),
               let dayBefore = cal.date(byAdding: .day, value: -2, to: today) else { return nil }
@@ -186,7 +187,7 @@ final class StreakService {
     /// domain) rather than a genuine completion. Used so auto-grace cannot anchor
     /// on a previously-graced day and chain through a multi-day lapse.
     private func dayIsGraceCovered(domain: StreakDomain, day: Date) -> Bool {
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let d = cal.startOfDay(for: day)
         if domain == .workout {
             let graceSources: Set<String> = [
@@ -244,7 +245,7 @@ final class StreakService {
     /// Resets the per-month freeze counter when the calendar month changes.
     /// Idempotent within the same month.
     func resetMonthlyFreezes(asOf: Date = Date()) throws {
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let monthAnchor = cal.date(from: cal.dateComponents([.year, .month], from: asOf)) ?? asOf
         for domain in StreakDomain.allCases {
             let counter = upsertCounter(domain: domain)
@@ -259,7 +260,7 @@ final class StreakService {
 
     /// Marks today's WorkoutEvent ledger so all the workout-related domains read as completed.
     func recordWorkoutLedger(date: Date, source: WorkoutEventSource, sourceID: UUID? = nil) throws {
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let day = cal.startOfDay(for: date)
         let event = WorkoutEvent(date: day, completed: true, source: source, sourceID: sourceID)
         modelContext.insert(event)
@@ -270,7 +271,7 @@ final class StreakService {
     /// FreezeApplication rows for non-workout domains, and sets profile.sickDayActiveUntil
     /// so banners and mascot reason can reflect the state.
     func activateSickDay(asOf: Date = Date()) throws {
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let day = cal.startOfDay(for: asOf)
         let endOfDay = cal.date(byAdding: DateComponents(day: 1, second: -1), to: day) ?? asOf
 
@@ -284,7 +285,7 @@ final class StreakService {
     /// Activates travel mode covering today and the next `days - 1` calendar days.
     func activateTravelMode(days: Int, asOf: Date = Date()) throws {
         precondition(days >= 1, "Travel mode must cover at least one day")
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let today = cal.startOfDay(for: asOf)
         var cursor = today
         for _ in 0..<days {
@@ -345,7 +346,7 @@ final class StreakService {
     // MARK: - History assembly
 
     private func buildCompletionHistory(domain: StreakDomain, asOf: Date) throws -> [Date: Bool] {
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>())
         let today = cal.startOfDay(for: asOf)
         var history: [Date: Bool] = [:]
@@ -372,37 +373,49 @@ final class StreakService {
                 if log.waterOz >= target { history[day] = true }
             }
         case .learning:
-            // M4.2 followup: generalize learning completion. The original rule
-            // was Clay-specific (Japanese >= 30 OR Guitar >= 20). Wife / buddy
-            // may pick a different OptimizationFocus (language, music, deep
-            // work) so we count the day done when ANY tracked learning
-            // module clears its threshold OR total tracked minutes >= 20.
-            // courseworkMinutes is included since the ScheduleEditor can
-            // route generic learning blocks there.
+            // Generalized learning completion (shared rule): any tracked
+            // module clears its threshold OR total tracked minutes >= 20, so
+            // a different OptimizationFocus still counts its day.
             for log in try modelContext.fetch(FetchDescriptor<DailyLog>(predicate: #Predicate<DailyLog> { $0.date >= earliest && $0.supersededAt == nil })) {
                 let day = cal.startOfDay(for: log.date)
-                let total = log.japaneseMinutes
-                    + log.guitarMinutes
-                    + log.courseworkMinutes
-                    + log.musicMinutes
-                if log.japaneseMinutes >= 30
-                    || log.guitarMinutes >= 20
-                    || log.courseworkMinutes >= 20
-                    || log.musicMinutes >= 20
-                    || total >= 20 {
+                if ProtocolRules.learningDone(log: log) {
                     history[day] = true
                 }
             }
         case .protocolAdherence:
-            // protocolAdherence depends on per-day adherence which is computed by
-            // DailySummaryService; for now require both fasting and hydration done
-            // (workout/learning are not always scheduled). DailySummaryService can
-            // refine this once it lands.
+            // Audit reconcile (decision 018): the master protocol streak now
+            // uses the SAME scheduled-aware 4-domain rule as the tally
+            // (DailySummaryService.todayProtocol / ProtocolGoalSnapshot):
+            // fasting AND hydration AND learning AND, on scheduled training
+            // weekdays, a completed workout. Previously this case required
+            // only fasting+hydration ("for now"), so the headline streak
+            // could advance while the tally read 2/4.
+            // Workout is part of the protocol ONLY on weekdays that have a
+            // training block scheduled — identical to the tally's
+            // `workoutScheduled` test (DailySummaryService / ProtocolGoalSnapshot
+            // add workout to the total only when a training block exists that
+            // day). When no schedule is seeded, no weekday requires a workout,
+            // so the protocol is fasting+hydration+learning. This is true
+            // parity, not the workout-streak's Sat/Sun rest-day fallback.
+            let trainingWeekdays = Set(
+                modelContext.fetchOrEmpty(FetchDescriptor<ScheduleBlock>()).compactMap { block -> Int? in
+                    (!block.isOverride && block.type == .training && block.module != nil) ? block.dayOfWeek : nil
+                }
+            )
+            var workoutDays: Set<Date> = []
+            for event in try modelContext.fetch(FetchDescriptor<WorkoutEvent>(predicate: #Predicate<WorkoutEvent> { $0.date >= earliest })) where event.completed {
+                workoutDays.insert(cal.startOfDay(for: event.date))
+            }
             for log in try modelContext.fetch(FetchDescriptor<DailyLog>(predicate: #Predicate<DailyLog> { $0.date >= earliest && $0.supersededAt == nil })) {
                 let day = cal.startOfDay(for: log.date)
                 let fastingDone = log.fastEnd != nil
                 let hydrationDone = log.waterOz >= hydrationTargetMin(for: day)
-                if fastingDone && hydrationDone { history[day] = true }
+                let learningDone = ProtocolRules.learningDone(log: log)
+                let workoutRequired = trainingWeekdays.contains(isoWeekday(for: day))
+                let workoutSatisfied = !workoutRequired || workoutDays.contains(day)
+                if fastingDone && hydrationDone && learningDone && workoutSatisfied {
+                    history[day] = true
+                }
             }
         }
 
@@ -429,12 +442,7 @@ final class StreakService {
     }
 
     private func hydrationTargetMin(for day: Date) -> Double {
-        guard let targets = hydrationTargets else { return 64 }
-        let weekday = isoWeekday(for: day)
-        if targets.basketball.appliesTo.contains(weekday) { return targets.basketball.min }
-        if targets.swim.appliesTo.contains(weekday) { return targets.swim.min }
-        if targets.lift.appliesTo.contains(weekday) { return targets.lift.min }
-        return targets.rest.min
+        ProtocolRules.hydrationTargetMin(for: day, targets: hydrationTargets, calendar: domainCalendar())
     }
 
     private func computeLongest(history: [Date: Bool], restDays: Set<Int>, calendar: Calendar) -> Int {
@@ -489,7 +497,7 @@ final class StreakService {
     }
 
     private func applyMonthlyResetIfNeeded(counter: StreakCounter, asOf: Date) {
-        let cal = jstCalendar()
+        let cal = domainCalendar()
         let anchor = cal.date(from: cal.dateComponents([.year, .month], from: asOf)) ?? asOf
         if counter.freezeMonthAnchor != anchor {
             counter.freezesAvailable = StreakService.maxFreezesPerMonth
@@ -511,17 +519,17 @@ final class StreakService {
         return counter
     }
 
-    private func jstCalendar() -> Calendar {
+    /// Calendar in the service's injected timezone (device/user tz via
+    /// UserCalendar at the call sites). Renamed from `jstCalendar` — the old
+    /// name described a pinned JST behavior that no longer exists.
+    private func domainCalendar() -> Calendar {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
         return cal
     }
 
     private func isoWeekday(for date: Date) -> Int {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = timezone
-        let raw = cal.component(.weekday, from: date)
-        return raw == 1 ? 7 : raw - 1
+        ProtocolRules.isoWeekday(for: date, calendar: domainCalendar())
     }
 }
 

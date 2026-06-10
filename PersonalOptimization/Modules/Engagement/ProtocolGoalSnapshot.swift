@@ -21,8 +21,7 @@ struct ProtocolGoalSnapshot: Sendable, Equatable {
         cal.timeZone = .current
         let day = cal.startOfDay(for: asOf)
         let tomorrow = cal.date(byAdding: .day, value: 1, to: day) ?? day
-        let raw = cal.component(.weekday, from: asOf)
-        let weekday = raw == 1 ? 7 : raw - 1
+        let weekday = ProtocolRules.isoWeekday(for: asOf, calendar: cal)
 
         let key = StreakDomain.protocolAdherence.rawValue
         let streak = modelContext.fetchOrEmpty(
@@ -47,13 +46,7 @@ struct ProtocolGoalSnapshot: Sendable, Equatable {
 
         let fastingDone = (log?.fastEnd != nil) || graceCovered
         let hydrationDone = ((log?.waterOz ?? 0) >= hydrationTarget(for: asOf, calendar: cal)) || graceCovered
-        let learningDone: Bool = {
-            let jp = log?.japaneseMinutes ?? 0
-            let gtr = log?.guitarMinutes ?? 0
-            let mus = log?.musicMinutes ?? 0
-            let work = log?.courseworkMinutes ?? 0
-            return jp >= 30 || gtr >= 20 || mus >= 20 || work >= 20 || (jp + gtr + mus + work) >= 20 || graceCovered
-        }()
+        let learningDone = ProtocolRules.learningDone(log: log) || graceCovered
 
         var completed = 0
         var total = 0
@@ -66,15 +59,13 @@ struct ProtocolGoalSnapshot: Sendable, Equatable {
         return ProtocolGoalSnapshot(streak: streak, completedDomains: completed, totalDomains: total)
     }
 
+    // @MainActor because loadCached() caches in a main-actor static; the only
+    // caller (make) is already @MainActor.
+    @MainActor
     private static func hydrationTarget(for date: Date, calendar: Calendar) -> Double {
-        // try? justified - bundled resource; on failure fall back to the 64oz
-        // floor so the surface renders rather than breaking.
-        guard let targets = try? ScheduleConfigLoader.load().hydrationTargetsOz else { return 64 }
-        let raw = calendar.component(.weekday, from: date)
-        let weekday = raw == 1 ? 7 : raw - 1
-        if targets.basketball.appliesTo.contains(weekday) { return targets.basketball.min }
-        if targets.swim.appliesTo.contains(weekday) { return targets.swim.min }
-        if targets.lift.appliesTo.contains(weekday) { return targets.lift.min }
-        return targets.rest.min
+        // try? justified - bundled resource; on failure ProtocolRules falls
+        // back to the 64oz floor so the surface renders rather than breaking.
+        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
+        return ProtocolRules.hydrationTargetMin(for: date, targets: targets, calendar: calendar)
     }
 }

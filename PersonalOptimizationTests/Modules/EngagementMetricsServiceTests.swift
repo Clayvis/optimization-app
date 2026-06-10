@@ -48,14 +48,16 @@ final class EngagementMetricsServiceTests: XCTestCase {
         )
     }
 
-    /// Seeds a protocol-complete DailyLog for the given day offset: fast ended +
-    /// hydration at the 64 oz default minimum, which is the protocolAdherence
-    /// completion rule.
+    /// Seeds a protocol-complete DailyLog for the given day offset. Decision
+    /// 018: the protocol day now requires fasting + hydration + learning (and
+    /// a workout only on scheduled training weekdays — none are seeded here, so
+    /// workout is not required). fast ended + 64 oz + 30 learning minutes.
     private func seedProtocolDay(_ ctx: ModelContext, offset: Int) {
         let d = day(offset)
         let log = DailyLog(date: d, calendar: cal)
         log.fastEnd = cal.date(byAdding: .hour, value: 12, to: d)
         log.waterOz = 64
+        log.japaneseMinutes = 30
         ctx.insert(log)
     }
 

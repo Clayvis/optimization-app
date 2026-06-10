@@ -4,7 +4,6 @@ import SwiftData
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
-    @State private var showTravelPrompt: Bool = false
 
     /// Persistence rung the app launched on. Defaults to `.full` so previews
     /// and any other callers compile unchanged; the app injects the real mode.
@@ -39,7 +38,6 @@ struct RootView: View {
                     .accessibilityAddTraits(.isStaticText)
             }
         }
-        .onAppear { checkTravelPrompt() }
         // Handoff receiver. When the paired watch starts a workout it
         // publishes an NSUserActivity via HandoffService; tapping the
         // continuation banner on the iPhone lock screen brings the app to
@@ -61,18 +59,6 @@ struct RootView: View {
         }
         .onContinueUserActivity(HandoffActivityType.learning.rawValue) { activity in
             postHandoffNotification(activity: activity)
-        }
-        .alert("Travel mode?", isPresented: $showTravelPrompt, presenting: profiles.first) { profile in
-            Button("Follow my device") {
-                profile.travelModeFollowsDevice = true
-                markTravelPromptShown()
-            }
-            Button("Stay pinned to \(profile.timezone)", role: .cancel) {
-                profile.travelModeFollowsDevice = false
-                markTravelPromptShown()
-            }
-        } message: { profile in
-            Text("You're not in \(profile.timezone) right now. Should the app follow your device's time zone for day boundaries and streak rollovers? You can change this anytime in Settings.")
         }
     }
 
@@ -124,24 +110,6 @@ struct RootView: View {
         .tint(Theme.kurenai)
     }
 
-    /// One-shot prompt: if the device's tz differs from the profile's pinned
-    /// tz and the user hasn't already made a travel-mode choice, ask them.
-    /// Gated by a UserDefaults flag so we never nag a second time.
-    private func checkTravelPrompt() {
-        guard let profile = profiles.first, profile.onboardingCompleted else { return }
-        guard !UserDefaults.standard.bool(forKey: Self.travelPromptKey) else { return }
-        guard !profile.travelModeFollowsDevice else { return }
-        let deviceTz = TimeZone.current.identifier
-        guard deviceTz != profile.timezone else { return }
-        showTravelPrompt = true
-    }
-
-    private func markTravelPromptShown() {
-        UserDefaults.standard.set(true, forKey: Self.travelPromptKey)
-        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
-    }
-
-    private static let travelPromptKey = "TravelModePrompt.v1.shown"
 }
 
 #Preview {

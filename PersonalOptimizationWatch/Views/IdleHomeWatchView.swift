@@ -198,14 +198,14 @@ struct IdleHomeWatchView: View {
 
     private func quickLogWater(oz: Double) {
         guard let svc = hydrationService else { return }
-        _ = try? svc.logBottle(oz: oz)
+        _ = try? svc.logBottle(oz: oz)  // MARK: try? justified - haptic still confirms; a failed write surfaces on next refresh rather than blocking the glance.
         WKInterfaceDevice.current().play(.success)
         refreshTrigger += 1
     }
 
     private func endFastIfActive() {
         guard let svc = fastingService else { return }
-        _ = try? svc.endManualFast()
+        _ = try? svc.endManualFast()  // MARK: try? justified - same glance posture as logBottle above.
         WKInterfaceDevice.current().play(.success)
         refreshTrigger += 1
     }
@@ -236,9 +236,9 @@ struct IdleHomeWatchView: View {
     /// real-time benefit. The state on the wrist refreshes when the user
     /// opens the app or the iOS app pushes via WCSession (M3.8 Block 3).
     private func recomputeMascot() {
-        let cal = jstCalendar()
+        let cal = deviceCalendar()
         let day = cal.startOfDay(for: Date())
-        let log = logs.first { cal.isDate($0.date, inSameDayAs: day) }
+        let log = logs.first { $0.supersededAt == nil && cal.isDate($0.date, inSameDayAs: day) }
 
         let workoutCounter = streaks.first { $0.domain == StreakDomain.workout.rawValue }
         let workoutMilestone = isMilestone(workoutCounter?.currentStreak)
@@ -289,7 +289,10 @@ struct IdleHomeWatchView: View {
         return trimmed.isEmpty || trimmed == "default"
     }
 
-    private func jstCalendar() -> Calendar {
+    /// Device-timezone calendar. Renamed from `jstCalendar`: the body has
+    /// followed the device since the M3 timezone centralization; only the
+    /// name still claimed a JST pin.
+    private func deviceCalendar() -> Calendar {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone.current
         return cal

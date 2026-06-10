@@ -23,6 +23,11 @@ struct TodayView: View {
     // bootstrapServices(reset: true).
     @State private var scheduleService: ScheduleService?
     @State private var summaryService: DailySummaryService?
+    /// Cached Gap-1 headline. The service runs 6-rule trend detection over
+    /// unbounded history; computing it inside the streak strip's body made
+    /// every TodayView render pay that cost. Recomputed on appear and on each
+    /// confirmed log instead.
+    @State private var durabilityHeadline: DurabilityHeadline?
 
     private var profile: UserProfile? { profiles.first }
 
@@ -282,6 +287,7 @@ struct TodayView: View {
                 characterService.start(modelContext: modelContext)
                 Task { await loadDailyQuote() }
                 refreshLapseAndMilestones()
+                durabilityHeadline = DurabilityHeadlineService(modelContext: modelContext).headline(asOf: now)
                 // Update an already-running daily-goal Live Activity, but do not
                 // spawn one just for opening the app (startIfNeeded: false).
                 Task { await refreshDailyGoalActivity(startIfNeeded: false) }
@@ -290,6 +296,7 @@ struct TodayView: View {
                 // A real log happened: surface / refresh the daily-goal Live
                 // Activity so today's shape updates on the lock screen.
                 Task { await refreshDailyGoalActivity(startIfNeeded: true) }
+                durabilityHeadline = DurabilityHeadlineService(modelContext: modelContext).headline(asOf: Date())
             }
             .onDisappear {
                 characterService.stop()
@@ -492,7 +499,10 @@ struct TodayView: View {
         // Gap 1 durability handoff: past the bootstrap window the headline shifts
         // from the raw streak count to an identity + trend narrative, and the
         // streak is demoted so the user is not solely streak-dependent.
-        let durability = DurabilityHeadlineService(modelContext: modelContext).headline(asOf: now)
+        // Cached in @State (recomputed on appear / log-confirm), NOT computed
+        // per render: the service walks full history for trend detection.
+        let durability = durabilityHeadline
+            ?? DurabilityHeadline(phase: .bootstrap, identityLine: "", trendLine: nil, streakDays: 0)
 
         VStack(alignment: .leading, spacing: 10) {
             // Design Principle 6 (one master metric): one headline, per-domain
@@ -799,9 +809,7 @@ struct TodayView: View {
     private var isSunday: Bool {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone.current
-        let raw = cal.component(.weekday, from: now)
-        let iso = raw == 1 ? 7 : raw - 1
-        return iso == 7
+        return ProtocolRules.isoWeekday(for: now, calendar: cal) == 7
     }
 
     private func loadDailyQuote() async {

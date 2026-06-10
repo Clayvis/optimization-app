@@ -233,7 +233,7 @@ final class FastingService {
         }
         try modelContext.save()
         CompletionHistoryWriter.record(domain: .fasting, at: date, modelContext: modelContext)
-        logger.info("Manual fast ended at \(date, privacy: .public) reason=\(reason ?? "nil", privacy: .public)")
+        logger.info("Manual fast ended at \(date, privacy: .public) reason=\(reason ?? "nil", privacy: .private)")
         #if os(iOS)
         FastingLiveActivityController.dismissAllSync()
         #endif

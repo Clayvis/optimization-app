@@ -238,7 +238,7 @@ final class AchievementService {
 
         let hydrationDaysHit = logs.filter { $0.waterOz >= 64 }.count
         let fastingDaysCompleted = logs.filter { $0.fastEnd != nil }.count
-        let learningMinutesTotal = logs.reduce(0) { $0 + $1.japaneseMinutes + $1.guitarMinutes + $1.courseworkMinutes }
+        let learningMinutesTotal = logs.reduce(0) { $0 + ProtocolRules.learningMinutes(log: $1) }
 
         let mascotStatesTriggered = Set(mascotLogs.map(\.stateRaw))
 

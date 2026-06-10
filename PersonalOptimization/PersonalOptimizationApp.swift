@@ -84,7 +84,7 @@ struct PersonalOptimizationApp: App {
             // protect the protocol streak if yesterday would otherwise have
             // broken it. Honest mercy: records a FreezeApplication, never a fake
             // completion, and only fires when it actually saves a live chain.
-            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
+            let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz  // MARK: try? justified - bundled resource; nil falls back to the 64oz floor inside ProtocolRules.
             let streaks = StreakService(modelContext: context, hydrationTargets: targets)
             do {
                 try streaks.resetMonthlyFreezes()
@@ -104,7 +104,14 @@ struct PersonalOptimizationApp: App {
         DevSecretsBootstrap.bootstrapIfNeeded()
         FirstLaunchTracker.shared.recordIfNeeded()
         ArchiveBackgroundScheduler.registerHandler(modelContainer: container)
-        ArchiveBackgroundScheduler.runRollupNow(modelContainer: container)
+        // Audit perf: the rollup walks up to 31 days of history (3 unbounded
+        // fetches + a CloudKit write). Deferring it a few seconds keeps the
+        // cold-launch render path clear; BG-task scheduling still covers the
+        // overnight case.
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))  // MARK: try? justified - cancellation just skips the deferred rollup this launch.
+            ArchiveBackgroundScheduler.runRollupNow(modelContainer: container)
+        }
         // M4.2: pull today's HealthKit data into DailyLog on launch. No-op when
         // HK isn't authorized; each fetch returns nil silently.
         Task { @MainActor in

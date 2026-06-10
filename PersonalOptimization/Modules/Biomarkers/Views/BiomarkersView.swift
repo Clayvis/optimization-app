@@ -17,6 +17,9 @@ struct BiomarkersView: View {
     @State private var showJSONImporter = false
     @State private var importError: String?
     @State private var importBusy = false
+    @State private var interpretation: String?
+    @State private var interpretBusy = false
+    @State private var interpretError: String?
 
     private var profile: UserProfile? { profiles.first }
     private var sex: String { profile?.sex ?? "male" }
@@ -30,6 +33,7 @@ struct BiomarkersView: View {
                         phenoAgeCard(for: latest)
                         summaryRow(for: latest)
                         patternsCard(for: latest)
+                        interpretationCard(for: latest)
                         categorySections(for: latest)
                         historyCard
                     } else {
@@ -196,6 +200,71 @@ struct BiomarkersView: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - AI interpretation (opt-in)
+
+    @ViewBuilder
+    private func interpretationCard(for draw: LabDraw) -> some View {
+        DojoCard(accent: Theme.murasaki) {
+            VStack(alignment: .leading, spacing: Theme.Space.m) {
+                HStack {
+                    SectionEyebrow(title: "AI Read", tint: Theme.murasaki)
+                    Spacer()
+                    if interpretation != nil {
+                        Button {
+                            Task { await runInterpretation() }
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        .accessibilityLabel("Regenerate interpretation")
+                    }
+                }
+
+                if let interpretation {
+                    Text(interpretation)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if interpretBusy {
+                    HStack(spacing: Theme.Space.s) {
+                        ProgressView().controlSize(.small)
+                        Text("Reading your panel…")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                } else {
+                    Text("Get a longevity-focused read of this draw from Claude. Uses your API key; counts against today's token budget. Values stay on device; only marker names, flags, and numbers are sent.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                    Button("Interpret this draw") {
+                        Task { await runInterpretation() }
+                    }
+                    .buttonStyle(BladeButtonStyle())
+                }
+
+                if let interpretError {
+                    Text(interpretError)
+                        .font(.caption)
+                        .foregroundStyle(Theme.kurenai)
+                }
+            }
+        }
+    }
+
+    private func runInterpretation() async {
+        guard let profile else { return }
+        interpretError = nil
+        interpretBusy = true
+        defer { interpretBusy = false }
+        do {
+            interpretation = try await LabInterpretationService(modelContext: modelContext)
+                .interpretLatest(profile: profile)
+        } catch {
+            interpretError = error.localizedDescription
         }
     }
 

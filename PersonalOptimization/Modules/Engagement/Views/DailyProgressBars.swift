@@ -11,7 +11,6 @@ struct DailyProgressBars: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
     @Query private var logs: [DailyLog]
-    @Query private var workoutEvents: [WorkoutEvent]
     @Query private var liftSessions: [LiftSession]
     @Query private var basketballSessions: [BasketballSession]
     @Query private var swimSessions: [SwimSession]
@@ -28,7 +27,7 @@ struct DailyProgressBars: View {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone.current
         let day = cal.startOfDay(for: Date())
-        return logs.first(where: { cal.isDate($0.date, inSameDayAs: day) })
+        return logs.first(where: { $0.supersededAt == nil && cal.isDate($0.date, inSameDayAs: day) })
     }
 
     private var hydrationOz: Double {
@@ -36,8 +35,7 @@ struct DailyProgressBars: View {
     }
 
     private var learningMinutes: Int {
-        guard let log = todayLog else { return 0 }
-        return log.japaneseMinutes + log.guitarMinutes + log.courseworkMinutes + log.musicMinutes
+        ProtocolRules.learningMinutes(log: todayLog)
     }
 
     /// Active calories shown on the Move track. Prefers HealthKit's measured
@@ -231,28 +229,10 @@ struct DailyProgressBars: View {
     private func loadHydrationTarget() async {
         // Best-effort: pull the day's minimum from ScheduleConfigLoader. On
         // failure leave the 64oz default in place rather than show a broken bar.
-        do {
-            let config = try ScheduleConfigLoader.loadCached()
-            let weekday = isoWeekday(for: Date())
-            let targets = config.hydrationTargetsOz
-            if targets.basketball.appliesTo.contains(weekday) {
-                hydrationTargetMin = targets.basketball.min
-            } else if targets.swim.appliesTo.contains(weekday) {
-                hydrationTargetMin = targets.swim.min
-            } else if targets.lift.appliesTo.contains(weekday) {
-                hydrationTargetMin = targets.lift.min
-            } else {
-                hydrationTargetMin = targets.rest.min
-            }
-        } catch {
-            hydrationTargetMin = 64
-        }
-    }
-
-    private func isoWeekday(for date: Date) -> Int {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone.current
-        let raw = cal.component(.weekday, from: date)
-        return raw == 1 ? 7 : raw - 1
+        // try? justified - bundled resource; nil falls back to the shared 64oz floor.
+        let targets = try? ScheduleConfigLoader.loadCached().hydrationTargetsOz
+        hydrationTargetMin = ProtocolRules.hydrationTargetMin(for: Date(), targets: targets, calendar: cal)
     }
 }

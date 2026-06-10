@@ -86,7 +86,22 @@ final class LiveWorkoutSessionService: NSObject, HKWorkoutSessionDelegate, HKLiv
         self.elapsedSeconds = 0
         startElapsedTicker()
 
+        // Publish the Handoff activity so the phone's lock screen offers the
+        // continuation banner. This was the missing half of the M4 handoff:
+        // RootView's onContinueUserActivity receivers existed with no
+        // publisher (2026-06 audit, dead-code finding, wired not removed).
+        HandoffService.startActivity(type: handoffType(for: activityType))
+
         logger.info("Live session started type=\(activityType.rawValue, privacy: .public)")
+    }
+
+    private func handoffType(for activity: HKWorkoutActivityType) -> HandoffActivityType {
+        switch activity {
+        case .traditionalStrengthTraining, .functionalStrengthTraining: return .lift
+        case .basketball: return .basketball
+        case .swimming: return .swim
+        default: return .customActivity
+        }
     }
 
     /// Ends the active session. Returns a summary so the typed-session module

@@ -175,6 +175,8 @@ targets:
         name: SharedEngagement
       - path: PersonalOptimization/Modules/Engagement/ProtocolGoalSnapshot.swift
         name: SharedEngagement
+      - path: PersonalOptimization/Modules/Engagement/ProtocolRules.swift
+        name: SharedEngagement
       - path: PersonalOptimization/Services/BuildConfig.swift
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/SwiftDataHelpers.swift
@@ -297,6 +299,8 @@ targets:
       - path: PersonalOptimization/Modules/Engagement/AdaptiveNotificationTiming.swift
         name: SharedEngagement
       - path: PersonalOptimization/Modules/Engagement/ProtocolGoalSnapshot.swift
+        name: SharedEngagement
+      - path: PersonalOptimization/Modules/Engagement/ProtocolRules.swift
         name: SharedEngagement
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/SwiftDataHelpers.swift

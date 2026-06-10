@@ -68,6 +68,7 @@
 		237030E260483256E4AACAB1 /* AdaptiveNotificationTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD6AE4177CF18D51EC8EA5E /* AdaptiveNotificationTimingTests.swift */; };
 		23F85E851349587FDFE750F7 /* BackgroundTaskLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89ABB69B067CB7A980AD7A2 /* BackgroundTaskLog.swift */; };
 		241E6249F46524572B675659 /* NotificationActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C30476F26619614BC0B0B0D /* NotificationActionHandler.swift */; };
+		2479B1A419D28A6EEB8E3220 /* LabInterpretationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64CC19D9481E22E753BF2D01 /* LabInterpretationService.swift */; };
 		24A2BE7A67599E2BE26BDF1E /* IdentityCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C3CDFD03BAAC196647C5E48 /* IdentityCopy.swift */; };
 		255D8374E9BA90839391CC13 /* FastingLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7089E4ECC4F61306ED1464CC /* FastingLiveActivityController.swift */; };
 		26292C2BAAB1EB1E9EF536CA /* ScheduleSuggestionInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA42BB296B8E440928F2531 /* ScheduleSuggestionInbox.swift */; };
@@ -96,6 +97,7 @@
 		37B473C64A5D4F2ED9E764ED /* ComplicationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A8B7DAAA4338CBBCB16151F /* ComplicationStore.swift */; };
 		3910CFFAEF639E97C5F2F8B4 /* LabDraw.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4985E865B7FE2268CC0631 /* LabDraw.swift */; };
 		39803EA851C039EFCE0CAED6 /* PerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62C8F58A99782B66ECCDFCB5 /* PerformanceTests.swift */; };
+		3AC886304B7C657CDB4DB4BF /* ProtocolRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6525F274C22AF0DB515D9230 /* ProtocolRules.swift */; };
 		3AE7066C9B19DF504AF76CB3 /* CoachMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAAA68FCE352531322034903 /* CoachMemory.swift */; };
 		3B175626FD2742A84887AE78 /* LiftServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12078C7513677476A637F58 /* LiftServiceTests.swift */; };
 		3B34A7A64B8E0F8E59666842 /* HydrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51542D012807C71EE967904 /* HydrationView.swift */; };
@@ -155,7 +157,6 @@
 		5727DD178D7E9AC3DBE3CAED /* WorkoutLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3213F7FD2629597440D2580 /* WorkoutLiveActivityController.swift */; };
 		5857CA6B690F61D2505895C7 /* StreakDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B56E873F82EA629BB4C40F /* StreakDomain.swift */; };
 		58928E3E6389CA49FEC01614 /* WeeklyReflection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50AF2EF82E30F5CC1950E5A /* WeeklyReflection.swift */; };
-		58F0F14D3410AC0490BC33DC /* OnDeviceShortTextProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F027AAC4910D63061D179258 /* OnDeviceShortTextProvider.swift */; };
 		59D4EA48757862313BF7C60F /* FastingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF0F1E795AB55462D194D73 /* FastingService.swift */; };
 		5A893A5F1A12FEEC7F76F187 /* AppNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10321A55932502F23BC01B7D /* AppNotifications.swift */; };
 		5A8F53ECFBCDD210D40FB27C /* BasketballSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B79B0DE348C5B10A3C13DA /* BasketballSession.swift */; };
@@ -182,6 +183,7 @@
 		679C729E8E0E51793AF6B6E2 /* CoachInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2185CF84672213ECD67A035 /* CoachInsight.swift */; };
 		67DBBB8238C4B35B86F64511 /* ScheduleSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79525ED54C2630347BC1E7F /* ScheduleSuggestion.swift */; };
 		681FF9C78398598E657BB6E1 /* HydrationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */; };
+		68565DEA88431984853F8C98 /* ProtocolGoalSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECE93021E3416183D93C347 /* ProtocolGoalSnapshotTests.swift */; };
 		68881CF1DB92A02E2B874FF5 /* BiomarkersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8D25180271B5770C803D8DF /* BiomarkersView.swift */; };
 		68C27BE2A6E28573AFA755DE /* ScheduleValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E74DAEF2EE8233EFEEF488C /* ScheduleValidatorTests.swift */; };
 		68D05DA3A8F8FCD94B355F39 /* CurrentBlockTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A14D7CDDD90CC1F2E608509 /* CurrentBlockTimelineProvider.swift */; };
@@ -220,6 +222,7 @@
 		7B359875922E4A9EADCEB844 /* LearningServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66D72CD6CEDF8A930891B3CF /* LearningServiceTests.swift */; };
 		7B424E19C9AA862FEA1F2ED6 /* AppGroupContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BCE71AEA316FE1447CBB073 /* AppGroupContainer.swift */; };
 		7B7F9117E45672A9026B767E /* ProtocolEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F30C85E85590C6112D02188 /* ProtocolEntry.swift */; };
+		7B9DF5E7BA1EBA8B06E119EF /* ProtocolRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6525F274C22AF0DB515D9230 /* ProtocolRules.swift */; };
 		7BD50C957BE222B6ACF6D5E5 /* PimsleurDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EC074E2864866FB1F02564 /* PimsleurDeepLink.swift */; };
 		7C2C8DDA6BB84AF04182DAD4 /* PersistenceBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35CE475A73CA776897180CAC /* PersistenceBootstrap.swift */; };
 		7DE2D2E0E8A7AB81A7FB4457 /* PrescribedWorkoutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9006DA55A1C2A95F2CB43994 /* PrescribedWorkoutCard.swift */; };
@@ -237,6 +240,7 @@
 		82082086900D7DA033787E62 /* HandoffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4974834FAD6CC2D925CB5C13 /* HandoffService.swift */; };
 		821C7E7785DC12B4770D9BC8 /* SchemaV6.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55921DCD58DBE8640AF42118 /* SchemaV6.swift */; };
 		82CED799C08A2A19FDA0D1C5 /* AdminTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961232791C8824387CFFBCE /* AdminTask.swift */; };
+		837D22B24FC5A26015F059B5 /* ProtocolRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6525F274C22AF0DB515D9230 /* ProtocolRules.swift */; };
 		8431A5BE306567CD42D52043 /* ProtocolAdherenceTallyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB066DB5EFCD1728DA590409 /* ProtocolAdherenceTallyTests.swift */; };
 		847D1AF8A4548B50E794DEF8 /* HandoffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4974834FAD6CC2D925CB5C13 /* HandoffService.swift */; };
 		86067350BA1F20E19A896AE1 /* PrescribedWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F855A3A3402581056CD01C9 /* PrescribedWorkout.swift */; };
@@ -279,6 +283,7 @@
 		9D1E68AD1664E20E23A2A895 /* FastingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C70A73F43D115EF06D2B6348 /* FastingLiveActivity.swift */; };
 		9D3153BAAA1A6171A07BFCD2 /* PersonalOptimizationWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB3766332CCC85C5B7A7765 /* PersonalOptimizationWatchApp.swift */; };
 		9D5714D4AC52347BCD7F192B /* SchemaV8.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BE7229186366A6743640CDA /* SchemaV8.swift */; };
+		9D8871B6618F3B445DBA9143 /* ProtocolRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5549BE89F7F0322F90FDF0B9 /* ProtocolRulesTests.swift */; };
 		9DAA02CAB65E37762DBB85A0 /* LiftTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1B2DD2C194F0D71DB98CF8 /* LiftTemplates.swift */; };
 		9DD36C9ABAA7B70B56C61A2A /* HydrationEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A58FDE761FD415973D33B2 /* HydrationEntry.swift */; };
 		9E3778818C6E6EB9782DBB0C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2890BCBC13A3A36541B1425 /* SettingsView.swift */; };
@@ -670,10 +675,12 @@
 		4C802AE0A1D4D1234655109C /* PersonaServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaServiceTests.swift; sourceTree = "<group>"; };
 		4C827967650D59F6287511D8 /* SwimService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwimService.swift; sourceTree = "<group>"; };
 		4D25AAB0086EEE975F73A476 /* ScheduleAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleAIService.swift; sourceTree = "<group>"; };
+		4ECE93021E3416183D93C347 /* ProtocolGoalSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolGoalSnapshotTests.swift; sourceTree = "<group>"; };
 		5093DF24E88D099B7076C10A /* CompletionHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionHistory.swift; sourceTree = "<group>"; };
 		50B7DB7679D00596FBE16B0E /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		51B45DAEA29E2FDD7CE9886B /* PersonaBehavioralInferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaBehavioralInferenceTests.swift; sourceTree = "<group>"; };
 		544D51C289F88D3C72AFE477 /* PhenoAgeCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhenoAgeCalculator.swift; sourceTree = "<group>"; };
+		5549BE89F7F0322F90FDF0B9 /* ProtocolRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolRulesTests.swift; sourceTree = "<group>"; };
 		55921DCD58DBE8640AF42118 /* SchemaV6.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV6.swift; sourceTree = "<group>"; };
 		590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Categories.swift"; sourceTree = "<group>"; };
 		599374856F922D5F8E08A0AD /* schedule_gym_focused.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schedule_gym_focused.json; sourceTree = "<group>"; };
@@ -689,6 +696,8 @@
 		62ED2C2DF973CA2FB4501EBB /* CustomActivitySessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomActivitySessionView.swift; sourceTree = "<group>"; };
 		63900474B867510B71486008 /* StartCurrentBlockWorkoutIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartCurrentBlockWorkoutIntent.swift; sourceTree = "<group>"; };
 		64C01CAA4C1C9882EA8BCA48 /* CurrentBlockComplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentBlockComplication.swift; sourceTree = "<group>"; };
+		64CC19D9481E22E753BF2D01 /* LabInterpretationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabInterpretationService.swift; sourceTree = "<group>"; };
+		6525F274C22AF0DB515D9230 /* ProtocolRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolRules.swift; sourceTree = "<group>"; };
 		6567EEEB6300BE175664C5B4 /* ReactiveRecomputeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactiveRecomputeService.swift; sourceTree = "<group>"; };
 		6661476503868300A642FD25 /* HealthKitObserverServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitObserverServiceTests.swift; sourceTree = "<group>"; };
 		66D1F0FDE7F7EE8D78EBAD9F /* SchemaV9ToV10Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV9ToV10Tests.swift; sourceTree = "<group>"; };
@@ -844,7 +853,6 @@
 		EDD10E6A03C2E680DC668FCD /* WatchConnectivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityService.swift; sourceTree = "<group>"; };
 		EE3B375BE82E1D175DD2CAD0 /* BiomarkerParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiomarkerParserTests.swift; sourceTree = "<group>"; };
 		EFE07D74DECEAE97388D869D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		F027AAC4910D63061D179258 /* OnDeviceShortTextProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDeviceShortTextProvider.swift; sourceTree = "<group>"; };
 		F05848408357125EDFCFDB85 /* PartnerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartnerService.swift; sourceTree = "<group>"; };
 		F3305701E5E1EB65C5834DE5 /* CharacterStateServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterStateServiceTests.swift; sourceTree = "<group>"; };
 		F3E71D23ADA1F43D8FCA3A00 /* LiveWorkoutSessionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveWorkoutSessionService.swift; sourceTree = "<group>"; };
@@ -1092,6 +1100,7 @@
 				DC95B76CDC3A02EE8278F6B7 /* BiomarkerInsights.swift */,
 				2EF2F916C50A64262E571B92 /* BiomarkerPDFParser.swift */,
 				D9C0C3AD075F54D73331068E /* LabDrawStore.swift */,
+				64CC19D9481E22E753BF2D01 /* LabInterpretationService.swift */,
 				544D51C289F88D3C72AFE477 /* PhenoAgeCalculator.swift */,
 			);
 			path = Biomarkers;
@@ -1291,6 +1300,7 @@
 				05D28643EE501CEAEE75175E /* PersonaBehavioralInference.swift */,
 				989E480F10D6817804A0C890 /* PersonaService.swift */,
 				ED7470D9C54626DCDFF25C9B /* ProtocolGoalSnapshot.swift */,
+				6525F274C22AF0DB515D9230 /* ProtocolRules.swift */,
 				908DCE315AB371A354909F0F /* RecoveryGate.swift */,
 				3F89650DCA4480B234FA0171 /* SessionLifecycleService.swift */,
 				FFE9E9465BD252E3D3BE2D98 /* StreakService.swift */,
@@ -1363,7 +1373,6 @@
 				590EB6B5FFDA108FD89D5FBB /* Logger+Categories.swift */,
 				1C30476F26619614BC0B0B0D /* NotificationActionHandler.swift */,
 				044790DF6858E05D889E8DA3 /* NotificationService.swift */,
-				F027AAC4910D63061D179258 /* OnDeviceShortTextProvider.swift */,
 				3542F29B5BB66ABD85302F9C /* PartnerSharedZone.swift */,
 				35CE475A73CA776897180CAC /* PersistenceBootstrap.swift */,
 				8AC713F81155648C69F8395C /* ProfileService.swift */,
@@ -1525,6 +1534,8 @@
 				62C8F58A99782B66ECCDFCB5 /* PerformanceTests.swift */,
 				1C71C9A7AF70C7B57BD81300 /* PhenoAgeTests.swift */,
 				2603B7C2F8BE658A2F1869D3 /* PlaceholderTests.swift */,
+				4ECE93021E3416183D93C347 /* ProtocolGoalSnapshotTests.swift */,
+				5549BE89F7F0322F90FDF0B9 /* ProtocolRulesTests.swift */,
 			);
 			path = PersonalOptimizationTests;
 			sourceTree = "<group>";
@@ -1857,6 +1868,8 @@
 				1C27514882A36096B397885A /* PlaceholderTests.swift in Sources */,
 				3C145031C9AAB2895B356800 /* ProfileServiceTests.swift in Sources */,
 				8431A5BE306567CD42D52043 /* ProtocolAdherenceTallyTests.swift in Sources */,
+				68565DEA88431984853F8C98 /* ProtocolGoalSnapshotTests.swift in Sources */,
+				9D8871B6618F3B445DBA9143 /* ProtocolRulesTests.swift in Sources */,
 				179ABA5B9DFB19C505B9A078 /* ReactiveRecomputeServiceTests.swift in Sources */,
 				AF02DB40855E1C6D5719104A /* RecoveryGateTests.swift in Sources */,
 				C563367AB44E0A78A2FDE417 /* ScheduleAIServiceTests.swift in Sources */,
@@ -1967,6 +1980,7 @@
 				3910CFFAEF639E97C5F2F8B4 /* LabDraw.swift in Sources */,
 				C07CA1D626597E29C3B096C4 /* LabDrawEditorView.swift in Sources */,
 				CFDDEEF27639B156B6D693B1 /* LabDrawStore.swift in Sources */,
+				2479B1A419D28A6EEB8E3220 /* LabInterpretationService.swift in Sources */,
 				1145CDF4DD7353FB9A7D2675 /* LapseDetectionService.swift in Sources */,
 				C46826AFB3B566431DFD83BD /* LapseEvent.swift in Sources */,
 				4F9215C80D0AA3B2ABAF6D74 /* LearningHubView.swift in Sources */,
@@ -1992,7 +2006,6 @@
 				AF12C113EFDA9026FEAB3A93 /* NextBlockCard.swift in Sources */,
 				241E6249F46524572B675659 /* NotificationActionHandler.swift in Sources */,
 				6B73F0CDF2A914042F1F0EC1 /* NotificationService.swift in Sources */,
-				58F0F14D3410AC0490BC33DC /* OnDeviceShortTextProvider.swift in Sources */,
 				760CD108B7842712787F026C /* OnboardingView.swift in Sources */,
 				BAD2BD9C2C61450AFE43D1F2 /* OptimizationFocus.swift in Sources */,
 				9F6122B6432265FEB3222A66 /* PartnerService.swift in Sources */,
@@ -2016,6 +2029,7 @@
 				D33BAA525669BD4C627C259A /* ProtocolDetailView.swift in Sources */,
 				D029431C4F2B4048CAC2FD28 /* ProtocolEntry.swift in Sources */,
 				146B59DF05F4BFC9815E513A /* ProtocolGoalSnapshot.swift in Sources */,
+				7B9DF5E7BA1EBA8B06E119EF /* ProtocolRules.swift in Sources */,
 				0B2B1A0C8AEA72646C5B5138 /* QuickLogIntents.swift in Sources */,
 				12427732BC2ED804F5B03717 /* ReactiveRecomputeService.swift in Sources */,
 				CF8583CC8DA65F63A121A8C0 /* RecoveryCard.swift in Sources */,
@@ -2134,6 +2148,7 @@
 				2732AB89C3CA4CA9A702EE98 /* ProtocolEntry.swift in Sources */,
 				6C9B3E87BC15FA4FF4F0AED0 /* ProtocolGoalComplication.swift in Sources */,
 				07FB250958DBE7067029316B /* ProtocolGoalSnapshot.swift in Sources */,
+				3AC886304B7C657CDB4DB4BF /* ProtocolRules.swift in Sources */,
 				DC3598DF9C384F7BBA1D00C9 /* ScheduleBlock.swift in Sources */,
 				FBE012E8CC00A4B68F92A687 /* ScheduleConfig.swift in Sources */,
 				B03C2BA23FD92471FF04F367 /* ScheduleGenerationDTO.swift in Sources */,
@@ -2232,6 +2247,7 @@
 				86067350BA1F20E19A896AE1 /* PrescribedWorkout.swift in Sources */,
 				7B7F9117E45672A9026B767E /* ProtocolEntry.swift in Sources */,
 				3043229C2351F4B47ACCAD72 /* ProtocolGoalSnapshot.swift in Sources */,
+				837D22B24FC5A26015F059B5 /* ProtocolRules.swift in Sources */,
 				ACA572767664C7DF00AC2761 /* QuickLogIntents.swift in Sources */,
 				CA48EEAB9F4C7F17C2BDCE99 /* ScheduleBlock.swift in Sources */,
 				FB5CFE3EBCB20739974FAC5A /* ScheduleConfig.swift in Sources */,

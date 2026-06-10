@@ -46,7 +46,7 @@ enum DevSecretsBootstrap {
             return nil
         }
         // MARK: try? justified - best-effort; nil/empty result is acceptable at this call site.
-        guard let data = try? Data(contentsOf: url),
+        guard let data = try? Data(contentsOf: url),  // MARK: try? justified - DEBUG-only optional secrets file; absence is the normal case.
               let raw = String(data: data, encoding: .utf8) else {
             return nil
         }

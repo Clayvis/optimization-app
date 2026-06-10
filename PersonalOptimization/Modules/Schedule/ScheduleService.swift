@@ -80,8 +80,7 @@ final class ScheduleService {
     func isoWeekday(for date: Date) -> Int {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
-        let raw = cal.component(.weekday, from: date)
-        return raw == 1 ? 7 : raw - 1
+        return ProtocolRules.isoWeekday(for: date, calendar: cal)
     }
 
     /// Parses "HH:mm" into total minutes from midnight. Returns nil on malformed input.

@@ -220,7 +220,7 @@ final class MilestoneService {
 
         let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
         let fastingDays = logs.filter { $0.fastEnd != nil }.count
-        let learningMinutes = logs.reduce(0) { $0 + $1.japaneseMinutes + $1.guitarMinutes + $1.courseworkMinutes }
+        let learningMinutes = logs.reduce(0) { $0 + ProtocolRules.learningMinutes(log: $1) }
 
         // App usage = number of distinct DailyLog rows or ActivityArchive rows.
         let archives = modelContext.fetchOrEmpty(FetchDescriptor<ActivityArchive>())

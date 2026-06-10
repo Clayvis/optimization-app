@@ -47,7 +47,7 @@ struct FastCountdownTimelineProvider: TimelineProvider {
     @MainActor
     static func makeEntry(at date: Date) -> FastCountdownEntry {
         guard let container = sharedContainer(),
-              let config = try? ScheduleConfigLoader.loadCached() else {
+              let config = try? ScheduleConfigLoader.loadCached() else {  // MARK: try? justified - bundled resource; failure renders the placeholder entry.
             return placeholderEntry(at: date)
         }
 

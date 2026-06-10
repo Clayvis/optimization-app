@@ -7,10 +7,35 @@ import Charts
 /// implementation's first-to-latest percent change.
 struct MarkerDetailView: View {
     @Query(sort: [SortDescriptor(\LabDraw.date, order: .forward)]) private var draws: [LabDraw]
+    @Query(sort: [SortDescriptor(\WearableEntry.date, order: .forward)]) private var wearables: [WearableEntry]
 
     let markerID: String
 
+    @State private var overlayMetric: String?
+
     private var definition: BiomarkerDefinition? { BiomarkerCatalog.all[markerID] }
+
+    /// Wearable metric keys present in the data, with display labels. Lets the
+    /// user overlay a recovery signal (HRV, resting HR, sleep) on the marker
+    /// trend to eyeball correlations.
+    private static let overlayChoices: [(key: String, label: String)] = [
+        ("hrv_rmssd", "HRV"),
+        ("resting_hr", "Resting HR"),
+        ("sleep_score", "Sleep score"),
+        ("weight", "Weight")
+    ]
+
+    private var availableOverlays: [(key: String, label: String)] {
+        Self.overlayChoices.filter { choice in
+            wearables.contains { $0.metrics[choice.key] != nil }
+        }
+    }
+
+    private func overlaySeries(_ key: String) -> [(date: Date, value: Double)] {
+        wearables
+            .compactMap { entry in entry.metrics[key].map { (entry.date, $0) } }
+            .sorted { $0.date < $1.date }
+    }
 
     private var series: [(date: Date, value: Double)] {
         draws.compactMap { draw in
@@ -103,9 +128,26 @@ struct MarkerDetailView: View {
                         )
                         .foregroundStyle(Theme.kurenai)
                     }
+                    // Wearable overlay on a secondary axis, normalized into the
+                    // marker's value band so the shapes are visually comparable.
+                    if let overlayMetric, let mapped = normalizedOverlay(overlayMetric) {
+                        ForEach(mapped, id: \.date) { point in
+                            LineMark(
+                                x: .value("Date", point.date),
+                                y: .value("overlay", point.value),
+                                series: .value("series", "overlay")
+                            )
+                            .foregroundStyle(Theme.ai)
+                            .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                        }
+                    }
                 }
                 .frame(height: 220)
                 .chartYAxisLabel(def.unit)
+
+                if !availableOverlays.isEmpty {
+                    overlayPicker
+                }
             }
             .accessibilityLabel("\(def.name) trend chart, \(series.count) draws")
         } else {
@@ -143,6 +185,43 @@ struct MarkerDetailView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var overlayPicker: some View {
+        HStack(spacing: Theme.Space.s) {
+            Text("Overlay")
+                .font(.caption2)
+                .foregroundStyle(Theme.textTertiary)
+            Button("Off") { overlayMetric = nil }
+                .font(.caption2.weight(overlayMetric == nil ? .bold : .regular))
+                .foregroundStyle(overlayMetric == nil ? Theme.kurenai : Theme.textSecondary)
+                .buttonStyle(.plain)
+            ForEach(availableOverlays, id: \.key) { choice in
+                Button(choice.label) { overlayMetric = choice.key }
+                    .font(.caption2.weight(overlayMetric == choice.key ? .bold : .regular))
+                    .foregroundStyle(overlayMetric == choice.key ? Theme.ai : Theme.textSecondary)
+                    .buttonStyle(.plain)
+            }
+        }
+    }
+
+    /// Min-max normalize the wearable series into the marker's own value band
+    /// so both lines share the chart's y-domain.
+    private func normalizedOverlay(_ key: String) -> [(date: Date, value: Double)]? {
+        let overlay = overlaySeries(key).filter { point in
+            guard let first = series.first?.date, let last = series.last?.date else { return false }
+            return point.date >= first && point.date <= last
+        }
+        guard overlay.count >= 2, series.count >= 2 else { return nil }
+        let oVals = overlay.map(\.value)
+        let mVals = series.map(\.value)
+        guard let oMin = oVals.min(), let oMax = oVals.max(), oMax > oMin,
+              let mMin = mVals.min(), let mMax = mVals.max() else { return nil }
+        return overlay.map { point in
+            let t = (point.value - oMin) / (oMax - oMin)
+            return (point.date, mMin + t * (mMax - mMin))
         }
     }
 

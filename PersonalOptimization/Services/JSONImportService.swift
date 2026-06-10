@@ -44,7 +44,7 @@ enum JSONImportService {
         // MARK: try? justified - import already succeeded; a dedupe hiccup is a
         // persistence diagnostic logged inside the store, not a reason to fail
         // the whole restore.
-        try? DailyLogStore.forUser(modelContext: modelContext).dedupe()
+        try? DailyLogStore.forUser(modelContext: modelContext).dedupe()  // MARK: try? justified - post-import cleanup is best-effort; a failed dedupe leaves valid duplicate-tolerant data.
         Logger.persistence.info("Restore complete: \(payload.scheduleBlocks.count, privacy: .public) blocks, \(payload.dailyLogs.count, privacy: .public) logs")
     }
 

@@ -28,6 +28,7 @@ enum ComplicationStore {
             url: storeURL,
             cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
         )
+        // MARK: try? justified - a failed store open degrades to placeholder entries; complications cannot surface errors.
         let container = try? ModelContainer(
             for: schema,
             migrationPlan: AppSchema.migrationPlan,
