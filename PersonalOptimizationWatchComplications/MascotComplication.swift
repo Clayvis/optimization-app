@@ -44,8 +44,11 @@ struct MascotTimelineProvider: TimelineProvider {
         guard let container = sharedContainer() else {
             return staticPlaceholder()
         }
+        // Device/user timezone, not a hardcoded JST pin, so the mascot's
+        // time-of-day state (thirsty, fasting) follows travel.
+        let tz = UserCalendar.timezone(modelContext: container.mainContext)
         let inputs = CharacterStateService.gatherInputs(modelContext: container.mainContext,
-                                                        timezone: TimeZone(identifier: "Asia/Tokyo") ?? .current)
+                                                        timezone: tz)
         let resolved = CharacterStateService.resolve(inputs: inputs)
         // Variant-aware: read the user's chosen mascot variant so the
         // complication renders the female ninja for the wife test profile
@@ -59,17 +62,7 @@ struct MascotTimelineProvider: TimelineProvider {
 
     @MainActor
     private static func sharedContainer() -> ModelContainer? {
-        let schema = AppSchema.schema()
-        let config = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
-        )
-        return try? ModelContainer(
-            for: schema,
-            migrationPlan: AppSchema.migrationPlan,
-            configurations: [config]
-        )
+        ComplicationStore.container()
     }
 }
 

@@ -81,6 +81,7 @@
 		2C54AB3472D5AAFA4F58A46D /* SwiftDataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4E80E3819864242F3C089C /* SwiftDataHelpers.swift */; };
 		2CB5F3D234025B138E772D8C /* DailyLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59DFC3D084F8FF47CEF4B344 /* DailyLogStore.swift */; };
 		2E4E19F22759ACFBE1342BE8 /* BasketballService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9138460973370757A950626 /* BasketballService.swift */; };
+		3043229C2351F4B47ACCAD72 /* ProtocolGoalSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7470D9C54626DCDFF25C9B /* ProtocolGoalSnapshot.swift */; };
 		3074080B67A2F95BCA65228D /* DurabilityHeadlineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A8A58E184594E874104789 /* DurabilityHeadlineService.swift */; };
 		309794CA7415760F3B2668C4 /* BackgroundTaskLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89ABB69B067CB7A980AD7A2 /* BackgroundTaskLog.swift */; };
 		318514B5249DE71694AA72CF /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA2773372A4E5001F3A6F618 /* WorkoutActivityAttributes.swift */; };
@@ -90,6 +91,7 @@
 		36D95A9B354F48B865EFA9F0 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4A1D03EFC9DE01812670DF /* TodayView.swift */; };
 		376D6F2678DB8252E110130C /* CustomActivityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A712E2954DC8575FD6F4A7C /* CustomActivityServiceTests.swift */; };
 		3787E7B96B377424A0C78F0C /* SchedulePlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED2ACA0962070F6E75BCD94 /* SchedulePlannerTests.swift */; };
+		37B473C64A5D4F2ED9E764ED /* ComplicationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A8B7DAAA4338CBBCB16151F /* ComplicationStore.swift */; };
 		3910CFFAEF639E97C5F2F8B4 /* LabDraw.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4985E865B7FE2268CC0631 /* LabDraw.swift */; };
 		39803EA851C039EFCE0CAED6 /* PerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62C8F58A99782B66ECCDFCB5 /* PerformanceTests.swift */; };
 		3AE7066C9B19DF504AF76CB3 /* CoachMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAAA68FCE352531322034903 /* CoachMemory.swift */; };
@@ -616,6 +618,7 @@
 		38E2F176E45BD213279FBE22 /* HealthKitWriteFailure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitWriteFailure.swift; sourceTree = "<group>"; };
 		39D17EF8A1B9A58C15B86F49 /* WeeklyProgramCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyProgramCard.swift; sourceTree = "<group>"; };
 		3A4985E865B7FE2268CC0631 /* LabDraw.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabDraw.swift; sourceTree = "<group>"; };
+		3A8B7DAAA4338CBBCB16151F /* ComplicationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplicationStore.swift; sourceTree = "<group>"; };
 		3B2B0266D3524538E14A5EB6 /* TrendAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendAnalyticsService.swift; sourceTree = "<group>"; };
 		3C0FDED3EF727D9B15FC65D5 /* SchemaV9.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV9.swift; sourceTree = "<group>"; };
 		3C1405D527E3E5318F280D4F /* TrainingWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingWatchView.swift; sourceTree = "<group>"; };
@@ -1425,6 +1428,7 @@
 			isa = PBXGroup;
 			children = (
 				37D09A08E65B464C2974BD2F /* ComplicationBundle.swift */,
+				3A8B7DAAA4338CBBCB16151F /* ComplicationStore.swift */,
 				64C01CAA4C1C9882EA8BCA48 /* CurrentBlockComplication.swift */,
 				4A14D7CDDD90CC1F2E608509 /* CurrentBlockTimelineProvider.swift */,
 				280C8DC3E36757B1E548A6F0 /* FastCountdownComplication.swift */,
@@ -2004,6 +2008,7 @@
 				3AE7066C9B19DF504AF76CB3 /* CoachMemory.swift in Sources */,
 				747E0FC60C3D5717A38808E8 /* CompletionHistory.swift in Sources */,
 				8A399C28D937DE547629836A /* ComplicationBundle.swift in Sources */,
+				37B473C64A5D4F2ED9E764ED /* ComplicationStore.swift in Sources */,
 				4AB094B82026550D98B3B435 /* CurrentBlockComplication.swift in Sources */,
 				68D05DA3A8F8FCD94B355F39 /* CurrentBlockTimelineProvider.swift in Sources */,
 				EDEB17191976A259D4DEABA9 /* CustomActivityTemplate.swift in Sources */,
@@ -2130,6 +2135,7 @@
 				BD328769908C6B6473E58C8E /* PomodoroSession.swift in Sources */,
 				86067350BA1F20E19A896AE1 /* PrescribedWorkout.swift in Sources */,
 				7B7F9117E45672A9026B767E /* ProtocolEntry.swift in Sources */,
+				3043229C2351F4B47ACCAD72 /* ProtocolGoalSnapshot.swift in Sources */,
 				ACA572767664C7DF00AC2761 /* QuickLogIntents.swift in Sources */,
 				CA48EEAB9F4C7F17C2BDCE99 /* ScheduleBlock.swift in Sources */,
 				FB5CFE3EBCB20739974FAC5A /* ScheduleConfig.swift in Sources */,

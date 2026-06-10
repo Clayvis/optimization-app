@@ -113,16 +113,6 @@ struct CurrentBlockTimelineProvider: TimelineProvider {
 
     @MainActor
     private static func sharedContainer() -> ModelContainer? {
-        let schema = AppSchema.schema()
-        let config = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
-        )
-        return try? ModelContainer(
-            for: schema,
-            migrationPlan: AppSchema.migrationPlan,
-            configurations: [config]
-        )
+        ComplicationStore.container()
     }
 }

@@ -42,15 +42,17 @@ struct HydrationTimelineProvider: TimelineProvider {
             return HydrationComplicationEntry(date: date, progress: 0, intakeOz: 0, targetOz: 64)
         }
         let context = container.mainContext
-        let cal = jstCalendar()
+        // Device/user timezone (same source the phone uses), not a hardcoded
+        // JST pin: the day boundary and weekday-target both follow travel.
+        let cal = UserCalendar.current(modelContext: context)
         let day = cal.startOfDay(for: date)
         let descriptor = FetchDescriptor<DailyLog>(
             predicate: #Predicate<DailyLog> { $0.date == day }
         )
         let log = (try? context.fetch(descriptor))?.first
         let intake = log?.waterOz ?? 0
-        let target = (try? ScheduleConfigLoader.load().hydrationTargetsOz)
-            .map { dayTargetMin(for: date, targets: $0) } ?? 64
+        let target = (try? ScheduleConfigLoader.loadCached().hydrationTargetsOz)
+            .map { dayTargetMin(for: date, targets: $0, calendar: cal) } ?? 64
         let progress: Double = target > 0 ? min(1.0, intake / target) : 0
         return HydrationComplicationEntry(
             date: date,
@@ -62,34 +64,16 @@ struct HydrationTimelineProvider: TimelineProvider {
 
     @MainActor
     private static func sharedContainer() -> ModelContainer? {
-        let schema = AppSchema.schema()
-        let config = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
-        )
-        return try? ModelContainer(
-            for: schema,
-            migrationPlan: AppSchema.migrationPlan,
-            configurations: [config]
-        )
+        ComplicationStore.container()
     }
 
-    private static func dayTargetMin(for date: Date, targets: HydrationTargetsOz) -> Double {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
-        let raw = cal.component(.weekday, from: date)
+    private static func dayTargetMin(for date: Date, targets: HydrationTargetsOz, calendar: Calendar) -> Double {
+        let raw = calendar.component(.weekday, from: date)
         let weekday = raw == 1 ? 7 : raw - 1
         if targets.basketball.appliesTo.contains(weekday) { return targets.basketball.min }
         if targets.swim.appliesTo.contains(weekday) { return targets.swim.min }
         if targets.lift.appliesTo.contains(weekday) { return targets.lift.min }
         return targets.rest.min
-    }
-
-    private static func jstCalendar() -> Calendar {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
-        return cal
     }
 }
 

@@ -173,6 +173,8 @@ targets:
         name: SharedEngagement
       - path: PersonalOptimization/Modules/Engagement/IdentityCopy.swift
         name: SharedEngagement
+      - path: PersonalOptimization/Modules/Engagement/ProtocolGoalSnapshot.swift
+        name: SharedEngagement
       - path: PersonalOptimization/Services/BuildConfig.swift
       - path: PersonalOptimization/Services/Logger+Categories.swift
       - path: PersonalOptimization/Services/SwiftDataHelpers.swift
@@ -340,6 +342,10 @@ targets:
       - path: PersonalOptimizationTests
         excludes:
           - "**/.DS_Store"
+      # Parser regression target: the reference JSON export the M5 import
+      # path must round-trip exactly (sample_lab_dod.pdf arrives later).
+      - path: References/sample_lab_dod.json
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.tests

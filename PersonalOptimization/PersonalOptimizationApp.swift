@@ -91,13 +91,14 @@ struct PersonalOptimizationApp: App {
             } catch {
                 Logger.app.error("Auto-grace / monthly reset failed: \(error.localizedDescription, privacy: .public)")
             }
+
+            // M4.2 one-shot keychain migration (legacy device-only key -> synced
+            // so it survives uninstall). Gated on the user's CURRENT preference,
+            // so it can never silently revert a device-only opt-out. Idempotent.
+            KeychainService.shared.migrateApiKeyToICloudSyncedIfDesired(profile?.apiKeyICloudSync ?? true)
         }
         DevSecretsBootstrap.bootstrapIfNeeded()
         FirstLaunchTracker.shared.recordIfNeeded()
-        // M4.2: one-shot keychain migration. Existing users get their API key
-        // moved to the iCloud-synced item so it survives an uninstall +
-        // reinstall. Idempotent.
-        KeychainService.shared.migrateApiKeyToICloudSynced()
         ArchiveBackgroundScheduler.registerHandler(modelContainer: container)
         ArchiveBackgroundScheduler.runRollupNow(modelContainer: container)
         // M4.2: pull today's HealthKit data into DailyLog on launch. No-op when

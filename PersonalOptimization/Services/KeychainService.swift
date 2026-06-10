@@ -73,9 +73,18 @@ final class KeychainService: Sendable {
 
     /// M4.2: one-time migration from the legacy `ThisDeviceOnly` keychain
     /// item to the iCloud-synced replacement. Idempotent — re-runs are no-ops.
+    /// One-shot, best-effort migration of a legacy device-only API key item to
+    /// the iCloud-synced posture, gated on the user's CURRENT sync preference.
+    /// When the user opted out of sync (`syncDesired == false`) this is a no-op,
+    /// so a launch-time migration can never silently revert a device-only choice.
+    func migrateApiKeyToICloudSyncedIfDesired(_ syncDesired: Bool) {
+        guard syncDesired else { return }
+        migrateApiKeyToICloudSynced()
+    }
+
     /// Call once on app launch. Safe sequence: copy first, then delete the old
     /// item only after the new write succeeds.
-    func migrateApiKeyToICloudSynced() {
+    private func migrateApiKeyToICloudSynced() {
         // Probe the old item using the explicit ThisDeviceOnly attribute set.
         let oldQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

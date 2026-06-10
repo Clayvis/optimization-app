@@ -47,7 +47,7 @@ struct FastCountdownTimelineProvider: TimelineProvider {
     @MainActor
     static func makeEntry(at date: Date) -> FastCountdownEntry {
         guard let container = sharedContainer(),
-              let config = try? ScheduleConfigLoader.load() else {
+              let config = try? ScheduleConfigLoader.loadCached() else {
             return placeholderEntry(at: date)
         }
 
@@ -73,7 +73,9 @@ struct FastCountdownTimelineProvider: TimelineProvider {
 
         let next = service.nextWindow(after: date, profile: profile)
         let formatter = DateFormatter()
-        formatter.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        // Device/user timezone, not a hardcoded JST pin, so the eating-window
+        // start time reads correctly while traveling.
+        formatter.timeZone = UserCalendar.timezone(modelContext: context)
         formatter.dateFormat = "HH:mm"
         return FastCountdownEntry(
             date: date,
@@ -110,16 +112,6 @@ struct FastCountdownTimelineProvider: TimelineProvider {
 
     @MainActor
     private static func sharedContainer() -> ModelContainer? {
-        let schema = AppSchema.schema()
-        let config = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private("iCloud.com.rawlins.PersonalOptimization")
-        )
-        return try? ModelContainer(
-            for: schema,
-            migrationPlan: AppSchema.migrationPlan,
-            configurations: [config]
-        )
+        ComplicationStore.container()
     }
 }

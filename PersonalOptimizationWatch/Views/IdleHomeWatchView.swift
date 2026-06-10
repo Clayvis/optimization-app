@@ -217,28 +217,14 @@ struct IdleHomeWatchView: View {
 
     // MARK: - Computation
 
-    /// Lightweight tally without DailySummaryService (which lives in iOS-only
-    /// engagement module). Mirrors the logic at glance fidelity: count of
-    /// (fasting done, hydration target met, learning ≥30min, workout logged).
+    /// Today's tally via the shared `ProtocolGoalSnapshot` — the SAME rules the
+    /// phone, the master metric, and the watch-face complication use (scheduled-
+    /// aware workout domain, day-type hydration floor, the real learning rule,
+    /// travel/sick grace). Replaces a hand-rolled tally that diverged on every
+    /// rule (32 oz bottle = hydration done, hardcoded 4 domains, no grace).
     private func todayTally() -> (completed: Int, scheduled: Int) {
-        let cal = jstCalendar()
-        let day = cal.startOfDay(for: Date())
-        let log = logs.first { cal.isDate($0.date, inSameDayAs: day) }
-        var completed = 0
-        let scheduled = 4
-
-        if log?.fastEnd != nil { completed += 1 }
-
-        let hydrationTarget = profile?.bottleSizeOz ?? 64
-        if (log?.waterOz ?? 0) >= hydrationTarget { completed += 1 }
-
-        if (log?.japaneseMinutes ?? 0) + (log?.guitarMinutes ?? 0) >= 30 { completed += 1 }
-
-        let workoutCounter = streaks.first { $0.domain == StreakDomain.workout.rawValue }
-        if (workoutCounter?.lastCompletedDate.map { cal.isDate($0, inSameDayAs: day) } ?? false) {
-            completed += 1
-        }
-        return (completed, scheduled)
+        let snap = ProtocolGoalSnapshot.make(modelContext: modelContext)
+        return (snap.completedDomains, snap.totalDomains)
     }
 
     private func streakValue(_ domain: StreakDomain) -> Int {
