@@ -66,8 +66,7 @@ struct WeeklyReflectionCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     private func metricChip(_ value: String, _ label: String) -> some View {
@@ -176,8 +175,7 @@ private struct WeeklyReflectionDetailView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.tertiarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .dojoCardSurface()
     }
 }
 

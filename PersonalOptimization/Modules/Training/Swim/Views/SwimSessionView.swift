@@ -73,7 +73,7 @@ struct SwimSessionView: View {
                                         .font(.caption.weight(.medium))
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 6)
-                                        .background(Color(.tertiarySystemBackground))
+                                        .background(Theme.inkRaised)
                                         .clipShape(Capsule())
                                 }
                                 .buttonStyle(.plain)
@@ -151,8 +151,7 @@ struct SwimSessionView: View {
                             .font(.subheadline.weight(.bold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
-                            .background(Color(.tertiarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .dojoCardSurface()
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Add \(count) lap\(count == 1 ? "" : "s")")
@@ -183,8 +182,7 @@ struct SwimSessionView: View {
                             .font(.subheadline.weight(.bold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
-                            .background(Color(.tertiarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .dojoCardSurface()
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Add \(Int(m)) meters")

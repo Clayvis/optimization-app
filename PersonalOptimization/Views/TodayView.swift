@@ -56,7 +56,7 @@ struct TodayView: View {
                         }
                         .padding(.vertical, 4)
                         .padding(.horizontal, 12)
-                        .background(Color(.tertiarySystemBackground))
+                        .background(Theme.inkSunken)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -227,8 +227,12 @@ struct TodayView: View {
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
-                        .background(Color(.tertiarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .background(Theme.inkSunken)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                                .stroke(Theme.hairline, lineWidth: 1)
+                        )
                     }
                     .buttonStyle(.plain)
                     .listRowSeparator(.hidden)
@@ -258,6 +262,10 @@ struct TodayView: View {
             }
             .navigationTitle(weekdayTitle)
             .listStyle(.insetGrouped)
+            // Dojo ground: layered ink gradient + faint asanoha lattice behind
+            // the card stack (the List keeps its inset layout, loses its gray).
+            .scrollContentBackground(.hidden)
+            .background(DojoBackground())
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
@@ -391,10 +399,14 @@ struct TodayView: View {
                 .font(.callout.weight(.medium))
             Spacer()
         }
-        .padding(12)
+        .padding(Theme.Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(accent.opacity(0.14))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                .stroke(accent.opacity(0.35), lineWidth: 1)
+        )
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
@@ -409,32 +421,41 @@ struct TodayView: View {
         return Button {
             showingProtocolDetail = true
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("TODAY'S PROTOCOL")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                Text(tally.displayText)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-                if tally.scheduledCount > 0 {
-                    ProgressView(value: Double(tally.completedCount), total: Double(tally.scheduledCount))
-                        .tint(.green)
+            HStack(spacing: Theme.Space.l) {
+                // The day's goal as a crest: ring fills as domains close.
+                CrestRing(
+                    progress: tally.scheduledCount > 0
+                        ? Double(tally.completedCount) / Double(tally.scheduledCount)
+                        : 0,
+                    lineWidth: 7
+                ) {
+                    Text("\(tally.completedCount)/\(tally.scheduledCount)")
+                        .font(Theme.numeral(17))
+                        .foregroundStyle(Theme.textPrimary)
                 }
-                // Goal-gradient: in the final stretch (exactly one domain left)
-                // name what closes the day. Motivation rises near the finish.
-                if let one = tally.oneMoreToClose {
-                    HStack(spacing: 4) {
-                        Image(systemName: "target")
-                        Text("One more to close: \(one.label)")
+                .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    SectionEyebrow(title: "Today's Protocol")
+                    Text(tally.displayText)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    // Goal-gradient: in the final stretch (exactly one domain
+                    // left) name what closes the day.
+                    if let one = tally.oneMoreToClose {
+                        HStack(spacing: 4) {
+                            Image(systemName: "target")
+                            Text("One more to close: \(one.label)")
+                        }
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Theme.kin)
                     }
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.orange)
                 }
+                Spacer(minLength: 0)
             }
-            .padding(16)
+            .padding(Theme.Space.l)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .dojoCardSurface()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(tally.displayText)
@@ -491,7 +512,7 @@ struct TodayView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
                             .font(.caption2)
-                            .foregroundStyle(masterStreak > 0 ? .orange : .secondary)
+                            .foregroundStyle(masterStreak > 0 ? Theme.kin : .secondary)
                             .accessibilityHidden(true)
                         Text("\(masterStreak)-day protocol streak")
                             .font(.caption.weight(.medium))
@@ -505,7 +526,7 @@ struct TodayView: View {
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Image(systemName: "flame.fill")
-                        .foregroundStyle(masterStreak > 0 ? .orange : .secondary)
+                        .foregroundStyle(masterStreak > 0 ? Theme.kin : .secondary)
                         .accessibilityHidden(true)
                     Text("\(masterStreak)")
                         .font(.largeTitle.weight(.bold))
@@ -530,10 +551,11 @@ struct TodayView: View {
                     Label("Protect today · \(masterFreezes) freeze\(masterFreezes == 1 ? "" : "s") left",
                           systemImage: "shield.lefthalf.filled")
                         .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.ai)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
-                        .background(Color.blue.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .background(Theme.ai.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip))
                 }
                 .buttonStyle(.plain)
                 .accessibilityHint("Spends one streak freeze to keep today's protocol streak alive without faking a log.")
@@ -541,7 +563,7 @@ struct TodayView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "shield.lefthalf.filled")
                         .font(.caption2)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Theme.ai)
                     Text(IdentityCopy.streakFreezeAvailable(count: freezesLeft))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -549,10 +571,9 @@ struct TodayView: View {
                 .accessibilityElement(children: .combine)
             }
         }
-        .padding(12)
+        .padding(Theme.Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     /// Spends one freeze on the master protocol streak to keep today alive
@@ -591,7 +612,7 @@ struct TodayView: View {
                 if days > 0 {
                     Image(systemName: "flame.fill")
                         .font(.caption2)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Theme.kin)
                 }
             }
             HStack(alignment: .firstTextBaseline, spacing: 2) {
@@ -604,12 +625,17 @@ struct TodayView: View {
             }
             Text(label.uppercased())
                 .font(.caption2.weight(.semibold))
+                .tracking(0.8)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(Color(.tertiarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(Theme.inkSunken)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                .stroke(Theme.hairline, lineWidth: 1)
+        )
         .accessibilityLabel("\(label) \(days) \(dayLabel)")
     }
 
@@ -647,10 +673,9 @@ struct TodayView: View {
                     .accessibilityLabel("Next transition in \(formattedInterval(interval))")
             }
         }
-        .padding(16)
+        .padding(Theme.Space.l)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     /// M4.2 followup: wraps blockRow in a NavigationLink when the block's

@@ -36,6 +36,8 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .scrollContentBackground(.hidden)
+            .background(DojoBackground())
             .onAppear { refreshAPIKeyStatus() }
             .sheet(isPresented: $showingKeyEntry) {
                 APIKeyEntrySheet { _ in

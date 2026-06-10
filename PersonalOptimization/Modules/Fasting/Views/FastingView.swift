@@ -14,6 +14,8 @@ struct FastingView: View {
         NavigationStack {
             content
                 .navigationTitle("Fasting")
+                .scrollContentBackground(.hidden)
+                .background(DojoBackground())
         }
         .task {
             await loadService()
@@ -64,8 +66,7 @@ struct FastingView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .dojoCardSurface()
 
                     manualControls(service: service, profile: profile, state: state, window: window)
 
@@ -162,11 +163,17 @@ struct FastingView: View {
 
         ZStack {
             Circle()
-                .stroke(Color(.tertiarySystemFill), lineWidth: 16)
+                .stroke(Theme.inkSunken, lineWidth: 16)
             Circle()
                 .trim(from: 0, to: progress)
-                .stroke(state == .fasting ? Color.accentColor : Color.gray,
-                        style: StrokeStyle(lineWidth: 16, lineCap: .round))
+                .stroke(
+                    state == .fasting
+                        ? AnyShapeStyle(AngularGradient(
+                            colors: [Theme.kurenaiDeep, Theme.kurenai, Theme.kin],
+                            center: .center))
+                        : AnyShapeStyle(Theme.textTertiary),
+                    style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                )
                 .rotationEffect(.degrees(-90))
                 .animation(.linear(duration: 0.5), value: progress)
 

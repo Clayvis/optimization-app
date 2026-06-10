@@ -42,8 +42,7 @@ struct IntentionsStrip: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .dojoCardSurface()
         }
     }
 

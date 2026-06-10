@@ -9,6 +9,8 @@ struct LearningHubView: View {
         NavigationStack {
             content
                 .navigationTitle("Learning")
+                .scrollContentBackground(.hidden)
+                .background(DojoBackground())
         }
         .task { loadService() }
     }

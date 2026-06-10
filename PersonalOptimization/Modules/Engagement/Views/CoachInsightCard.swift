@@ -177,8 +177,7 @@ struct CoachInsightCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     private var accessibilityLabel: String {

@@ -118,7 +118,7 @@ struct DailyProgressBars: View {
                 label: "Move",
                 detail: "\(Int(caloriesBurned)) / \(Int(calorieGoal)) kcal",
                 progress: caloriesProgress,
-                tint: .red,
+                tint: Theme.kurenai,
                 systemImage: "flame.fill"
             )
 
@@ -126,7 +126,7 @@ struct DailyProgressBars: View {
                 label: "Hydration",
                 detail: "\(Int(hydrationOz)) / \(Int(hydrationTargetMin)) oz",
                 progress: hydrationProgress,
-                tint: .blue,
+                tint: Theme.ai,
                 systemImage: "drop.fill"
             )
 
@@ -134,7 +134,7 @@ struct DailyProgressBars: View {
                 label: "Learning",
                 detail: "\(learningMinutes) / 30 min",
                 progress: learningProgress,
-                tint: .green,
+                tint: Theme.matcha,
                 systemImage: "book.fill"
             )
 
@@ -147,8 +147,7 @@ struct DailyProgressBars: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
         .task {
             await loadHydrationTarget()
             loadReadiness()

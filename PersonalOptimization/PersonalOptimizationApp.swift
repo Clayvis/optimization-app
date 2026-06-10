@@ -18,6 +18,10 @@ struct PersonalOptimizationApp: App {
     let persistenceMode: PersistenceMode
 
     init() {
+        // Dojo theme chrome (rounded heavy nav titles). Pure appearance, safe
+        // under tests; installed before any window exists.
+        Theme.installAppearance()
+
         // Tests build their own services against an in-memory container and
         // must not touch CloudKit/HealthKit/BG tasks/the watch bridge.
         if PersonalOptimizationApp.isRunningTests {

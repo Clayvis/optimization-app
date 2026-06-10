@@ -29,6 +29,8 @@ struct HydrationView: View {
         NavigationStack {
             content
                 .navigationTitle("Hydration")
+                .scrollContentBackground(.hidden)
+                .background(DojoBackground())
         }
         .task { await loadService() }
         .sensoryFeedback(.increase, trigger: celebrationTrigger)
@@ -108,8 +110,7 @@ struct HydrationView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     @ViewBuilder
@@ -151,8 +152,7 @@ struct HydrationView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     @ViewBuilder
@@ -189,8 +189,7 @@ struct HydrationView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Color(.tertiarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .dojoCardSurface()
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Log \(Int(oz)) ounces of \(customBeverage.displayName)")
@@ -199,8 +198,7 @@ struct HydrationView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     @ViewBuilder
@@ -214,8 +212,7 @@ struct HydrationView: View {
                 TextField("Amount", value: $customAmount, format: .number)
                     .keyboardType(.decimalPad)
                     .padding(8)
-                    .background(Color(.tertiarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .dojoCardSurface()
                 Picker("Unit", selection: $customUnit) {
                     Text("oz").tag(HydrationUnit.oz)
                     Text("mL").tag(HydrationUnit.mL)
@@ -235,8 +232,7 @@ struct HydrationView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     @ViewBuilder
@@ -264,8 +260,7 @@ struct HydrationView: View {
             .accessibilityLabel("Log an electrolyte session")
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     @ViewBuilder
@@ -315,8 +310,7 @@ struct HydrationView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .dojoCardSurface()
         }
     }
 

@@ -113,8 +113,7 @@ struct PartnerStatusCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     private func streakPill(label: String, days: Int) -> some View {
@@ -128,8 +127,7 @@ struct PartnerStatusCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(Color(.tertiarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .dojoCardSurface()
     }
 
     private func sendNudge() async {

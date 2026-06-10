@@ -61,8 +61,7 @@ struct RecoveryCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Readiness: \(d.headline). \(d.reason). \(d.loadAdjustment).")
     }
@@ -90,8 +89,7 @@ struct RecoveryCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(Color(.tertiarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .dojoCardSurface()
     }
 
     private func tint(_ recommendation: RecoveryRecommendation) -> Color {

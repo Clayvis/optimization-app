@@ -94,6 +94,28 @@ enum Theme {
     /// Section eyebrow: small, uppercase, wide tracking (a stamped-seal feel).
     static let eyebrow = Font.system(size: 12, weight: .semibold, design: .rounded)
 
+    // MARK: - Global chrome
+
+    /// One-shot UIKit appearance pass for chrome SwiftUI cannot style
+    /// directly: heavy rounded navigation titles (modern, matches the
+    /// numeral face) on a clear bar so the dojo ground shows through.
+    /// Call once at app launch.
+    @MainActor
+    static func installAppearance() {
+        let nav = UINavigationBarAppearance()
+        nav.configureWithTransparentBackground()
+        let large = UIFont.systemFont(ofSize: 34, weight: .heavy)
+        let title = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        if let largeRounded = large.fontDescriptor.withDesign(.rounded) {
+            nav.largeTitleTextAttributes = [.font: UIFont(descriptor: largeRounded, size: 34)]
+        }
+        if let titleRounded = title.fontDescriptor.withDesign(.rounded) {
+            nav.titleTextAttributes = [.font: UIFont(descriptor: titleRounded, size: 17)]
+        }
+        UINavigationBar.appearance().standardAppearance = nav
+        UINavigationBar.appearance().scrollEdgeAppearance = nav
+    }
+
     // MARK: - Helpers
 
     /// Build an adaptive `Color` from a light and dark variant.

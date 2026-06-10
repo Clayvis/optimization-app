@@ -44,8 +44,7 @@ struct NextBlockCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .dojoCardSurface()
     }
 
     @ViewBuilder

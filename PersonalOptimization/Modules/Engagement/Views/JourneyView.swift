@@ -32,6 +32,8 @@ struct JourneyView: View {
                 .padding(.vertical, 8)
             }
             .navigationTitle("Journey")
+            .scrollContentBackground(.hidden)
+            .background(DojoBackground())
         }
     }
 
@@ -50,8 +52,7 @@ struct JourneyView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     @ViewBuilder
@@ -114,8 +115,7 @@ struct JourneyView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     @ViewBuilder
@@ -198,8 +198,7 @@ struct JourneyView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .dojoCardSurface()
     }
 
     private func jstCalendar() -> Calendar {

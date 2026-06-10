@@ -40,6 +40,8 @@ struct TrainingHubView: View {
                 }
             }
             .navigationTitle("Training")
+            .scrollContentBackground(.hidden)
+            .background(DojoBackground())
         }
     }
 
