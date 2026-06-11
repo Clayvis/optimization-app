@@ -78,6 +78,9 @@ struct PersonalOptimizationApp: App {
             // with inconsistent timezone keys before DailyLogStore landed.
             // UserDefaults-gated, no-op on subsequent launches.
             DailyLogDedupeOnce.runIfNeeded(modelContext: context)
+            // One-shot label migration: seeded "Lift B" blocks become
+            // "My Workout" to match the renamed Training slot.
+            LiftBRenameOnce.runIfNeeded(modelContext: context)
 
             // Forgiveness from day one (build sheet Gap 2): refresh the monthly
             // freeze pool on month rollover, then auto-spend one freeze to

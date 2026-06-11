@@ -1,3 +1,27 @@
+# Pending Xcode verification: Lift B leftovers (2026-06-11, third push)
+
+The first rename only touched the iOS hub tile. This batch clears the
+remaining "Lift B" surfaces:
+
+- Watch Train list row is now My Workout; LiftWatchView resolves the custom
+  template from UserProfile metadata (synced via CloudKit). Both files ride
+  the existing SharedTraining/SharedModels source globs in project.yml.
+- Bundled schedule JSONs (default, balanced, gym_focused, fasting_focused,
+  References copy) renamed activity labels; `module: lift_b` keys unchanged.
+- `LiftBRenameOnce` one-shot launch migration renames already-stored seeded
+  blocks (non-custom, module lift_b) on the device. Update only, no deletes.
+  Tests: `LiftBRenameOnceTests`.
+- PrescribedWorkoutType.liftB displayName is "My Workout"; coach prompts note
+  what lift_b means now.
+- Kept on purpose: lift_templates.json "Lift B" entry (seed source + old
+  drafts), session history rows, schedule module keys, watch handoff payloads.
+
+NOTE: this and the previous batch add new source files. The pbxproj is
+XcodeGen-generated; run `xcodegen generate` after pulling or the new files
+will not be in any target.
+
+---
+
 # Pending Xcode verification: training fix batch (2026-06-11, second push)
 
 Five fixes on top of the merged revamp. Authored remotely, unverified by Xcode.
