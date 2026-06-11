@@ -17,6 +17,11 @@ struct DailyProgressBars: View {
     @Query private var customSessions: [CustomActivitySession]
 
     @State private var hydrationTargetMin: Double = 64
+    /// Last seen milestone bucket per bar (0 none, 1 quarter, 2 half,
+    /// 3 almost, 4 done). A bucket increase fires one haptic, so crossing
+    /// halfway feels like something without any fake celebration.
+    @State private var milestoneBuckets: [String: Int] = [:]
+    @State private var milestoneCelebration = 0
     /// Readiness-adjusted Move goal multiplier (Gap 3: a low-readiness day gets a
     /// reduced "restore" goal, a normal day keeps the full "stretch" goal). 1.0
     /// until RecoveryGate resolves in `.task`.
@@ -149,6 +154,37 @@ struct DailyProgressBars: View {
         .task {
             await loadHydrationTarget()
             loadReadiness()
+            // Baseline the buckets silently so opening the screen never
+            // haptics for progress already made.
+            for (label, progress) in currentProgress() {
+                milestoneBuckets[label] = Self.milestoneBucket(progress)
+            }
+        }
+        .onChange(of: caloriesProgress) { trackMilestone(label: "Move", progress: caloriesProgress) }
+        .onChange(of: hydrationProgress) { trackMilestone(label: "Hydration", progress: hydrationProgress) }
+        .onChange(of: learningProgress) { trackMilestone(label: "Learning", progress: learningProgress) }
+        .sensoryFeedback(.increase, trigger: milestoneCelebration)
+    }
+
+    private func currentProgress() -> [(String, Double)] {
+        [("Move", caloriesProgress), ("Hydration", hydrationProgress), ("Learning", learningProgress)]
+    }
+
+    /// 0 none, 1 quarter, 2 half, 3 almost (75 percent), 4 done.
+    private static func milestoneBucket(_ progress: Double) -> Int {
+        if progress >= 1.0 { return 4 }
+        if progress >= 0.75 { return 3 }
+        if progress >= 0.5 { return 2 }
+        if progress >= 0.25 { return 1 }
+        return 0
+    }
+
+    private func trackMilestone(label: String, progress: Double) {
+        let bucket = Self.milestoneBucket(progress)
+        let previous = milestoneBuckets[label] ?? 0
+        milestoneBuckets[label] = bucket
+        if bucket > previous {
+            milestoneCelebration += 1
         }
     }
 
@@ -192,17 +228,23 @@ struct DailyProgressBars: View {
                     .frame(width: 18)
                 Text(label)
                     .font(.subheadline.weight(.medium))
-                // Goal-gradient cue: emphasize the final stretch so motivation
-                // rises near the finish, without distorting the accurate fill.
+                // Goal-gradient cue: name the milestone the user just passed
+                // so motivation rises through the middle and final stretch,
+                // without distorting the accurate fill.
                 if progress >= 1.0 {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(tint)
                         .accessibilityHidden(true)
-                } else if progress >= 0.8 {
+                } else if progress >= 0.75 {
                     Text("almost")
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(tint)
+                        .accessibilityHidden(true)
+                } else if progress >= 0.5 {
+                    Text("halfway")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(tint.opacity(0.8))
                         .accessibilityHidden(true)
                 }
                 Spacer()
@@ -210,8 +252,10 @@ struct DailyProgressBars: View {
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            // Apple-Activity-style fully rounded thick progress bar. GeometryReader
-            // keeps the fill width pixel-correct and the 100% case lights up.
+            // Apple-Activity-style fully rounded thick progress bar with faint
+            // quarter ticks, so the milestones read on the bar itself.
+            // GeometryReader keeps the fill width pixel-correct and the 100%
+            // case lights up.
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -219,7 +263,14 @@ struct DailyProgressBars: View {
                     Capsule()
                         .fill(tint.gradient)
                         .frame(width: max(0, geo.size.width * progress))
+                    ForEach([0.25, 0.5, 0.75], id: \.self) { tick in
+                        Rectangle()
+                            .fill(Theme.inkVoid.opacity(0.3))
+                            .frame(width: 1.5)
+                            .offset(x: geo.size.width * tick)
+                    }
                 }
+                .clipShape(Capsule())
             }
             .frame(height: 10)
             .accessibilityLabel("\(label) \(detail), \(Int(progress * 100)) percent")

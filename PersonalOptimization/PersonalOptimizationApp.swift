@@ -195,10 +195,23 @@ struct PersonalOptimizationApp: App {
         }
     }
 
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             RootView(persistenceMode: persistenceMode)
         }
         .modelContainer(container)
+        .onChange(of: scenePhase) { _, newPhase in
+            // Refresh today's HealthKit aggregates (Move kcal, exercise
+            // minutes, steps) every time the app comes to the foreground, so
+            // the Move bar matches Apple Fitness without a pull-to-refresh.
+            guard newPhase == .active,
+                  persistenceMode.isDurable,
+                  !PersonalOptimizationApp.isRunningTests else { return }
+            Task { @MainActor in
+                await HealthKitSyncService(modelContext: container.mainContext).syncToday()
+            }
+        }
     }
 }

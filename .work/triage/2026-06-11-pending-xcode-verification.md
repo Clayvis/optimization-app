@@ -1,3 +1,44 @@
+# Pending Xcode verification: training fix batch (2026-06-11, second push)
+
+Five fixes on top of the merged revamp. Authored remotely, unverified by Xcode.
+
+## Changed in this batch
+
+1. Auto-start: Training tiles start the session on tap. `LiftSessionView` and
+   `SwimSessionView` gained `autoStart` (default false, so schedule-block taps
+   from TodayView still show the preview). Swim auto-start prefills water
+   type, pool length, and location from the most recent session. Resume
+   banner lift rows auto-resume.
+2. "My Workout" replaces the Lift B tile. Template lives in
+   `UserProfile.metadataBlob` (key `customLiftTemplate`), seeded from bundled
+   Lift B on first open, edited via the pencil toolbar button in the session
+   view (`CustomLiftEditorSheet`). Sessions record `template == "My Workout"`.
+   `lift_b` schedule blocks in TodayView route to it. Bundled "Lift B" JSON
+   kept for old drafts and history. New tests:
+   `CustomLiftTemplateStoreTests`.
+3. Custom train hours: `TimeOfDayPreference.custom` + a "Training starts"
+   DatePicker in onboarding anchors and Settings anchor editor. Planner
+   resolves `.custom` from `UserProfile.trainingWindowStartHHMM` (field
+   existed, was never read). Re-apply template after saving anchors to see
+   blocks move. New tests in `SchedulePlannerTests`.
+4. Faster Move refresh: observer now watches activeEnergyBurned,
+   appleExerciseTime, stepCount on a debounced (60s) today-only sync path,
+   plus a foreground `scenePhase` sync in the App. Observer tests updated to
+   `allObservedTypes`.
+5. Daily goal milestones: quarter ticks on DailyProgressBars, "halfway" label
+   at 50 percent ("almost" moved 80 to 75 to align), one haptic per milestone
+   crossing, baseline-on-appear so opening the screen is silent.
+
+## Verify
+
+- Build + tests (`CustomLiftTemplateStoreTests`, `SchedulePlannerTests`,
+  `HealthKitObserverServiceTests` changed).
+- Simulator: tile tap goes straight to live session; pencil edits My Workout;
+  anchors editor shows the time picker when Custom is selected; Move bar
+  updates on foreground.
+
+---
+
 # Pending Xcode verification: Training + Learning tab revamps
 
 Branch: `claude/training-tab-redesign-tnqr3y`

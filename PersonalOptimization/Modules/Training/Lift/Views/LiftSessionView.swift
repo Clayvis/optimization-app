@@ -7,6 +7,10 @@ struct LiftSessionView: View {
     @Query private var profiles: [UserProfile]
 
     let templateName: String
+    /// When true (Training hub tiles), the session starts the moment the view
+    /// loads instead of waiting on the preview's Start button. Resumes an
+    /// existing draft when one is present.
+    var autoStart: Bool = false
 
     @State private var template: LiftTemplate?
     @State private var session: LiftSession?
@@ -19,6 +23,11 @@ struct LiftSessionView: View {
     @State private var addSetExercise: LiftExercise?
     @State private var customExerciseName: String = ""
     @State private var completionCount: Int = 0
+    @State private var showingTemplateEditor = false
+
+    private var isCustomTemplate: Bool {
+        templateName == CustomLiftTemplateStore.templateName
+    }
 
     var body: some View {
         Group {
@@ -35,6 +44,26 @@ struct LiftSessionView: View {
             }
         }
         .navigationTitle(templateName)
+        .toolbar {
+            if isCustomTemplate {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingTemplateEditor = true
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                    .accessibilityLabel("Edit My Workout plan")
+                }
+            }
+        }
+        .sheet(isPresented: $showingTemplateEditor) {
+            CustomLiftEditorSheet(profile: profiles.first) {
+                // Reload so the preview targets reflect the new plan. An
+                // active session keeps its inserted exercises; the new plan
+                // applies from the next start.
+                loadPreview()
+            }
+        }
         .task { loadPreview() }
         .sensoryFeedback(.success, trigger: completionCount)
     }
@@ -328,10 +357,24 @@ struct LiftSessionView: View {
     /// explicitly tap Start (or Resume, when a draft exists).
     private func loadPreview() {
         do {
-            let templates = try LiftTemplatesLoader.load()
-            template = try LiftTemplatesLoader.template(named: templateName, file: templates)
+            let bundled = try LiftTemplatesLoader.load()
+            let templates: LiftTemplatesFile
+            if isCustomTemplate {
+                // MARK: try? justified - a missing bundled Lift B only means the custom seed starts empty.
+                let seed = try? LiftTemplatesLoader.template(named: "Lift B", file: bundled)
+                let dto = CustomLiftTemplateStore.loadOrSeed(profile: profiles.first, seed: seed)
+                let custom = CustomLiftTemplateStore.asLiftTemplate(dto)
+                templates = LiftTemplatesFile(version: bundled.version, templates: bundled.templates + [custom])
+                template = custom
+            } else {
+                templates = bundled
+                template = try LiftTemplatesLoader.template(named: templateName, file: templates)
+            }
             service = LiftService(modelContext: modelContext, templatesFile: templates, healthKit: LiveHealthKitService.shared)
             hasResumableDraft = inProgressSession(for: templateName) != nil
+            if autoStart, session == nil, let service {
+                promoteToActiveSession(service: service)
+            }
         } catch {
             loadError = error.localizedDescription
         }

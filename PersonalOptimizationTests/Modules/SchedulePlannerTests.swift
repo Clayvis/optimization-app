@@ -174,4 +174,20 @@ final class SchedulePlannerTests: XCTestCase {
         // Planner clamps to 23:59.
         XCTAssertEqual(e, "23:59")
     }
+
+    func test_anchorSet_customPreference_usesProfileTrainingWindowStart() {
+        let profile = UserProfile(name: "t")
+        profile.preferredTrainingTimeOfDay = .custom
+        profile.trainingWindowStartHHMM = "05:15"
+        let set = SchedulePlanner.AnchorSet.from(profile: profile)
+        XCTAssertEqual(set.trainingStartHHMM, "05:15")
+    }
+
+    func test_anchorSet_presetPreference_ignoresTrainingWindowStart() {
+        let profile = UserProfile(name: "t")
+        profile.preferredTrainingTimeOfDay = .morning
+        profile.trainingWindowStartHHMM = "05:15"
+        let set = SchedulePlanner.AnchorSet.from(profile: profile)
+        XCTAssertEqual(set.trainingStartHHMM, "06:00")
+    }
 }

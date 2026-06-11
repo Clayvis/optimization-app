@@ -706,7 +706,9 @@ struct TodayView: View {
                 blockRow(block: block, isCurrent: isCurrent(block))
             }
         } else if module == "lift_b" {
-            NavigationLink { LiftSessionView(templateName: "Lift B") } label: {
+            // lift_b schedule blocks land on the user's custom workout now
+            // that the hub's second lift slot is "My Workout".
+            NavigationLink { LiftSessionView(templateName: CustomLiftTemplateStore.templateName) } label: {
                 blockRow(block: block, isCurrent: isCurrent(block))
             }
         } else if module == "basketball" {

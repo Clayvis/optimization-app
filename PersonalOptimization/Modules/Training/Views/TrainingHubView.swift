@@ -47,7 +47,7 @@ private struct InProgressBanner: View {
                 VStack(alignment: .leading, spacing: Theme.Space.s) {
                     SectionEyebrow(title: "In progress")
                     ForEach(activeLifts, id: \.persistentModelID) { session in
-                        NavigationLink(destination: LiftSessionView(templateName: session.template)) {
+                        NavigationLink(destination: LiftSessionView(templateName: session.template, autoStart: true)) {
                             resumeRow(icon: "figure.strengthtraining.traditional",
                                       title: session.template,
                                       detail: detail(for: session))
@@ -239,13 +239,13 @@ private struct StartSessionGrid: View {
                              title: "Lift A",
                              subtitle: "legs, push, pull",
                              tint: Theme.kurenai) {
-                    LiftSessionView(templateName: "Lift A")
+                    LiftSessionView(templateName: "Lift A", autoStart: true)
                 }
                 ActivityTile(icon: "figure.strengthtraining.functional",
-                             title: "Lift B",
-                             subtitle: "variation",
+                             title: "My Workout",
+                             subtitle: "your custom lift",
                              tint: Theme.kurenai) {
-                    LiftSessionView(templateName: "Lift B")
+                    LiftSessionView(templateName: CustomLiftTemplateStore.templateName, autoStart: true)
                 }
                 ActivityTile(icon: "basketball.fill",
                              title: "Basketball",
@@ -257,7 +257,7 @@ private struct StartSessionGrid: View {
                              title: "Swim",
                              subtitle: "McTureous, 25m",
                              tint: Theme.ai) {
-                    SwimSessionView()
+                    SwimSessionView(autoStart: true)
                 }
                 ForEach(visible, id: \.persistentModelID) { template in
                     ActivityTile(icon: template.systemImageName,

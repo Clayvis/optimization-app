@@ -243,6 +243,13 @@ struct OnboardingView: View {
                 }
                 .pickerStyle(.inline)
                 .labelsHidden()
+                if anchorDraft.preferredTrainingTimeOfDay == .custom {
+                    DatePicker(
+                        "Training starts",
+                        selection: $anchorDraft.trainingStartDate,
+                        displayedComponents: .hourAndMinute
+                    )
+                }
             }
             Section("Learning") {
                 DatePicker(
@@ -618,19 +625,23 @@ struct ScheduleAnchorDraft {
     var kidPickupDate: Date
     var learningStartDate: Date
     var preferredTrainingTimeOfDay: TimeOfDayPreference
+    /// Wall-clock training start, used when the preference is `.custom`.
+    var trainingStartDate: Date
 
     init(wakeHHMM: String = "06:00",
          bedtimeHHMM: String = "22:00",
          kidDropHHMM: String = "09:00",
          kidPickupHHMM: String = "17:00",
          learningStartHHMM: String = "19:00",
-         preferredTrainingTimeOfDay: TimeOfDayPreference = .evening) {
+         preferredTrainingTimeOfDay: TimeOfDayPreference = .evening,
+         trainingWindowStartHHMM: String = "18:00") {
         self.wakeDate = Self.todayAt(hhmm: wakeHHMM) ?? Self.todayAt(hour: 6, minute: 0)
         self.bedtimeDate = Self.todayAt(hhmm: bedtimeHHMM) ?? Self.todayAt(hour: 22, minute: 0)
         self.kidDropDate = Self.todayAt(hhmm: kidDropHHMM) ?? Self.todayAt(hour: 9, minute: 0)
         self.kidPickupDate = Self.todayAt(hhmm: kidPickupHHMM) ?? Self.todayAt(hour: 17, minute: 0)
         self.learningStartDate = Self.todayAt(hhmm: learningStartHHMM) ?? Self.todayAt(hour: 19, minute: 0)
         self.preferredTrainingTimeOfDay = preferredTrainingTimeOfDay
+        self.trainingStartDate = Self.todayAt(hhmm: trainingWindowStartHHMM) ?? Self.todayAt(hour: 18, minute: 0)
     }
 
     /// Validity gate for the Continue button: wake strictly before bedtime,
@@ -650,6 +661,7 @@ struct ScheduleAnchorDraft {
         profile.kidPickupHHMM = Self.hhmm(kidPickupDate)
         profile.learningWindowStartHHMM = Self.hhmm(learningStartDate)
         profile.preferredTrainingTimeOfDay = preferredTrainingTimeOfDay
+        profile.trainingWindowStartHHMM = Self.hhmm(trainingStartDate)
     }
 
     /// Inverse of `writeTo`: builds a draft seeded from the profile's
@@ -661,7 +673,8 @@ struct ScheduleAnchorDraft {
             kidDropHHMM: profile.kidDropoffHHMM,
             kidPickupHHMM: profile.kidPickupHHMM,
             learningStartHHMM: profile.learningWindowStartHHMM,
-            preferredTrainingTimeOfDay: profile.preferredTrainingTimeOfDay
+            preferredTrainingTimeOfDay: profile.preferredTrainingTimeOfDay,
+            trainingWindowStartHHMM: profile.trainingWindowStartHHMM
         )
     }
 

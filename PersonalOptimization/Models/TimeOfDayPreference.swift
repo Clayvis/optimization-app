@@ -8,6 +8,11 @@ enum TimeOfDayPreference: String, CaseIterable, Sendable, Identifiable {
     case midday
     case evening
     case lateEvening = "late_evening"
+    /// User-picked wall-clock start. The actual time lives in
+    /// `UserProfile.trainingWindowStartHHMM`; `startHHMM` here is only the
+    /// fallback for callers without profile access. The planner resolves
+    /// `.custom` against the profile (see `SchedulePlanner.AnchorSet.from`).
+    case custom
 
     var id: String { rawValue }
 
@@ -19,6 +24,7 @@ enum TimeOfDayPreference: String, CaseIterable, Sendable, Identifiable {
         case .midday:      return "11:30"
         case .evening:     return "18:00"
         case .lateEvening: return "20:00"
+        case .custom:      return "18:00"
         }
     }
 
@@ -28,6 +34,7 @@ enum TimeOfDayPreference: String, CaseIterable, Sendable, Identifiable {
         case .midday:      return "Midday (11:30-13:00)"
         case .evening:     return "Evening (18:00-20:00)"
         case .lateEvening: return "Late evening (20:00-22:00)"
+        case .custom:      return "Custom start time"
         }
     }
 }

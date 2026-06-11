@@ -5,6 +5,11 @@ struct SwimSessionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    /// When true (Training hub tile), the session starts immediately using the
+    /// most recent session's water type, pool length, and location instead of
+    /// stopping at the setup form. Resumes an in-progress session first.
+    var autoStart: Bool = false
+
     @State private var session: SwimSession?
     @State private var service: SwimService?
     @State private var startedAt = Date()
@@ -31,6 +36,8 @@ struct SwimSessionView: View {
     }
 
     /// Resume an in-progress swim session that the user navigated away from.
+    /// With `autoStart`, falls through to starting a fresh session seeded from
+    /// the most recent session's settings when nothing is in progress.
     private func resumeIfNeeded() {
         guard session == nil else { return }
         let svc = SwimService(modelContext: modelContext, healthKit: LiveHealthKitService.shared)
@@ -43,7 +50,24 @@ struct SwimSessionView: View {
             waterType = active.waterType
             lapsExact = active.laps
             metersExact = active.totalMeters
+            return
         }
+        if autoStart {
+            prefillFromLastSession()
+            start()
+        }
+    }
+
+    /// Seeds the setup fields from the most recent SwimSession so an
+    /// auto-started session lands at the user's usual pool.
+    private func prefillFromLastSession() {
+        let descriptor = FetchDescriptor<SwimSession>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        guard let last = modelContext.fetchOrEmpty(descriptor).first else { return }
+        poolLengthMeters = last.poolLengthMeters
+        locationText = last.location ?? ""
+        waterType = last.waterType
     }
 
     @ViewBuilder

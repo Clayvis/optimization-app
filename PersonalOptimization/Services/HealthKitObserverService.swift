@@ -87,8 +87,8 @@ final class HealthKitObserverService {
         self.backend = backend
     }
 
-    /// Sample types we observe. Exposed for tests so they can assert
-    /// without mirroring the constant.
+    /// Sample types we observe with the full 7-day resync + workout import.
+    /// Exposed for tests so they can assert without mirroring the constant.
     static var defaultObservedTypes: [HKSampleType] {
         [
             HKQuantityType(.bodyMass),
@@ -99,6 +99,28 @@ final class HealthKitObserverService {
             HKObjectType.workoutType()
         ]
     }
+
+    /// High-frequency activity types (the Apple Fitness Move/Exercise inputs).
+    /// These fire constantly during movement, so they get a debounced
+    /// today-only sync instead of the heavy 7-day resync. Without them the
+    /// Move number only refreshed at launch and pull-to-refresh.
+    static var fastObservedTypes: [HKSampleType] {
+        [
+            HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.appleExerciseTime),
+            HKQuantityType(.stepCount)
+        ]
+    }
+
+    /// Every type registered with the backend (heavy + fast paths).
+    static var allObservedTypes: [HKSampleType] {
+        defaultObservedTypes + fastObservedTypes
+    }
+
+    /// Minimum spacing between fast-path syncs. Active energy can fire every
+    /// few seconds during a workout; one today-sync per interval is plenty.
+    static let fastSyncDebounce: TimeInterval = 60
+    private var lastFastSyncAt: Date?
 
     /// Begin observing the high-signal HK sample types. Safe to call repeatedly;
     /// no-op if already observing.
@@ -122,6 +144,21 @@ final class HealthKitObserverService {
             observedTypes.insert(type.identifier)
         }
 
+        for type in Self.fastObservedTypes {
+            do {
+                try await backend.enableBackgroundDelivery(for: type, frequency: .immediate)
+            } catch {
+                logger.warning("enableBackgroundDelivery failed for \(type.identifier, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+
+            backend.startObserver(for: type) { [weak self] in
+                Task { @MainActor in
+                    await self?.handleFastUpdate()
+                }
+            }
+            observedTypes.insert(type.identifier)
+        }
+
         isObserving = true
         logger.info("HKObserverService started for \(self.observedTypes.count, privacy: .public) sample types.")
     }
@@ -137,6 +174,19 @@ final class HealthKitObserverService {
             logger.warning("disableAllBackgroundDelivery failed: \(error.localizedDescription, privacy: .public)")
         }
         isObserving = false
+    }
+
+    /// Fast path for Move/Exercise/steps: refresh today's DailyLog only,
+    /// debounced. No 7-day range walk, no workout import; the heavy types
+    /// keep covering those.
+    private func handleFastUpdate() async {
+        guard let container = modelContainer else { return }
+        if let last = lastFastSyncAt, Date().timeIntervalSince(last) < Self.fastSyncDebounce {
+            return
+        }
+        lastFastSyncAt = Date()
+        await HealthKitSyncService(modelContext: container.mainContext).syncToday()
+        NotificationCenter.default.post(name: .healthKitObserverDidFire, object: nil)
     }
 
     private func handleUpdate() async {
