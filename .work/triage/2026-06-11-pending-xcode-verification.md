@@ -15,9 +15,10 @@ compiled or run.
 
 ## Verify at the workstation
 
-1. `xcodebuild -scheme PersonalOptimization build` with zero warnings (Swift 6
-   strict concurrency; the new views are all view-layer, no new actors).
-2. `xcodebuild test -scheme PersonalOptimizationTests`.
+1. ~~`xcodebuild -scheme PersonalOptimization build` with zero warnings~~
+   DONE 2026-06-11 at merge: iOS + watch + complications all build, 0 warnings.
+2. ~~`xcodebuild test -scheme PersonalOptimizationTests`~~
+   DONE 2026-06-11 at merge: 704 tests, 0 failures.
 3. Open the four `#Preview`s (TrainingHubView, LearningHubView,
    LearningTimerView, DojoComponents) and confirm they render with seeded data.
 4. Simulator pass, both color schemes:
