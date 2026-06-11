@@ -318,20 +318,8 @@ private struct ActivityTile<Destination: View>: View {
             .dojoCardSurface()
             .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
         }
-        .buttonStyle(TilePressStyle())
+        .buttonStyle(DojoPressStyle())
         .accessibilityLabel("\(title). \(subtitle)")
-    }
-}
-
-/// Subtle press feedback for tiles.
-private struct TilePressStyle: ButtonStyle {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 

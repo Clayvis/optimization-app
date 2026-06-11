@@ -22,4 +22,13 @@ enum LearningModule: String, Sendable, CaseIterable {
         case .music:    return "Music"
         }
     }
+
+    /// SF Symbol shown in the hub and timer views.
+    var iconName: String {
+        switch self {
+        case .japanese: return "character.book.closed"
+        case .guitar:   return "guitars"
+        case .music:    return "music.note"
+        }
+    }
 }
