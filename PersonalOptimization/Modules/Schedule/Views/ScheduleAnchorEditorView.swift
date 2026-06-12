@@ -59,6 +59,13 @@ struct ScheduleAnchorEditorView: View {
                 }
                 .pickerStyle(.inline)
                 .labelsHidden()
+                if draft.preferredTrainingTimeOfDay == .custom {
+                    DatePicker(
+                        "Training starts",
+                        selection: $draft.trainingStartDate,
+                        displayedComponents: .hourAndMinute
+                    )
+                }
             }
             Section("Learning") {
                 DatePicker(

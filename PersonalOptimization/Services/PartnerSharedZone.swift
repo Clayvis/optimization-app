@@ -52,17 +52,26 @@ struct PartnerSharedRecord: Codable, Sendable, Equatable {
     let masterMetric: Double
     let mascotState: String
     let lastUpdate: Date
+    /// Weekly challenge payload (additive, optional so records written by
+    /// older builds keep decoding). `challengeWeekStart` anchors the points
+    /// to a week so a stale snapshot never scores against the current one.
+    let challengeWeekStart: Date?
+    let challengeWeekPoints: Int?
 
     init(userID: String,
          currentStreak: Int,
          masterMetric: Double,
          mascotState: String,
-         lastUpdate: Date = Date()) {
+         lastUpdate: Date = Date(),
+         challengeWeekStart: Date? = nil,
+         challengeWeekPoints: Int? = nil) {
         self.userID = userID
         self.currentStreak = currentStreak
         self.masterMetric = masterMetric
         self.mascotState = mascotState
         self.lastUpdate = lastUpdate
+        self.challengeWeekStart = challengeWeekStart
+        self.challengeWeekPoints = challengeWeekPoints
     }
 }
 

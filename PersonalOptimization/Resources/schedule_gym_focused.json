@@ -4,7 +4,7 @@
     "blocks": [
         { "dayOfWeek": 1, "anchor": "training", "durationMinutes": 90, "activity": "Heavy lift A", "type": "training", "module": "lift_a" },
         { "dayOfWeek": 2, "anchor": "training", "durationMinutes": 30, "activity": "Mobility", "type": "training" },
-        { "dayOfWeek": 3, "anchor": "training", "durationMinutes": 90, "activity": "Heavy lift B", "type": "training", "module": "lift_b" },
+        { "dayOfWeek": 3, "anchor": "training", "durationMinutes": 90, "activity": "My Workout (heavy)", "type": "training", "module": "lift_b" },
         { "dayOfWeek": 4, "anchor": "training", "durationMinutes": 30, "activity": "Light cardio", "type": "training" },
         { "dayOfWeek": 5, "anchor": "training", "durationMinutes": 90, "activity": "Heavy lift C", "type": "training", "module": "lift_a" },
         { "dayOfWeek": 6, "anchor": "morning", "offsetMinutes": 180, "durationMinutes": 90, "activity": "Long session", "type": "training", "module": "lift_b" }

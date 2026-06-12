@@ -132,7 +132,22 @@ struct LiftWatchView: View {
 
     private func start() {
         do {
-            let templates = try LiftTemplatesLoader.load()
+            let bundled = try LiftTemplatesLoader.load()
+            let templates: LiftTemplatesFile
+            if templateName == CustomLiftTemplateStore.templateName {
+                // Same resolution as the iOS LiftSessionView: the custom
+                // template rides UserProfile.metadataBlob, which syncs to the
+                // watch store via CloudKit.
+                let profile = modelContext.fetchFirstOrNil(FetchDescriptor<UserProfile>())
+                // MARK: try? justified - a missing bundled Lift B only means the custom seed starts empty.
+                let seed = try? LiftTemplatesLoader.template(named: "Lift B", file: bundled)
+                let custom = CustomLiftTemplateStore.asLiftTemplate(
+                    CustomLiftTemplateStore.loadOrSeed(profile: profile, seed: seed)
+                )
+                templates = LiftTemplatesFile(version: bundled.version, templates: bundled.templates + [custom])
+            } else {
+                templates = bundled
+            }
             let svc = LiftService(modelContext: modelContext, templatesFile: templates)
             session = try svc.startSession(templateName: templateName)
             service = svc

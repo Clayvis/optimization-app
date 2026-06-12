@@ -19,9 +19,9 @@ struct TrainingWatchView: View {
                     rowLabel(icon: "figure.strengthtraining.traditional", title: "Lift A")
                 }
                 NavigationLink {
-                    LiftWatchView(templateName: "Lift B")
+                    LiftWatchView(templateName: CustomLiftTemplateStore.templateName)
                 } label: {
-                    rowLabel(icon: "figure.strengthtraining.functional", title: "Lift B")
+                    rowLabel(icon: "figure.strengthtraining.functional", title: CustomLiftTemplateStore.templateName)
                 }
                 NavigationLink {
                     BasketballWatchView()

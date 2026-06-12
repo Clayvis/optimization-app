@@ -15,9 +15,9 @@ final class HealthKitObserverServiceTests: XCTestCase {
         let service = HealthKitObserverService(backend: fake)
         let container = try InMemoryContainer.make()
         await service.startObserving(modelContainer: container)
-        XCTAssertEqual(fake.observedTypes.count, HealthKitObserverService.defaultObservedTypes.count)
+        XCTAssertEqual(fake.observedTypes.count, HealthKitObserverService.allObservedTypes.count)
         XCTAssertTrue(service.isObserving)
-        XCTAssertEqual(service.observedTypes.count, HealthKitObserverService.defaultObservedTypes.count)
+        XCTAssertEqual(service.observedTypes.count, HealthKitObserverService.allObservedTypes.count)
     }
 
     func test_startObserving_enablesImmediateBackgroundDelivery() async throws {
@@ -25,7 +25,7 @@ final class HealthKitObserverServiceTests: XCTestCase {
         let service = HealthKitObserverService(backend: fake)
         let container = try InMemoryContainer.make()
         await service.startObserving(modelContainer: container)
-        XCTAssertEqual(fake.backgroundDeliveryRequests.count, HealthKitObserverService.defaultObservedTypes.count)
+        XCTAssertEqual(fake.backgroundDeliveryRequests.count, HealthKitObserverService.allObservedTypes.count)
         XCTAssertTrue(fake.backgroundDeliveryRequests.allSatisfy { $0.1 == .immediate })
     }
 
@@ -36,8 +36,8 @@ final class HealthKitObserverServiceTests: XCTestCase {
         await service.startObserving(modelContainer: container)
         await service.startObserving(modelContainer: container)
         // Second call must not double-register.
-        XCTAssertEqual(fake.observedTypes.count, HealthKitObserverService.defaultObservedTypes.count)
-        XCTAssertEqual(fake.backgroundDeliveryRequests.count, HealthKitObserverService.defaultObservedTypes.count)
+        XCTAssertEqual(fake.observedTypes.count, HealthKitObserverService.allObservedTypes.count)
+        XCTAssertEqual(fake.backgroundDeliveryRequests.count, HealthKitObserverService.allObservedTypes.count)
     }
 
     func test_startObserving_skipsWhenHealthKitUnavailable() async throws {
@@ -62,6 +62,17 @@ final class HealthKitObserverServiceTests: XCTestCase {
         await fulfillment(of: [exp], timeout: 3)
     }
 
+    func test_fastObserverFire_routesThroughFastPath() async throws {
+        let fake = FakeHKObserverBackend()
+        let service = HealthKitObserverService(backend: fake)
+        let container = try InMemoryContainer.make()
+        await service.startObserving(modelContainer: container)
+
+        let exp = expectation(forNotification: .healthKitObserverDidFire, object: nil)
+        fake.fireObserver(for: HKQuantityType(.activeEnergyBurned))
+        await fulfillment(of: [exp], timeout: 3)
+    }
+
     func test_stopObserving_disablesBackgroundDeliveryAndStopsAll() async throws {
         let fake = FakeHKObserverBackend()
         let service = HealthKitObserverService(backend: fake)
@@ -83,6 +94,6 @@ final class HealthKitObserverServiceTests: XCTestCase {
         let container = try InMemoryContainer.make()
         await service.startObserving(modelContainer: container)
         XCTAssertTrue(service.isObserving)
-        XCTAssertEqual(fake.observedTypes.count, HealthKitObserverService.defaultObservedTypes.count)
+        XCTAssertEqual(fake.observedTypes.count, HealthKitObserverService.allObservedTypes.count)
     }
 }

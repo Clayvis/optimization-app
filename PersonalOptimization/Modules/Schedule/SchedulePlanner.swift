@@ -15,18 +15,23 @@ struct SchedulePlanner {
         let bedtimeHHMM: String
         let kidDropHHMM: String
         let kidPickupHHMM: String
-        /// Resolved from UserProfile.preferredTrainingTimeOfDay.startHHMM.
+        /// Resolved from UserProfile.preferredTrainingTimeOfDay.startHHMM,
+        /// or the user's own `trainingWindowStartHHMM` when the preference
+        /// is `.custom`.
         let trainingStartHHMM: String
         let learningStartHHMM: String
 
         @MainActor
         static func from(profile: UserProfile) -> AnchorSet {
-            AnchorSet(
+            let preference = profile.preferredTrainingTimeOfDay
+            return AnchorSet(
                 wakeHHMM: profile.wakeHHMM,
                 bedtimeHHMM: profile.bedtimeHHMM,
                 kidDropHHMM: profile.kidDropoffHHMM,
                 kidPickupHHMM: profile.kidPickupHHMM,
-                trainingStartHHMM: profile.preferredTrainingTimeOfDay.startHHMM,
+                trainingStartHHMM: preference == .custom
+                    ? profile.trainingWindowStartHHMM
+                    : preference.startHHMM,
                 learningStartHHMM: profile.learningWindowStartHHMM
             )
         }

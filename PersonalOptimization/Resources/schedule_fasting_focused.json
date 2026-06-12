@@ -9,6 +9,6 @@
         { "dayOfWeek": 4, "anchor": "explicit", "startTime": "12:00", "endTime": "12:30", "durationMinutes": 30, "activity": "Break fast", "type": "fasting" },
         { "dayOfWeek": 4, "anchor": "training", "durationMinutes": 60, "activity": "Cardio", "type": "training" },
         { "dayOfWeek": 5, "anchor": "explicit", "startTime": "12:00", "endTime": "12:30", "durationMinutes": 30, "activity": "Break fast", "type": "fasting" },
-        { "dayOfWeek": 5, "anchor": "training", "durationMinutes": 60, "activity": "Lift B", "type": "training", "module": "lift_b" }
+        { "dayOfWeek": 5, "anchor": "training", "durationMinutes": 60, "activity": "My Workout", "type": "training", "module": "lift_b" }
     ]
 }

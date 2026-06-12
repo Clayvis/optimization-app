@@ -4,7 +4,7 @@
     "blocks": [
         { "dayOfWeek": 1, "anchor": "training", "durationMinutes": 60, "activity": "Lift A", "type": "training", "module": "lift_a" },
         { "dayOfWeek": 2, "anchor": "training", "durationMinutes": 60, "activity": "Cardio (basketball)", "type": "training", "module": "basketball" },
-        { "dayOfWeek": 3, "anchor": "training", "durationMinutes": 60, "activity": "Lift B", "type": "training", "module": "lift_b" },
+        { "dayOfWeek": 3, "anchor": "training", "durationMinutes": 60, "activity": "My Workout", "type": "training", "module": "lift_b" },
         { "dayOfWeek": 4, "anchor": "training", "durationMinutes": 60, "activity": "Cardio (swim)", "type": "training", "module": "swim" },
         { "dayOfWeek": 5, "anchor": "training", "durationMinutes": 60, "activity": "Lift A", "type": "training", "module": "lift_a" },
         { "dayOfWeek": 7, "anchor": "morning", "offsetMinutes": 240, "durationMinutes": 30, "activity": "Weekly review", "type": "admin" }

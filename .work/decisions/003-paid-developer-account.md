@@ -1,6 +1,6 @@
 # 003 — Paid Apple Developer Program enrollment
 
-Status: PENDING USER ACTION (Clay's enrollment).
+Status: ENROLLED (confirmed by Clay 2026-06-12).
 
 ## Context
 

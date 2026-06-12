@@ -78,6 +78,9 @@ struct PersonalOptimizationApp: App {
             // with inconsistent timezone keys before DailyLogStore landed.
             // UserDefaults-gated, no-op on subsequent launches.
             DailyLogDedupeOnce.runIfNeeded(modelContext: context)
+            // One-shot label migration: seeded "Lift B" blocks become
+            // "My Workout" to match the renamed Training slot.
+            LiftBRenameOnce.runIfNeeded(modelContext: context)
 
             // Forgiveness from day one (build sheet Gap 2): refresh the monthly
             // freeze pool on month rollover, then auto-spend one freeze to
@@ -195,10 +198,23 @@ struct PersonalOptimizationApp: App {
         }
     }
 
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             RootView(persistenceMode: persistenceMode)
         }
         .modelContainer(container)
+        .onChange(of: scenePhase) { _, newPhase in
+            // Refresh today's HealthKit aggregates (Move kcal, exercise
+            // minutes, steps) every time the app comes to the foreground, so
+            // the Move bar matches Apple Fitness without a pull-to-refresh.
+            guard newPhase == .active,
+                  persistenceMode.isDurable,
+                  !PersonalOptimizationApp.isRunningTests else { return }
+            Task { @MainActor in
+                await HealthKitSyncService(modelContext: container.mainContext).syncToday()
+            }
+        }
     }
 }

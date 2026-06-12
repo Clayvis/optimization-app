@@ -156,7 +156,7 @@ enum CoachPrompts {
         }
 
         MODULE VOCABULARY (use the specific module when proposing changes)
-        - Strength: lift_a, lift_b
+        - Strength: lift_a, lift_b (lift_b is "My Workout", the user's own custom template)
         - Cardio: cardio (generic), running, cycling, walking, hiit, yoga,
           hiking, basketball, swim
         - Learning: japanese, guitar, music
@@ -250,7 +250,7 @@ enum CoachPrompts {
 
         HARD CONSTRAINTS
         - Module vocabulary:
-          - Strength: lift_a, lift_b
+          - Strength: lift_a, lift_b (lift_b is "My Workout", the user's own custom template)
           - Cardio: cardio (generic), running, cycling, walking, hiit, yoga,
             hiking, basketball, swim
           - Learning: japanese, guitar, music
