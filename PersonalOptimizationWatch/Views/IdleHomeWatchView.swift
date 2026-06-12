@@ -24,6 +24,9 @@ struct IdleHomeWatchView: View {
     @State private var hydrationService: HydrationService?
     @State private var fastingService: FastingService?
     @State private var refreshTrigger = 0
+    @State private var pokeCount = 0
+    @State private var showingTallyCaption = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var profile: UserProfile? { profiles.first }
     private var variant: String { profile?.mascotVariant ?? "ninja_male" }
@@ -32,7 +35,6 @@ struct IdleHomeWatchView: View {
         ScrollView {
             VStack(spacing: 8) {
                 mascotBlock
-                masterMetricBlock
                 fastingBlock
                 quickLogRow
                 streakRow
@@ -46,53 +48,85 @@ struct IdleHomeWatchView: View {
 
     // MARK: - Blocks
 
+    /// The tamagotchi: mascot inside a live goal ring (today's protocol
+    /// adherence). Tap to poke it — haptic, a little bounce, and the caption
+    /// flips between the mascot's reason and the day tally. The ring IS the
+    /// master metric, so the goals live on the same glance as the character.
     @ViewBuilder
     private var mascotBlock: some View {
-        VStack(spacing: 2) {
-            Image(mascotState.assetName(for: variant))
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .frame(height: 72)
-                .accessibilityLabel(mascotState.rawValue.capitalized)
-            if !isInternalReason(mascotReason) {
+        let tally = todayTally()
+        let progress = tally.scheduled > 0 ? Double(tally.completed) / Double(tally.scheduled) : 0
+
+        VStack(spacing: 4) {
+            Button {
+                poke()
+            } label: {
+                ZStack {
+                    Circle()
+                        .stroke(Color.gray.opacity(0.25), lineWidth: 7)
+                    Circle()
+                        .trim(from: 0, to: max(0.0001, min(1, progress)))
+                        .stroke(
+                            progress >= 1 ? Color.green : Color.accentColor,
+                            style: StrokeStyle(lineWidth: 7, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
+                        .animation(.easeOut(duration: 0.5), value: progress)
+                    Image(mascotState.assetName(for: variant))
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 78, height: 78)
+                        .clipShape(Circle())
+                }
+                .frame(width: 104, height: 104)
+                .scaleEffect(bounceScale)
+                .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.45),
+                           value: pokeCount)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Mascot \(mascotState.rawValue), \(tally.completed) of \(tally.scheduled) goals done. Tap for status.")
+
+            if showingTallyCaption {
+                Text("\(tally.completed) of \(tally.scheduled) goals today")
+                    .font(.caption2.weight(.semibold))
+                    .monospacedDigit()
+            } else if !isInternalReason(mascotReason) {
                 Text(mascotReason)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+            } else {
+                Text(tally.completed >= tally.scheduled && tally.scheduled > 0
+                     ? "day closed"
+                     : "\(tally.scheduled - tally.completed) to go")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
     }
 
-    @ViewBuilder
-    private var masterMetricBlock: some View {
-        let tally = todayTally()
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
-                Text("\(tally.completed)")
-                    .font(.title2.weight(.bold))
-                    .monospacedDigit()
-                Text("of \(tally.scheduled)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Image(systemName: "chart.bar.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.tint)
+    /// Subtle squash on even pokes, back to rest on odd, so each tap visibly
+    /// lands without keeping any animation running between interactions.
+    private var bounceScale: CGFloat {
+        pokeCount % 2 == 0 ? 1.0 : 0.93
+    }
+
+    private func poke() {
+        WKInterfaceDevice.current().play(.click)
+        pokeCount += 1
+        showingTallyCaption.toggle()
+        recomputeMascot()
+        // Bounce back to rest right after the squash lands.
+        if !reduceMotion {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(140))  // MARK: try? justified - cancellation just skips the rebound frame.
+                pokeCount += 1
             }
-            Text("TODAY'S PROTOCOL")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.secondary)
-            if tally.scheduled > 0 {
-                ProgressView(value: Double(tally.completed), total: Double(tally.scheduled))
-                    .tint(.green)
-            }
+        } else {
+            pokeCount += 1
         }
-        .padding(8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.gray.opacity(0.18))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     @ViewBuilder

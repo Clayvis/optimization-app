@@ -57,6 +57,11 @@ targets:
         optional: true
       - path: PersonalOptimization/Assets.xcassets
         optional: true
+      # Mascot PNGs live in their own catalog so the watch app and the
+      # complications extension can ship them too (the main catalog would
+      # drag the iOS AppIcon along and collide).
+      - path: PersonalOptimization/MascotAssets.xcassets
+        optional: true
       - path: PersonalOptimization/PrivacyInfo.xcprivacy
         optional: true
       # DEBUG-only Anthropic API key bootstrap. Optional: file may not exist.
@@ -193,6 +198,9 @@ targets:
     resources:
       - path: PersonalOptimizationWatch/Assets.xcassets
         optional: true
+      - path: PersonalOptimization/MascotAssets.xcassets
+        name: SharedMascotAssets
+        optional: true
       - path: PersonalOptimization/Resources
         name: SharedResources
     info:
@@ -311,6 +319,9 @@ targets:
       - path: PersonalOptimization/Services/UserCalendar.swift
       - path: PersonalOptimization/Services/DailyLogStore.swift
     resources:
+      - path: PersonalOptimization/MascotAssets.xcassets
+        name: SharedMascotAssets
+        optional: true
       - path: PersonalOptimization/Resources
         name: SharedResources
     info:

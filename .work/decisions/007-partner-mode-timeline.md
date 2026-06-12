@@ -29,3 +29,22 @@ Mitigation: she can still see Clay's app, react in person, share screenshots. Th
 - 30-day TestFlight stability metrics for v1.0 (Clay + wife).
 - Confirmed mascot variant system is the right framing for partner UI (his ninja, her ninja, side-by-side card).
 - CloudKit zone-sharing spike confirmed feasible on free Apple Developer account.
+
+
+## Addendum 2026-06-12: weekly challenge built against the seam
+
+Clay requested an Apple-Fitness-style weekly challenge with his wife and
+confirmed the paid developer account is enrolled. Scope agreed: build the
+full challenge feature NOW against the existing `PartnerSharedZone` seam
+(scoring, standing logic, TodayView card), keep the live CloudKit shared
+zone deferred per this decision. Scoring is protocol points (one point per
+closed domain per day, master-metric rules), not move calories, to avoid
+duplicating Apple's own Activity competitions.
+
+The card is hidden until `partnerRecordID` is set and renders "waiting"
+copy until a same-week partner snapshot syncs, so production behavior is
+unchanged until the CloudKit zone PR lands. `PartnerSharedRecord` gained
+optional `challengeWeekStart` / `challengeWeekPoints` fields (additive,
+old payloads still decode). Note: this intentionally adds a competitive
+frame alongside the cooperative joint-streak card; the joint streak stays
+the primary partner surface.

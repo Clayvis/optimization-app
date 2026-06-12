@@ -1,3 +1,41 @@
+# Pending Xcode verification: watch tamagotchi + partner challenge (2026-06-12)
+
+## Watch mascot (bug fix + feature)
+
+- ROOT CAUSE: the 16 mascot PNGs shipped only in the iOS asset catalog; the
+  watch home and MascotComplication rendered blank images. Moved them to
+  `PersonalOptimization/MascotAssets.xcassets`, now a resource of iOS, Watch,
+  and WatchComplications targets (project.yml). RUN `xcodegen generate`.
+- IdleHomeWatchView: mascot now sits inside a live protocol-adherence ring
+  (replaces the separate master-metric block), tap pokes it (haptic, bounce
+  honoring Reduce Motion, caption flips reason <-> tally).
+- MascotComplication: circular family gained a goal ring around the mascot;
+  new accessoryRectangular (Smart Stack) family shows mascot + "N of M goals"
+  + linear gauge. Entry now carries the ProtocolGoalSnapshot tally.
+
+## Partner weekly challenge (seam-only, decision 007 addendum)
+
+- Protocol-points scoring: ChallengeScoring walks the week through
+  ProtocolGoalSnapshot; standing logic is pure. PartnerSharedRecord gained
+  optional challengeWeekStart/Points (legacy payloads still decode; test
+  covers it). PartnerService.challengeStanding() reads through the zone.
+- PartnerChallengeCard on TodayView under PartnerStatusCard: You/Her point
+  bars, leader line, daily points dots, days-left. Hidden until paired, so
+  nothing changes in production until the CloudKit zone lands.
+- Tests: PartnerChallengeTests.
+- Decision 003 marked ENROLLED; decision 007 addendum records this scope.
+
+## Verify
+
+- `xcodegen generate`, then all four targets build (complications target
+  newly compiles ProtocolGoalSnapshot usage in MascotComplication).
+- Watch simulator: ninja renders on home + complication; tap bounces; ring
+  fills as domains close. Add the rectangular Mascot widget to Smart Stack.
+- iPhone: PartnerChallengeCard stays hidden (unpaired); preview shows the
+  full card with a seeded MemoryPartnerSharedZone.
+
+---
+
 # Pending Xcode verification: Lift B leftovers (2026-06-11, third push)
 
 The first rename only touched the iOS hub tile. This batch clears the

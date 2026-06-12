@@ -130,6 +130,13 @@ struct TodayView: View {
                 }
 
                 Section {
+                    PartnerChallengeCard()
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section {
                     DailyProgressBars()
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)

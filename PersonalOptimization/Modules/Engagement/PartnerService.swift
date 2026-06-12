@@ -118,6 +118,17 @@ final class PartnerService {
         try await zone.fetchPendingNudge()
     }
 
+    /// Current week's challenge standing: my protocol points against the
+    /// partner's published total. Partner side stays nil until the live zone
+    /// syncs a same-week snapshot, so single-user installs render the solo
+    /// view of their own week.
+    func challengeStanding(asOf: Date = Date()) async throws -> ChallengeStanding {
+        let calendar = UserCalendar.current(modelContext: modelContext)
+        let week = ChallengeScoring.currentWeek(modelContext: modelContext, asOf: asOf, calendar: calendar)
+        let partner = try await zone.fetchPartnerSnapshot()
+        return ChallengeScoring.standing(week: week, partner: partner, calendar: calendar, asOf: asOf)
+    }
+
     /// Computes the cooperative joint streak from the user's own streak and the
     /// partner's published snapshot. The joint streak is the strongest novel
     /// hook a solo app cannot replicate: it survives only while BOTH chains are
