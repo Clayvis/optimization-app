@@ -45,6 +45,16 @@ final class HealthKitSyncService {
         await sync(for: now())
     }
 
+    /// For-effect refresh used by fire-and-forget callers (scene activation,
+    /// HK observer fast path, watch events). Returns Void so no non-Sendable
+    /// DailyLog ever surfaces as the value of an `await` expression at the call
+    /// site. A `Task { ... }` whose tail expression is `syncToday()` would
+    /// otherwise be inferred as `Task<DailyLog, Never>`, and `Task.Success`
+    /// must be Sendable — which `@Model` types are not.
+    func refreshToday() async {
+        _ = await syncToday()
+    }
+
     /// Pulls HealthKit data for a specific day into its DailyLog row.
     /// Powers retroactive recompute when late-arriving samples (Garmin,
     /// Strava, Withings) land for a day in the past.

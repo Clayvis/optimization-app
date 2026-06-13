@@ -83,7 +83,7 @@ final class DailyLog {
               let dict = try? JSONSerialization.jsonObject(with: blob) as? [String: Any], // MARK: try? justified - see prior line.
               let raw = dict[key] else { return nil }
         // MARK: try? justified - see helper note.
-        guard let data = try? JSONSerialization.data(withJSONObject: raw) else { return nil }
+        guard let data = try? JSONSerialization.data(withJSONObject: raw, options: [.fragmentsAllowed]) else { return nil }
         // MARK: try? justified - see helper note.
         return try? JSONDecoder().decode(T.self, from: data)
     }
@@ -98,7 +98,7 @@ final class DailyLog {
         if let value {
             // MARK: try? justified - see helper note on `metadata(_:as:)`.
             guard let data = try? JSONEncoder().encode(value),
-                  let any = try? JSONSerialization.jsonObject(with: data) else { return } // MARK: try? justified - see prior line.
+                  let any = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) else { return } // MARK: try? justified - see prior line.
             dict[key] = any
         } else {
             dict.removeValue(forKey: key)

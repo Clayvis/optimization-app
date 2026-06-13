@@ -185,7 +185,7 @@ final class HealthKitObserverService {
             return
         }
         lastFastSyncAt = Date()
-        await HealthKitSyncService(modelContext: container.mainContext).syncToday()
+        await HealthKitSyncService(modelContext: container.mainContext).refreshToday()
         NotificationCenter.default.post(name: .healthKitObserverDidFire, object: nil)
     }
 
