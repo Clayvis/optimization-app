@@ -151,12 +151,12 @@ struct PersonalOptimizationApp: App {
                 NotificationCenter.default.post(name: .userStateChanged, object: event)
                 switch event.kind {
                 case .workoutStarted, .workoutEnded:
-                    await HealthKitSyncService(modelContext: container.mainContext).syncToday()
+                    await HealthKitSyncService(modelContext: container.mainContext).refreshToday()
                 case .waterLogged:
                     // Force a HK sync so the daily aggregate refreshes with
                     // whatever the watch added. SwiftData rows arrive via
                     // CloudKit; this accelerates the visible state on the phone.
-                    await HealthKitSyncService(modelContext: container.mainContext).syncToday()
+                    await HealthKitSyncService(modelContext: container.mainContext).refreshToday()
                 default:
                     break
                 }
@@ -213,7 +213,7 @@ struct PersonalOptimizationApp: App {
                   persistenceMode.isDurable,
                   !PersonalOptimizationApp.isRunningTests else { return }
             Task { @MainActor in
-                await HealthKitSyncService(modelContext: container.mainContext).syncToday()
+                await HealthKitSyncService(modelContext: container.mainContext).refreshToday()
             }
         }
     }
