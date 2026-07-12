@@ -155,19 +155,8 @@ struct PartnerChallengeCard: View {
     profile.partnerRecordID = "wife-record"
     container.mainContext.insert(profile)
 
-    let zone = MemoryPartnerSharedZone()
-    let weekStart = Calendar.current.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
-    zone.preloadPartner(PartnerSharedRecord(
-        userID: "wife-record",
-        currentStreak: 9,
-        masterMetric: 0.75,
-        mascotState: "proud",
-        challengeWeekStart: weekStart,
-        challengeWeekPoints: 14
-    ))
-
-    return ScrollView {
-        PartnerChallengeCard(zoneOverride: zone)
+    ScrollView {
+        PartnerChallengeCard(zoneOverride: NoopPartnerSharedZone())
             .padding()
     }
     .dojoBackground()
