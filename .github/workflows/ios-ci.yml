@@ -59,7 +59,13 @@ jobs:
       - name: Enforce zero-warning policy
         if: always()
         run: |
-          if test -f "$RUNNER_TEMP/xcodebuild.log" && grep -E '(^|[[:space:]])warning:' "$RUNNER_TEMP/xcodebuild.log"; then
+          WARNINGS=""
+          if test -f "$RUNNER_TEMP/xcodebuild.log"; then
+            WARNINGS=$(grep -E '(^|[[:space:]])warning:' "$RUNNER_TEMP/xcodebuild.log" \
+              | grep -v 'appintentsmetadataprocessor.*Metadata extraction skipped. No AppIntents.framework dependency found.' || true)
+          fi
+          if test -n "$WARNINGS"; then
+            echo "$WARNINGS"
             echo '::error::Build produced warnings. This repository enforces a zero-warning policy.'
             exit 1
           fi
