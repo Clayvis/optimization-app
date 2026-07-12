@@ -53,7 +53,7 @@ final class HealthKitObserverServiceTests: XCTestCase {
 
     func test_observerFire_routesThroughHandleUpdate() async throws {
         let fake = FakeHKObserverBackend()
-        let service = HealthKitObserverService(backend: fake)
+        let service = HealthKitObserverService(backend: fake, skipsDataSync: true)
         let container = try InMemoryContainer.make()
         await service.startObserving(modelContainer: container)
 
@@ -64,7 +64,7 @@ final class HealthKitObserverServiceTests: XCTestCase {
 
     func test_fastObserverFire_routesThroughFastPath() async throws {
         let fake = FakeHKObserverBackend()
-        let service = HealthKitObserverService(backend: fake)
+        let service = HealthKitObserverService(backend: fake, skipsDataSync: true)
         let container = try InMemoryContainer.make()
         await service.startObserving(modelContainer: container)
 

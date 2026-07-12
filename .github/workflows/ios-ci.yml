@@ -37,12 +37,9 @@ jobs:
           bash scripts/check_schema_parity.sh
           bash scripts/check_assets.sh
 
-      - name: Generate Xcode project
-        run: |
-          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
-          xcodegen generate
-
-      - name: Build Release configuration
+      # Xcode Cloud consumes the checked-in project. Build it before XcodeGen
+      # can repair stale or missing file references in CI.
+      - name: Build checked-in Release configuration
         run: |
           set -o pipefail
           xcodebuild build \
@@ -55,6 +52,11 @@ jobs:
             COMPILER_INDEX_STORE_ENABLE=NO \
             | tee "$RUNNER_TEMP/release-xcodebuild.log" \
             | xcbeautify --renderer github-actions
+
+      - name: Generate Xcode project
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate
 
       - name: Build and run unit and UI smoke tests
         run: |
