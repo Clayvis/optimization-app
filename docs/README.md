@@ -28,6 +28,12 @@ Point-in-time code audits (e.g. `AUDIT_2026-06-04.md`).
 
 Design assets: `Mascot.svg`, `chiba.svg`.
 
+## docs/roadmap/
+
+Responsive product-roadmap web page covering shipped capabilities, current
+improvement priorities, future features, and the product decision rules. Open
+`roadmap/index.html` directly or serve `docs/` as the GitHub Pages source.
+
 ## References/ (unchanged, repo root)
 
 Validated logic and seed data the build/milestones consume directly
