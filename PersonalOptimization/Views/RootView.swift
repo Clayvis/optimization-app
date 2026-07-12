@@ -11,6 +11,11 @@ struct RootView: View {
 
     /// Local-only sync banner is dismissible per launch.
     @State private var showSyncBanner: Bool = true
+    @State private var selectedTab: AppTab = .today
+
+    private enum AppTab: Hashable {
+        case today, fasting, hydration, training, dojo
+    }
 
     var body: some View {
         switch persistenceMode {
@@ -69,47 +74,230 @@ struct RootView: View {
 
     @ViewBuilder
     private var tabRoot: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             TodayView()
                 .tabItem {
                     Label("Today", systemImage: "sun.max.fill")
                 }
+                .tag(AppTab.today)
             FastingView()
                 .tabItem {
                     Label("Fast", systemImage: "timer")
                 }
+                .tag(AppTab.fasting)
             HydrationView()
                 .tabItem {
                     Label("Water", systemImage: "drop.fill")
                 }
+                .tag(AppTab.hydration)
             TrainingHubView()
                 .tabItem {
                     Label("Train", systemImage: "figure.run")
                 }
-            LearningHubView()
+                .tag(AppTab.training)
+            DojoHubView()
                 .tabItem {
-                    Label("Learn", systemImage: "book.fill")
+                    Label("Dojo", systemImage: "torii.gate")
                 }
-            JourneyView()
-                .tabItem {
-                    Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
-                }
-            BiomarkersView()
-                .tabItem {
-                    Label("Labs", systemImage: "testtube.2")
-                }
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
-                }
+                .tag(AppTab.dojo)
         }
         // Global in-the-moment log confirmation banner (identity copy + haptic).
         .logFeedbackOverlay()
         // Dojo theme: kurenai (crimson) accent everywhere a control reads the
         // environment tint — tab items, buttons, toggles, links, pickers.
         .tint(Theme.kurenai)
+        // Widget and future App Intent deep links always land on the relevant
+        // daily surface even when the app was last left on another tab.
+        .onOpenURL { url in
+            guard url.scheme == "personaloptimization" else { return }
+            switch url.host {
+            case "fast": selectedTab = .fasting
+            case "water": selectedTab = .hydration
+            case "train": selectedTab = .training
+            case "dojo": selectedTab = .dojo
+            default: selectedTab = .today
+            }
+        }
     }
 
+}
+
+// MARK: - Dojo hub
+
+/// Keeps the root tab bar to five predictable destinations. The previous
+/// eight-tab layout was pushed into iOS's automatic "More" controller, which
+/// hid core features behind a visually unrelated system list. The Dojo is a
+/// deliberate home for the slower-cadence modules while Today, Fast, Water,
+/// and Train remain one tap away.
+private struct DojoHubView: View {
+    private let columns = [
+        GridItem(.flexible(), spacing: Theme.Space.m),
+        GridItem(.flexible(), spacing: Theme.Space.m)
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Space.xl) {
+                    dojoHeader
+
+                    VStack(alignment: .leading, spacing: Theme.Space.m) {
+                        SectionEyebrow(title: "Tune your practice", tint: Theme.kurenai)
+                        NavigationLink {
+                            AdvancedSetupView()
+                        } label: {
+                            HStack(spacing: Theme.Space.l) {
+                                Image(systemName: "slider.horizontal.3")
+                                    .font(.title2.weight(.semibold))
+                                    .foregroundStyle(Theme.kurenai)
+                                    .frame(width: 48, height: 48)
+                                    .background(Theme.kurenai.opacity(0.14), in: RoundedRectangle(cornerRadius: Theme.Radius.chip))
+                                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                                    Text("Advanced Setup").font(.headline)
+                                    Text("Time anchors, schedule templates, and AI planning")
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.textSecondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(Theme.kurenai)
+                            }
+                            .padding()
+                            .dojoCardSurface()
+                        }
+                        .buttonStyle(DojoPressStyle())
+                        .accessibilityIdentifier("dojo.advancedSetup")
+
+                        SectionEyebrow(title: "Practice halls", tint: Theme.kin)
+                        LazyVGrid(columns: columns, spacing: Theme.Space.m) {
+                            dojoTile(
+                                title: "Learning",
+                                subtitle: "Language, guitar, music",
+                                systemImage: "book.closed.fill",
+                                tint: Theme.murasaki,
+                                destination: LearningHubView(embedded: true)
+                            )
+                            dojoTile(
+                                title: "Journey",
+                                subtitle: "Trends, streaks, progress",
+                                systemImage: "chart.line.uptrend.xyaxis",
+                                tint: Theme.matcha,
+                                destination: JourneyView(embedded: true)
+                            )
+                            dojoTile(
+                                title: "Biomarkers",
+                                subtitle: "Labs and health signals",
+                                systemImage: "testtube.2",
+                                tint: Theme.ai,
+                                destination: BiomarkersView(embedded: true)
+                            )
+                            dojoTile(
+                                title: "Settings",
+                                subtitle: "Profile, schedule, devices",
+                                systemImage: "gearshape.fill",
+                                tint: Theme.textSecondary,
+                                destination: SettingsView(embedded: true)
+                            )
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("The Dojo")
+            .background(DojoBackground())
+        }
+    }
+
+    private var dojoHeader: some View {
+        DojoCard(accent: Theme.kurenai) {
+            HStack(spacing: Theme.Space.l) {
+                ZStack {
+                    Circle()
+                        .fill(Theme.kurenai.opacity(0.14))
+                    Image(systemName: "torii.gate")
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundStyle(Theme.kurenai)
+                }
+                .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    Text("Sharpen the whole system")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("Review progress, practice skills, inspect health, and tune your protocol.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private func dojoTile<Destination: View>(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        tint: Color,
+        destination: Destination
+    ) -> some View {
+        NavigationLink {
+            destination
+        } label: {
+            VStack(alignment: .leading, spacing: Theme.Space.m) {
+                Image(systemName: systemImage)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                            .fill(tint.opacity(0.14))
+                    )
+
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "arrow.up.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(tint)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, minHeight: 172, alignment: .leading)
+            .dojoCardSurface()
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+        }
+        .buttonStyle(DojoPressStyle())
+        .accessibilityLabel("\(title). \(subtitle)")
+    }
+}
+
+private struct AdvancedSetupView: View {
+    var body: some View {
+        List {
+            Section("Build your week") {
+                NavigationLink("Generate with AI", destination: ScheduleGenerationView())
+                NavigationLink("Choose a template", destination: ScheduleTemplateChooserView())
+                NavigationLink("Edit schedule", destination: ScheduleEditorView())
+            }
+            Section("Make it fit your life") {
+                NavigationLink("Time anchors", destination: ScheduleAnchorEditorView())
+                NavigationLink("Implementation intentions", destination: ImplementationIntentionsView())
+            }
+        }
+        .navigationTitle("Advanced Setup")
+        .scrollContentBackground(.hidden)
+        .background(DojoBackground())
+        .accessibilityIdentifier("advancedSetup.screen")
+    }
 }
 
 #Preview {

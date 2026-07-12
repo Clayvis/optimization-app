@@ -16,25 +16,33 @@ struct JourneyView: View {
     private var archives: [ActivityArchive]
 
     private let timezone = TimeZone.current
+    var embedded: Bool = false
 
+    @ViewBuilder
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    if archives.count >= 30 {
-                        sameDayAgoCard
-                        yearHeatmap
-                    } else {
-                        cleanStartCard
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-            }
-            .navigationTitle("Journey")
-            .scrollContentBackground(.hidden)
-            .background(DojoBackground())
+        if embedded {
+            screen
+        } else {
+            NavigationStack { screen }
         }
+    }
+
+    private var screen: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if archives.count >= 30 {
+                    sameDayAgoCard
+                    yearHeatmap
+                } else {
+                    cleanStartCard
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .navigationTitle("Journey")
+        .scrollContentBackground(.hidden)
+        .background(DojoBackground())
     }
 
     // MARK: - Year heatmap

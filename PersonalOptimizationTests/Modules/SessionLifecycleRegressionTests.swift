@@ -117,10 +117,11 @@ final class SessionLifecycleRegressionTests: XCTestCase {
             ),
             weeks_3_plus: Phase2FastingDefaults(all: FastingWindowSpec(start: "22:00", end: "10:00"))
         )
-        let service = FastingService(modelContext: context, defaults: defaults)
+        let jst = TimeZone(identifier: "Asia/Tokyo")!
+        let service = FastingService(modelContext: context, timezone: jst, defaults: defaults)
         // Pick a moment inside the window: 23:00 weekday during phase 1.
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        cal.timeZone = jst
         let inside = cal.date(from: DateComponents(year: 2026, month: 5, day: 7, hour: 23, minute: 0))!
         try service.logEarlyBreak(at: inside, reason: "social", profile: profile)
 

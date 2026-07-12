@@ -7,15 +7,23 @@ import SwiftData
 struct LearningHubView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var service: LearningService?
+    var embedded: Bool = false
 
+    @ViewBuilder
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle("Learning")
-                .scrollContentBackground(.hidden)
-                .background(DojoBackground())
+        if embedded {
+            screen
+        } else {
+            NavigationStack { screen }
         }
-        .task { loadService() }
+    }
+
+    private var screen: some View {
+        content
+            .navigationTitle("Learning")
+            .scrollContentBackground(.hidden)
+            .background(DojoBackground())
+            .task { loadService() }
     }
 
     @ViewBuilder

@@ -49,12 +49,16 @@ final class CoachServiceTests: XCTestCase {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "Asia/Tokyo")!
         let day = cal.startOfDay(for: Date())
-        let log = DailyLog(date: day)
+        let log = DailyLog(date: day, calendar: cal)
         log.waterOz = 48
         context.insert(log)
         try context.save()
 
-        let service = CoachService(modelContext: context, api: StubAPI())
+        let service = CoachService(
+            modelContext: context,
+            timezone: cal.timeZone,
+            api: StubAPI()
+        )
         let profile = ensureProfile()
         let ctx = service.gatherContext(profile: profile)
         XCTAssertEqual(ctx.hydrationOzToday, 48)

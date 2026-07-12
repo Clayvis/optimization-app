@@ -33,7 +33,8 @@ final class RecoveryGateTests: XCTestCase {
     func test_lowSleep_returnsDowngrade() throws {
         let profile = UserProfile()
         context.insert(profile)
-        let log = DailyLog(date: Calendar(identifier: .gregorian).startOfDay(for: Date()))
+        let c = cal()
+        let log = DailyLog(date: c.startOfDay(for: Date()), calendar: c)
         log.sleepHours = 5.0
         context.insert(log)
         try context.save()
@@ -47,7 +48,7 @@ final class RecoveryGateTests: XCTestCase {
         context.insert(profile)
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = jst
-        let log = DailyLog(date: cal.startOfDay(for: Date()))
+        let log = DailyLog(date: cal.startOfDay(for: Date()), calendar: cal)
         log.sleepHours = 4.0
         context.insert(log)
         try context.save()
@@ -61,7 +62,7 @@ final class RecoveryGateTests: XCTestCase {
         context.insert(profile)
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = jst
-        let log = DailyLog(date: cal.startOfDay(for: Date()))
+        let log = DailyLog(date: cal.startOfDay(for: Date()), calendar: cal)
         log.achillesPain = 8
         context.insert(log)
         try context.save()
@@ -75,7 +76,7 @@ final class RecoveryGateTests: XCTestCase {
         context.insert(profile)
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = jst
-        let log = DailyLog(date: cal.startOfDay(for: Date()))
+        let log = DailyLog(date: cal.startOfDay(for: Date()), calendar: cal)
         log.achillesPain = 5
         context.insert(log)
         try context.save()
@@ -118,13 +119,13 @@ final class RecoveryGateTests: XCTestCase {
         let c = cal()
         let today = c.startOfDay(for: Date())
         for i in 1...4 {
-            let log = DailyLog(date: c.date(byAdding: .day, value: -i, to: today)!)
+            let log = DailyLog(date: c.date(byAdding: .day, value: -i, to: today)!, calendar: c)
             log.hrvRmssd = 58
             log.restingHR = 50
             log.sleepHours = 7.5
             context.insert(log)
         }
-        let todayLog = DailyLog(date: today)
+        let todayLog = DailyLog(date: today, calendar: c)
         todayLog.hrvRmssd = 42
         todayLog.restingHR = 50
         todayLog.sleepHours = 7.5
@@ -141,7 +142,8 @@ final class RecoveryGateTests: XCTestCase {
     func test_detail_lowSleep_downgrade_reducesLoad() throws {
         let profile = UserProfile()
         context.insert(profile)
-        let log = DailyLog(date: cal().startOfDay(for: Date()))
+        let c = cal()
+        let log = DailyLog(date: c.startOfDay(for: Date()), calendar: c)
         log.sleepHours = 5.0
         context.insert(log)
         try context.save()
@@ -158,7 +160,8 @@ final class RecoveryGateTests: XCTestCase {
     func test_detail_veryLowSleep_rest_loadZero() throws {
         let profile = UserProfile()
         context.insert(profile)
-        let log = DailyLog(date: cal().startOfDay(for: Date()))
+        let c = cal()
+        let log = DailyLog(date: c.startOfDay(for: Date()), calendar: c)
         log.sleepHours = 4.0
         context.insert(log)
         try context.save()
@@ -175,13 +178,13 @@ final class RecoveryGateTests: XCTestCase {
         let c = cal()
         let today = c.startOfDay(for: Date())
         for i in 1...4 {
-            let log = DailyLog(date: c.date(byAdding: .day, value: -i, to: today)!)
+            let log = DailyLog(date: c.date(byAdding: .day, value: -i, to: today)!, calendar: c)
             log.hrvRmssd = 58
             log.restingHR = 50
             log.sleepHours = 7.5
             context.insert(log)
         }
-        let todayLog = DailyLog(date: today)
+        let todayLog = DailyLog(date: today, calendar: c)
         todayLog.sleepHours = 7.5   // sleep synced today, but no HRV/RHR sample
         context.insert(todayLog)
         try context.save()
@@ -195,7 +198,8 @@ final class RecoveryGateTests: XCTestCase {
     func test_detail_achillesOnly_isDataAndComponentShown() throws {
         let profile = UserProfile()
         context.insert(profile)
-        let log = DailyLog(date: cal().startOfDay(for: Date()))
+        let c = cal()
+        let log = DailyLog(date: c.startOfDay(for: Date()), calendar: c)
         log.achillesPain = 6   // no HRV/RHR/sleep today, only achilles
         context.insert(log)
         try context.save()
@@ -209,7 +213,8 @@ final class RecoveryGateTests: XCTestCase {
     func test_detail_normal_fullLoadAndData() throws {
         let profile = UserProfile()
         context.insert(profile)
-        let log = DailyLog(date: cal().startOfDay(for: Date()))
+        let c = cal()
+        let log = DailyLog(date: c.startOfDay(for: Date()), calendar: c)
         log.sleepHours = 7.5
         context.insert(log)
         try context.save()

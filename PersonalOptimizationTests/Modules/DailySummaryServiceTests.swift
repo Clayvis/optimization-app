@@ -58,7 +58,7 @@ final class DailySummaryServiceTests: XCTestCase {
         context.insert(block)
         let day = jstDate(2026, 5, 6, 0, 0)
         context.insert(WorkoutEvent(date: day, completed: true, source: .lift))
-        let log = DailyLog(date: day)
+        let log = DailyLog(date: day, calendar: jstCalendar())
         log.fastEnd = jstDate(2026, 5, 6, 10, 0)
         log.waterOz = 100
         log.japaneseMinutes = 35
@@ -84,7 +84,7 @@ final class DailySummaryServiceTests: XCTestCase {
 
     func test_partialCompletion_reportsCorrectFraction() throws {
         let day = jstDate(2026, 5, 6, 0, 0)
-        let log = DailyLog(date: day)
+        let log = DailyLog(date: day, calendar: jstCalendar())
         log.waterOz = 80
         log.fastEnd = nil
         context.insert(log)
@@ -100,5 +100,11 @@ final class DailySummaryServiceTests: XCTestCase {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = jst
         return cal.date(from: c)!
+    }
+
+    private func jstCalendar() -> Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = jst
+        return cal
     }
 }

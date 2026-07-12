@@ -28,7 +28,7 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     // MARK: - dailyAdherence
 
     func test_dailyAdherence_emptyData_allZeros() {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let range = DateRange.lastNDays(7, asOf: jstNow)
         let result = service.dailyAdherence(over: range)
         XCTAssertEqual(result.count, 7)
@@ -44,7 +44,7 @@ final class TrendAnalyticsServiceTests: XCTestCase {
         context.insert(archive)
         try context.save()
 
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let range = DateRange(start: day, end: day)
         let result = service.dailyAdherence(over: range)
         XCTAssertEqual(result[day], 0.75)
@@ -64,7 +64,7 @@ final class TrendAnalyticsServiceTests: XCTestCase {
         context.insert(liftA); context.insert(liftB); context.insert(liftYesterday)
         try context.save()
 
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let range = DateRange(start: yesterday, end: today)
         let result = service.volumeProgression(domain: .lift, over: range)
         XCTAssertEqual(result[today], 15_000)
@@ -78,7 +78,7 @@ final class TrendAnalyticsServiceTests: XCTestCase {
         context.insert(swim)
         try context.save()
 
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let range = DateRange(start: day, end: day)
         let result = service.volumeProgression(domain: .swim, over: range)
         XCTAssertEqual(result[day], 1_000)
@@ -86,14 +86,14 @@ final class TrendAnalyticsServiceTests: XCTestCase {
 
     func test_volumeProgression_learning_sumsMinutes() throws {
         let day = jstCal.startOfDay(for: jstNow)
-        let log = DailyLog(date: day)
+        let log = DailyLog(date: day, calendar: jstCal)
         log.japaneseMinutes = 30
         log.guitarMinutes = 20
         log.courseworkMinutes = 60
         context.insert(log)
         try context.save()
 
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let range = DateRange(start: day, end: day)
         let result = service.volumeProgression(domain: .learning, over: range)
         XCTAssertEqual(result[day], 110)
@@ -102,7 +102,7 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     // MARK: - patternsDetected
 
     func test_patternsDetected_volumeDecline_belowThreshold_returnsPattern() throws {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let today = jstCal.startOfDay(for: jstNow)
         // Days -13 to -7: 1000 lb each. Days -6 to 0: 200 lb each.
         for i in -13...0 {
@@ -118,7 +118,7 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     }
 
     func test_patternsDetected_volumeStable_returnsNoVolumeDeclinePattern() throws {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let today = jstCal.startOfDay(for: jstNow)
         for i in -13...0 {
             let day = jstCal.date(byAdding: .day, value: i, to: today)!
@@ -133,12 +133,12 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     }
 
     func test_patternsDetected_hydrationCorrelation_detectsHigherAdherence() throws {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let today = jstCal.startOfDay(for: jstNow)
         // 5 hydrated days with archive adherence 0.9, 5 dry days with adherence 0.3
         for i in 0..<10 {
             let day = jstCal.date(byAdding: .day, value: -i, to: today)!
-            let log = DailyLog(date: day)
+            let log = DailyLog(date: day, calendar: jstCal)
             log.waterOz = (i < 5) ? 100 : 20
             context.insert(log)
             let archive = ActivityArchive(date: day)
@@ -152,12 +152,12 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     }
 
     func test_patternsDetected_sleepImpact_detectsLowSleepCorrelation() throws {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let today = jstCal.startOfDay(for: jstNow)
         // 5 nights of low sleep, each followed by adherence-zero day
         for i in 1...5 {
             let priorDay = jstCal.date(byAdding: .day, value: -(i + 1), to: today)!
-            let logPrior = DailyLog(date: priorDay)
+            let logPrior = DailyLog(date: priorDay, calendar: jstCal)
             logPrior.sleepHours = 4.5
             context.insert(logPrior)
             let day = jstCal.date(byAdding: .day, value: -i, to: today)!
@@ -172,12 +172,12 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     }
 
     func test_patternsDetected_fastingConsistency_detectsDecline() throws {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let today = jstCal.startOfDay(for: jstNow)
         // First half of 14d range: completed fasts. Second half: not completed.
         for i in 0..<14 {
             let day = jstCal.date(byAdding: .day, value: -(13 - i), to: today)!
-            let log = DailyLog(date: day)
+            let log = DailyLog(date: day, calendar: jstCal)
             if i < 7 {
                 log.fastStart = day
                 log.fastEnd = jstCal.date(byAdding: .hour, value: 16, to: day)
@@ -191,12 +191,12 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     }
 
     func test_patternsDetected_learningStreakDecay_detectsDrop() throws {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let today = jstCal.startOfDay(for: jstNow)
         // 4 weeks of data. Weeks 1-2: 100 min/wk learning. Weeks 3-4: 10 min/wk.
         for i in 0..<28 {
             let day = jstCal.date(byAdding: .day, value: -(27 - i), to: today)!
-            let log = DailyLog(date: day)
+            let log = DailyLog(date: day, calendar: jstCal)
             log.japaneseMinutes = (i < 14) ? 14 : 1
             context.insert(log)
         }
@@ -207,7 +207,7 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     }
 
     func test_patternsDetected_emptyData_returnsEmptyList() {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let range = DateRange.lastNDays(7, asOf: jstNow)
         let patterns = service.patternsDetected(over: range)
         XCTAssertTrue(patterns.isEmpty)
@@ -216,14 +216,14 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     // MARK: - summaryForCoach
 
     func test_summaryForCoach_withFullData_producesAllFields() throws {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let today = jstCal.startOfDay(for: jstNow)
         for i in 0..<14 {
             let day = jstCal.date(byAdding: .day, value: -(13 - i), to: today)!
             let archive = ActivityArchive(date: day)
             archive.masterMetric = 0.7
             context.insert(archive)
-            let log = DailyLog(date: day)
+            let log = DailyLog(date: day, calendar: jstCal)
             log.waterOz = 80
             log.japaneseMinutes = 30
             log.fastStart = day
@@ -251,7 +251,7 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     }
 
     func test_summaryForCoach_emptyData_doesNotCrash() {
-        let service = TrendAnalyticsService(modelContext: context)
+        let service = makeService()
         let range = DateRange.lastNDays(7, asOf: jstNow)
         let summary = service.summaryForCoach(over: range)
         XCTAssertEqual(summary.workoutsPerWeekMean, 0)
@@ -267,6 +267,10 @@ final class TrendAnalyticsServiceTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makeService() -> TrendAnalyticsService {
+        TrendAnalyticsService(modelContext: context, timezone: jstCal.timeZone)
+    }
 
     private var jstNow: Date {
         // Anchor to a fixed date to keep tests deterministic across the run.

@@ -24,10 +24,19 @@ struct BiomarkersView: View {
     private var profile: UserProfile? { profiles.first }
     private var sex: String { profile?.sex ?? "male" }
     private var latest: LabDraw? { draws.first }
+    var embedded: Bool = false
 
+    @ViewBuilder
     var body: some View {
-        NavigationStack {
-            ScrollView {
+        if embedded {
+            screen
+        } else {
+            NavigationStack { screen }
+        }
+    }
+
+    private var screen: some View {
+        ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Space.l) {
                     if let latest {
                         phenoAgeCard(for: latest)
@@ -42,10 +51,10 @@ struct BiomarkersView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, Theme.Space.xxl)
-            }
-            .dojoBackground()
-            .navigationTitle("Labs")
-            .toolbar {
+        }
+        .dojoBackground()
+        .navigationTitle("Labs")
+        .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
@@ -70,31 +79,30 @@ struct BiomarkersView: View {
                     }
                     .accessibilityLabel("Add lab draw")
                 }
-            }
-            .sheet(isPresented: $showEditor) {
+        }
+        .sheet(isPresented: $showEditor) {
                 LabDrawEditorView(prefill: editorPrefill, sex: sex)
-            }
-            .fileImporter(isPresented: $showPDFImporter, allowedContentTypes: [.pdf]) { result in
+        }
+        .fileImporter(isPresented: $showPDFImporter, allowedContentTypes: [.pdf]) { result in
                 handlePDF(result)
-            }
-            .fileImporter(isPresented: $showJSONImporter, allowedContentTypes: [.json]) { result in
+        }
+        .fileImporter(isPresented: $showJSONImporter, allowedContentTypes: [.json]) { result in
                 handleJSON(result)
-            }
-            .overlay {
+        }
+        .overlay {
                 if importBusy {
                     ProgressView("Parsing…")
                         .padding(Theme.Space.xl)
                         .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.inkRaised))
                 }
-            }
-            .alert("Import failed", isPresented: Binding(
+        }
+        .alert("Import failed", isPresented: Binding(
                 get: { importError != nil },
                 set: { if !$0 { importError = nil } }
             )) {
                 Button("OK", role: .cancel) {}
-            } message: {
-                Text(importError ?? "")
-            }
+        } message: {
+            Text(importError ?? "")
         }
     }
 

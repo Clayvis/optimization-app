@@ -31,7 +31,7 @@ struct OnboardingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ProgressView(value: Double(step + 1), total: 7)
+            ProgressView(value: Double(step + 1), total: 5)
                 .tint(.accentColor)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -40,10 +40,8 @@ struct OnboardingView: View {
                 welcomeScreen.tag(0)
                 permissionsScreen.tag(1)
                 goalsScreen.tag(2)
-                anchorsScreen.tag(3)      // M5: collect anchors BEFORE template
-                scheduleScreen.tag(4)
-                mascotScreen.tag(5)
-                wrapUpScreen.tag(6)
+                mascotScreen.tag(3)
+                wrapUpScreen.tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut, value: step)
@@ -455,14 +453,14 @@ struct OnboardingView: View {
                 .padding(.top, 32)
             Text("You're set.")
                 .font(.largeTitle.weight(.bold))
-            Text("Five evidence-backed implementation intentions seeded for your morning routine, training, and learning. Edit them in Settings whenever the routine shifts.")
+            Text("Your balanced starter protocol is ready. Tune time anchors, templates, or AI scheduling later in Advanced Setup inside the Dojo.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 12) {
                 bullet("Apple Watch: pair the watch in the iOS Watch app to surface complications and live workouts.")
-                bullet("Coach Mode: drop your Anthropic API key in Settings → AI to enable daily insights and prescriptions.")
+                bullet("Advanced Setup: tune your schedule and time anchors in the Dojo.")
                 bullet("Sundays: open the Today tab for a weekly reflection.")
             }
             .padding(.horizontal, 24)
@@ -480,7 +478,7 @@ struct OnboardingView: View {
                     .buttonStyle(.bordered)
             }
             Spacer()
-            if step < 6 {
+            if step < 4 {
                 Button("Continue") { step += 1 }
                     .buttonStyle(.borderedProminent)
                     .disabled(canAdvance == false)
@@ -497,16 +495,6 @@ struct OnboardingView: View {
         case 0: return true
         case 1: return true // permissions are optional but encouraged
         case 2: return true
-        case 3:
-            // M5: anchors step. Require a sane wake/bedtime ordering before
-            // we let the user proceed to template selection. Defaults pass
-            // this check, so a user who taps Continue without changing
-            // anything still gets through.
-            return anchorDraft.isValid
-        case 4:
-            // M4.2 T0c (shifted +1): schedule step requires an explicit
-            // choice. User must tap a template tile or apply an AI schedule.
-            return hasMadeScheduleChoice
         default: return true
         }
     }
@@ -603,10 +591,9 @@ struct OnboardingView: View {
         }
         profile.equipmentAccess = equipmentAccess
         profile.mascotVariant = pickedVariant.rawValue
-        // V11: persist final anchor draft if the user touched the screen but
-        // never tapped a template tile (defensive — the flush in
-        // applyScheduleTemplate already covers the normal path).
-        anchorDraft.writeTo(profile: profile)
+        // Start useful immediately. Fine-grained anchors and alternative
+        // templates are deliberately deferred to Advanced Setup in Dojo.
+        applyScheduleTemplate(.balanced)
         profile.onboardingCompleted = true
         try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
     }

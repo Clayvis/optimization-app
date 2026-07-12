@@ -75,6 +75,10 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         TeamBundlePrefix: $(TEAM_BUNDLE_PREFIX)
+        CFBundleURLTypes:
+          - CFBundleURLName: com.rawlins.PersonalOptimization
+            CFBundleURLSchemes:
+              - personaloptimization
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:
           UIColorName: AccentColor
@@ -258,6 +262,10 @@ targets:
       - path: PersonalOptimization/Modules/Fasting/LiveActivity/FastingActivityAttributes.swift
       - path: PersonalOptimization/Modules/Training/LiveActivity/WorkoutActivityAttributes.swift
       - path: PersonalOptimization/Modules/Engagement/LiveActivity/DailyGoalActivityAttributes.swift
+    resources:
+      - path: PersonalOptimization/MascotAssets.xcassets
+        name: SharedMascotAssets
+        optional: true
     info:
       path: PersonalOptimizationLiveActivity/Info.plist
       properties:
@@ -369,6 +377,21 @@ targets:
     dependencies:
       - target: PersonalOptimization
 
+  PersonalOptimizationUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: PersonalOptimizationUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.uitests
+        SWIFT_TREAT_WARNINGS_AS_ERRORS: NO
+        GENERATE_INFOPLIST_FILE: YES
+        ENABLE_APP_INTENTS_METADATA_EXTRACTION: NO
+    dependencies:
+      - target: PersonalOptimization
+
 schemes:
 
   PersonalOptimization:
@@ -382,6 +405,7 @@ schemes:
         - PersonalOptimization
       targets:
         - PersonalOptimizationTests
+        - PersonalOptimizationUITests
     run:
       config: Debug
     profile:

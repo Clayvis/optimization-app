@@ -15,9 +15,9 @@ final class ProtocolGoalSnapshotTests: XCTestCase {
     /// (documented container-retention hazard).
     private var container: ModelContainer!
 
-    override func tearDown() {
+    override func tearDown() async throws {
         container = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     private func makeContext() throws -> ModelContext {

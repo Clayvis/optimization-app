@@ -18,31 +18,39 @@ struct SettingsView: View {
     @State private var iCloudAccountStatus: CKAccountStatus = .couldNotDetermine
     @State private var exportData: Data?
     @State private var exportFeedback: String?
+    var embedded: Bool = false
 
     enum APIKeyStatus {
         case unknown, set, missing
     }
 
+    @ViewBuilder
     var body: some View {
-        NavigationStack {
-            Group {
-                if let profile = profiles.first {
-                    profileForm(profile: profile)
-                } else {
-                    ProgressView()
-                        .task {
-                            _ = ProfileService.currentOrCreate(modelContext: modelContext)
-                        }
-                }
+        if embedded {
+            screen
+        } else {
+            NavigationStack { screen }
+        }
+    }
+
+    private var screen: some View {
+        Group {
+            if let profile = profiles.first {
+                profileForm(profile: profile)
+            } else {
+                ProgressView()
+                    .task {
+                        _ = ProfileService.currentOrCreate(modelContext: modelContext)
+                    }
             }
-            .navigationTitle("Settings")
-            .scrollContentBackground(.hidden)
-            .background(DojoBackground())
-            .onAppear { refreshAPIKeyStatus() }
-            .sheet(isPresented: $showingKeyEntry) {
-                APIKeyEntrySheet { _ in
-                    refreshAPIKeyStatus()
-                }
+        }
+        .navigationTitle("Settings")
+        .scrollContentBackground(.hidden)
+        .background(DojoBackground())
+        .onAppear { refreshAPIKeyStatus() }
+        .sheet(isPresented: $showingKeyEntry) {
+            APIKeyEntrySheet { _ in
+                refreshAPIKeyStatus()
             }
         }
     }
