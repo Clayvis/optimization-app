@@ -1,0 +1,72 @@
+name: iOS CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push supersedes an older run for the same PR/branch. This avoids
+# burning macOS runner time on code that can no longer be merged.
+concurrency:
+  group: ios-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-26
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      # project.yml declares Xcode 26.4. Pin the runner instead of accepting
+      # macos-26's moving default, which is currently newer than the project.
+      - name: Select Xcode 26.4.1
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.4.1.app
+          xcodebuild -version
+
+      - name: Run repository guards
+        run: |
+          bash scripts/check_schema_parity.sh
+          bash scripts/check_assets.sh
+
+      - name: Build and run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project PersonalOptimization.xcodeproj \
+            -scheme PersonalOptimization \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/PersonalOptimization.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            | tee "$RUNNER_TEMP/xcodebuild.log" \
+            | xcbeautify --renderer github-actions
+
+      - name: Enforce zero-warning policy
+        if: always()
+        run: |
+          if grep -E '(^|[[:space:]])warning:' "$RUNNER_TEMP/xcodebuild.log"; then
+            echo '::error::Build produced warnings. This repository enforces a zero-warning policy.'
+            exit 1
+          fi
+
+      - name: Upload test result
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: PersonalOptimization-test-results
+          path: |
+            ${{ runner.temp }}/PersonalOptimization.xcresult
+            ${{ runner.temp }}/xcodebuild.log
+          if-no-files-found: warn
+          retention-days: 14

@@ -75,6 +75,10 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         TeamBundlePrefix: $(TEAM_BUNDLE_PREFIX)
+        CFBundleURLTypes:
+          - CFBundleURLName: com.rawlins.PersonalOptimization
+            CFBundleURLSchemes:
+              - personaloptimization
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:
           UIColorName: AccentColor

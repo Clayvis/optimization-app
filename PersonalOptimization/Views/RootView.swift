@@ -11,6 +11,11 @@ struct RootView: View {
 
     /// Local-only sync banner is dismissible per launch.
     @State private var showSyncBanner: Bool = true
+    @State private var selectedTab: AppTab = .today
+
+    private enum AppTab: Hashable {
+        case today, fasting, hydration, training, dojo
+    }
 
     var body: some View {
         switch persistenceMode {
@@ -69,33 +74,50 @@ struct RootView: View {
 
     @ViewBuilder
     private var tabRoot: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             TodayView()
                 .tabItem {
                     Label("Today", systemImage: "sun.max.fill")
                 }
+                .tag(AppTab.today)
             FastingView()
                 .tabItem {
                     Label("Fast", systemImage: "timer")
                 }
+                .tag(AppTab.fasting)
             HydrationView()
                 .tabItem {
                     Label("Water", systemImage: "drop.fill")
                 }
+                .tag(AppTab.hydration)
             TrainingHubView()
                 .tabItem {
                     Label("Train", systemImage: "figure.run")
                 }
+                .tag(AppTab.training)
             DojoHubView()
                 .tabItem {
                     Label("Dojo", systemImage: "torii.gate")
                 }
+                .tag(AppTab.dojo)
         }
         // Global in-the-moment log confirmation banner (identity copy + haptic).
         .logFeedbackOverlay()
         // Dojo theme: kurenai (crimson) accent everywhere a control reads the
         // environment tint — tab items, buttons, toggles, links, pickers.
         .tint(Theme.kurenai)
+        // Widget and future App Intent deep links always land on the relevant
+        // daily surface even when the app was last left on another tab.
+        .onOpenURL { url in
+            guard url.scheme == "personaloptimization" else { return }
+            switch url.host {
+            case "fast": selectedTab = .fasting
+            case "water": selectedTab = .hydration
+            case "train": selectedTab = .training
+            case "dojo": selectedTab = .dojo
+            default: selectedTab = .today
+            }
+        }
     }
 
 }

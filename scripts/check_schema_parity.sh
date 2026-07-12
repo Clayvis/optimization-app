@@ -37,13 +37,16 @@ else
 fi
 
 echo "== Direct DailyLog construction outside sanctioned writers =="
-DLOFFENDERS=$(grep -rn 'DailyLog(date:' \
-  --include='*.swift' \
-  PersonalOptimization PersonalOptimizationWatch 2>/dev/null \
-  | grep -v 'DailyLog.swift' \
-  | grep -v 'DailyLogStore.swift' \
-  | grep -v 'JSONImportService.swift' \
-  | grep -v Tests || true)
+# Preview fixtures live at the bottom of several production source files. Stop
+# scanning a file once its first #Preview block starts so sample rows do not
+# masquerade as live writer paths.
+DLOFFENDERS=$(find PersonalOptimization PersonalOptimizationWatch -name '*.swift' -type f -print0 \
+  | while IFS= read -r -d '' file; do
+      case "$file" in
+        *Tests*|*DailyLog.swift|*DailyLogStore.swift|*JSONImportService.swift) continue ;;
+      esac
+      awk '/#Preview/ { exit } /DailyLog\(date:/ { print FILENAME ":" FNR ":" $0 }' "$file"
+    done || true)
 if [ -n "$DLOFFENDERS" ]; then
   echo "FAIL: DailyLog(date:) outside sanctioned writers:"
   echo "$DLOFFENDERS"
@@ -53,14 +56,15 @@ else
 fi
 
 echo "== Asia/Tokyo references in production code =="
-TZCOUNT=$(grep -rn 'Asia/Tokyo' --include='*.swift' \
+TZLINES=$(grep -rn 'Asia/Tokyo' --include='*.swift' \
   PersonalOptimization PersonalOptimizationWatch 2>/dev/null \
-  | grep -v Tests | wc -l | tr -d ' ')
+  | grep -v Tests \
+  | awk -F: '{ rest = ""; for (i = 3; i <= NF; i++) rest = rest $i (i < NF ? ":" : ""); gsub(/^[ \t]+/, "", rest); if (rest !~ /^\/\//) print $0 }' || true)
+TZCOUNT=$(printf '%s\n' "$TZLINES" | grep -c . || true)
 # Allow 1 (the UserProfile.timezone = "Asia/Tokyo" seed default).
 if [ "$TZCOUNT" -gt 1 ]; then
   echo "FAIL: Asia/Tokyo refs beyond the seed default ($TZCOUNT > 1):"
-  grep -rn 'Asia/Tokyo' --include='*.swift' \
-    PersonalOptimization PersonalOptimizationWatch 2>/dev/null | grep -v Tests
+  printf '%s\n' "$TZLINES"
   FAIL=1
 else
   echo "OK ($TZCOUNT)"

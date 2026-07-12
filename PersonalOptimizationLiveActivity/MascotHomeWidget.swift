@@ -75,6 +75,7 @@ struct MascotHomeWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: MascotHomeProvider()) { entry in
             MascotHomeWidgetView(entry: entry)
+                .widgetURL(URL(string: "personaloptimization://today"))
                 .containerBackground(for: .widget) {
                     LinearGradient(
                         colors: [Color(red: 0.04, green: 0.045, blue: 0.055),

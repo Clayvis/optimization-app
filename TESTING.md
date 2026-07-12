@@ -227,10 +227,18 @@ For v1, use `#Preview` macros with seeded data and visually verify on simulator.
 
 ## CI Integration
 
-NOTE (2026-06-11 docs-truth pass): the GitHub Actions workflow previously
-described here NEVER existed in the repo. GitHub-hosted macOS images also lag
-the Xcode 26.x toolchain this project uses. The enforced gate today is a LOCAL
-pre-push hook (audit Theme 3).
+GitHub Actions runs `.github/workflows/ios-ci.yml` on every pull request to
+`main`, every push to `main`, and manual dispatch. The workflow pins the
+generally available `macos-26` runner to Xcode 26.4.1 and tests against the
+iPhone 17 Pro / iOS 26.4 simulator. It runs schema parity, asset validation,
+the full unit suite, code coverage, and the repository's zero-warning policy.
+The `.xcresult` bundle and complete build log are retained for 14 days.
+
+TestFlight delivery remains in Xcode Cloud because it owns the Apple signing
+configuration. Protect `main` with the `Build and test` status check so Xcode
+Cloud only sees commits that passed GitHub CI before merge.
+
+The local pre-push hook runs the same core checks before code leaves a Mac.
 
 Install once per clone:
 
