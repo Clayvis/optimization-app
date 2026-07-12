@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
@@ -292,6 +293,7 @@ struct TodayView: View {
                 now = Date()
                 bootstrapServices()
                 characterService.start(modelContext: modelContext)
+                refreshMascotWidget()
                 Task { await loadDailyQuote() }
                 refreshLapseAndMilestones()
                 durabilityHeadline = DurabilityHeadlineService(modelContext: modelContext).headline(asOf: now)
@@ -304,6 +306,13 @@ struct TodayView: View {
                 // Activity so today's shape updates on the lock screen.
                 Task { await refreshDailyGoalActivity(startIfNeeded: true) }
                 durabilityHeadline = DurabilityHeadlineService(modelContext: modelContext).headline(asOf: Date())
+                refreshMascotWidget()
+            }
+            .onChange(of: characterService.currentState) { _, _ in
+                refreshMascotWidget()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .dailyLogsRecomputed)) { _ in
+                refreshMascotWidget()
             }
             .onDisappear {
                 characterService.stop()
@@ -338,6 +347,31 @@ struct TodayView: View {
                 CoachMemoryEntrySheet()
             }
         }
+    }
+
+    /// Publishes a compact, privacy-safe snapshot to the App Group. WidgetKit
+    /// extensions should not open the live SwiftData/CloudKit store merely to
+    /// draw a Home Screen tile; doing so is slower, less reliable under the
+    /// extension time budget, and can race a migration. The phone owns the
+    /// calculation and the widget only renders these primitive values.
+    private func refreshMascotWidget() {
+        guard let defaults = UserDefaults(suiteName: AppGroupContainer.identifier) else { return }
+
+        let timezone = UserCalendar.timezone(modelContext: modelContext)
+        let inputs = CharacterStateService.gatherInputs(modelContext: modelContext, timezone: timezone)
+        let resolved = CharacterStateService.resolve(inputs: inputs)
+        let protocolGoal = ProtocolGoalSnapshot.make(modelContext: modelContext, asOf: Date())
+        let variant = profile?.mascotVariant ?? "ninja_male"
+
+        defaults.set(resolved.state.rawValue, forKey: "mascotWidget.state")
+        defaults.set(resolved.state.assetName(for: variant), forKey: "mascotWidget.assetName")
+        defaults.set(resolved.reason, forKey: "mascotWidget.reason")
+        defaults.set(protocolGoal.completedDomains, forKey: "mascotWidget.completedGoals")
+        defaults.set(protocolGoal.totalDomains, forKey: "mascotWidget.totalGoals")
+        defaults.set(protocolGoal.streak, forKey: "mascotWidget.streak")
+        defaults.set(Date().timeIntervalSince1970, forKey: "mascotWidget.updatedAt")
+
+        WidgetCenter.shared.reloadTimelines(ofKind: "MascotHomeWidget")
     }
 
     /// V11 launch-polish (Item 6). Lazily allocates the ScheduleService /

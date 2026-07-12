@@ -258,6 +258,10 @@ targets:
       - path: PersonalOptimization/Modules/Fasting/LiveActivity/FastingActivityAttributes.swift
       - path: PersonalOptimization/Modules/Training/LiveActivity/WorkoutActivityAttributes.swift
       - path: PersonalOptimization/Modules/Engagement/LiveActivity/DailyGoalActivityAttributes.swift
+    resources:
+      - path: PersonalOptimization/MascotAssets.xcassets
+        name: SharedMascotAssets
+        optional: true
     info:
       path: PersonalOptimizationLiveActivity/Info.plist
       properties:

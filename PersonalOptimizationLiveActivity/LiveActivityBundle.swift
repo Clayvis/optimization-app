@@ -7,5 +7,6 @@ struct LiveActivityBundle: WidgetBundle {
         FastingLiveActivity()
         WorkoutLiveActivity()
         DailyGoalLiveActivity()
+        MascotHomeWidget()
     }
 }

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D0A0B0C0D0E0F1011121314 /* MascotHomeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A1B1C1D1E1F2021222324 /* MascotHomeWidget.swift */; };
+		2D2A2B2C2D2E2F3031323334 /* MascotAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C942A3B6AA926D8BA6E755B7 /* MascotAssets.xcassets */; };
 		00284E75632C7BB1BD6A2181 /* PartnerSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17FB8A4BB496CEA2762528C /* PartnerSettingsView.swift */; };
 		00BF11AABDECB9D5FBBA77EB /* CharacterStateLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1584E714556DEC27402B9AB6 /* CharacterStateLog.swift */; };
 		011F883361A83F57B4AED2C8 /* HealthKitWriteFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E2F176E45BD213279FBE22 /* HealthKitWriteFailure.swift */; };
@@ -561,6 +563,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1D1A1B1C1D1E1F2021222324 /* MascotHomeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotHomeWidget.swift; sourceTree = "<group>"; };
 		00706BB90BB75A496A3D1606 /* LearningTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTimerView.swift; sourceTree = "<group>"; };
 		026062AB166F1C6F733696D7 /* FastingServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingServiceTests.swift; sourceTree = "<group>"; };
 		038A8112E68D369AC2CFB1F7 /* BasketballServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketballServiceTests.swift; sourceTree = "<group>"; };
@@ -1108,6 +1111,7 @@
 				C70A73F43D115EF06D2B6348 /* FastingLiveActivity.swift */,
 				F6B0B7A3633B51BD8E9A8CAF /* Info.plist */,
 				424CC7EBA7731934A798C2B9 /* LiveActivityBundle.swift */,
+				1D1A1B1C1D1E1F2021222324 /* MascotHomeWidget.swift */,
 				7A52017AF0403E7BFD35E053 /* PersonalOptimizationLiveActivity.entitlements */,
 				7F095AE1CB9BE0D92DEE423F /* WorkoutLiveActivity.swift */,
 			);
@@ -1698,6 +1702,7 @@
 			buildConfigurationList = 61AAC01AFF425BFF7C50C9A5 /* Build configuration list for PBXNativeTarget "PersonalOptimizationLiveActivity" */;
 			buildPhases = (
 				D5E0E33CE0131CB8F8C58BF0 /* Sources */,
+				3D3A3B3C3D3E3F4041424344 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -1802,6 +1807,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		3D3A3B3C3D3E3F4041424344 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2D2A2B2C2D2E2F3031323334 /* MascotAssets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2653562709E5D7B6445ACB45 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2337,6 +2350,7 @@
 				9917F8765CFAF3D69DB3FC23 /* FastingActivityAttributes.swift in Sources */,
 				9D1E68AD1664E20E23A2A895 /* FastingLiveActivity.swift in Sources */,
 				D7679AEA78367E5C772D5CFA /* LiveActivityBundle.swift in Sources */,
+				0D0A0B0C0D0E0F1011121314 /* MascotHomeWidget.swift in Sources */,
 				653B00B8BF5FF2BFCC33BABB /* WorkoutActivityAttributes.swift in Sources */,
 				C2A16CC968C31009FDB5CF48 /* WorkoutLiveActivity.swift in Sources */,
 			);

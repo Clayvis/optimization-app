@@ -86,21 +86,9 @@ struct RootView: View {
                 .tabItem {
                     Label("Train", systemImage: "figure.run")
                 }
-            LearningHubView()
+            DojoHubView()
                 .tabItem {
-                    Label("Learn", systemImage: "book.fill")
-                }
-            JourneyView()
-                .tabItem {
-                    Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
-                }
-            BiomarkersView()
-                .tabItem {
-                    Label("Labs", systemImage: "testtube.2")
-                }
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
+                    Label("Dojo", systemImage: "torii.gate")
                 }
         }
         // Global in-the-moment log confirmation banner (identity copy + haptic).
@@ -110,6 +98,138 @@ struct RootView: View {
         .tint(Theme.kurenai)
     }
 
+}
+
+// MARK: - Dojo hub
+
+/// Keeps the root tab bar to five predictable destinations. The previous
+/// eight-tab layout was pushed into iOS's automatic "More" controller, which
+/// hid core features behind a visually unrelated system list. The Dojo is a
+/// deliberate home for the slower-cadence modules while Today, Fast, Water,
+/// and Train remain one tap away.
+private struct DojoHubView: View {
+    private let columns = [
+        GridItem(.flexible(), spacing: Theme.Space.m),
+        GridItem(.flexible(), spacing: Theme.Space.m)
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Space.xl) {
+                    dojoHeader
+
+                    VStack(alignment: .leading, spacing: Theme.Space.m) {
+                        SectionEyebrow(title: "Practice halls", tint: Theme.kin)
+                        LazyVGrid(columns: columns, spacing: Theme.Space.m) {
+                            dojoTile(
+                                title: "Learning",
+                                subtitle: "Language, guitar, music",
+                                systemImage: "book.closed.fill",
+                                tint: Theme.murasaki,
+                                destination: LearningHubView(embedded: true)
+                            )
+                            dojoTile(
+                                title: "Journey",
+                                subtitle: "Trends, streaks, progress",
+                                systemImage: "chart.line.uptrend.xyaxis",
+                                tint: Theme.matcha,
+                                destination: JourneyView(embedded: true)
+                            )
+                            dojoTile(
+                                title: "Biomarkers",
+                                subtitle: "Labs and health signals",
+                                systemImage: "testtube.2",
+                                tint: Theme.ai,
+                                destination: BiomarkersView(embedded: true)
+                            )
+                            dojoTile(
+                                title: "Settings",
+                                subtitle: "Profile, schedule, devices",
+                                systemImage: "gearshape.fill",
+                                tint: Theme.textSecondary,
+                                destination: SettingsView(embedded: true)
+                            )
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("The Dojo")
+            .background(DojoBackground())
+        }
+    }
+
+    private var dojoHeader: some View {
+        DojoCard(accent: Theme.kurenai) {
+            HStack(spacing: Theme.Space.l) {
+                ZStack {
+                    Circle()
+                        .fill(Theme.kurenai.opacity(0.14))
+                    Image(systemName: "torii.gate")
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundStyle(Theme.kurenai)
+                }
+                .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    Text("Sharpen the whole system")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("Review progress, practice skills, inspect health, and tune your protocol.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private func dojoTile<Destination: View>(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        tint: Color,
+        destination: Destination
+    ) -> some View {
+        NavigationLink {
+            destination
+        } label: {
+            VStack(alignment: .leading, spacing: Theme.Space.m) {
+                Image(systemName: systemImage)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                            .fill(tint.opacity(0.14))
+                    )
+
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "arrow.up.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(tint)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, minHeight: 172, alignment: .leading)
+            .dojoCardSurface()
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+        }
+        .buttonStyle(DojoPressStyle())
+        .accessibilityLabel("\(title). \(subtitle)")
+    }
 }
 
 #Preview {
