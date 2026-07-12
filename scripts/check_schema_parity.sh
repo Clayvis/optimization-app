@@ -42,9 +42,12 @@ echo "== Direct DailyLog construction outside sanctioned writers =="
 # masquerade as live writer paths.
 DLOFFENDERS=$(find PersonalOptimization PersonalOptimizationWatch -name '*.swift' -type f -print0 \
   | while IFS= read -r -d '' file; do
-      case "$file" in
-        *Tests*|*DailyLog.swift|*DailyLogStore.swift|*JSONImportService.swift) continue ;;
-      esac
+      if [[ "$file" == *Tests* \
+         || "$file" == *DailyLog.swift \
+         || "$file" == *DailyLogStore.swift \
+         || "$file" == *JSONImportService.swift ]]; then
+        continue
+      fi
       awk '/#Preview/ { exit } /DailyLog\(date:/ { print FILENAME ":" FNR ":" $0 }' "$file"
     done || true)
 if [ -n "$DLOFFENDERS" ]; then

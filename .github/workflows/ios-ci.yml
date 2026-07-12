@@ -55,7 +55,7 @@ jobs:
       - name: Enforce zero-warning policy
         if: always()
         run: |
-          if grep -E '(^|[[:space:]])warning:' "$RUNNER_TEMP/xcodebuild.log"; then
+          if test -f "$RUNNER_TEMP/xcodebuild.log" && grep -E '(^|[[:space:]])warning:' "$RUNNER_TEMP/xcodebuild.log"; then
             echo '::error::Build produced warnings. This repository enforces a zero-warning policy.'
             exit 1
           fi
