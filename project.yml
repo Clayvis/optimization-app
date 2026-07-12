@@ -377,6 +377,20 @@ targets:
     dependencies:
       - target: PersonalOptimization
 
+  PersonalOptimizationUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: PersonalOptimizationUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.uitests
+        SWIFT_TREAT_WARNINGS_AS_ERRORS: NO
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: PersonalOptimization
+
 schemes:
 
   PersonalOptimization:
@@ -390,6 +404,7 @@ schemes:
         - PersonalOptimization
       targets:
         - PersonalOptimizationTests
+        - PersonalOptimizationUITests
     run:
       config: Debug
     profile:

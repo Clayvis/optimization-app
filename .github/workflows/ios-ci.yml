@@ -37,7 +37,7 @@ jobs:
           bash scripts/check_schema_parity.sh
           bash scripts/check_assets.sh
 
-      - name: Build and run unit tests
+      - name: Build and run unit and UI smoke tests
         run: |
           set -o pipefail
           xcodebuild test \

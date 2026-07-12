@@ -142,6 +142,32 @@ private struct DojoHubView: View {
                     dojoHeader
 
                     VStack(alignment: .leading, spacing: Theme.Space.m) {
+                        SectionEyebrow(title: "Tune your practice", tint: Theme.kurenai)
+                        NavigationLink {
+                            AdvancedSetupView()
+                        } label: {
+                            HStack(spacing: Theme.Space.l) {
+                                Image(systemName: "slider.horizontal.3")
+                                    .font(.title2.weight(.semibold))
+                                    .foregroundStyle(Theme.kurenai)
+                                    .frame(width: 48, height: 48)
+                                    .background(Theme.kurenai.opacity(0.14), in: RoundedRectangle(cornerRadius: Theme.Radius.chip))
+                                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                                    Text("Advanced Setup").font(.headline)
+                                    Text("Time anchors, schedule templates, and AI planning")
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.textSecondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(Theme.kurenai)
+                            }
+                            .padding()
+                            .dojoCardSurface()
+                        }
+                        .buttonStyle(DojoPressStyle())
+                        .accessibilityIdentifier("dojo.advancedSetup")
+
                         SectionEyebrow(title: "Practice halls", tint: Theme.kin)
                         LazyVGrid(columns: columns, spacing: Theme.Space.m) {
                             dojoTile(
@@ -251,6 +277,26 @@ private struct DojoHubView: View {
         }
         .buttonStyle(DojoPressStyle())
         .accessibilityLabel("\(title). \(subtitle)")
+    }
+}
+
+private struct AdvancedSetupView: View {
+    var body: some View {
+        List {
+            Section("Build your week") {
+                NavigationLink("Generate with AI", destination: ScheduleGenerationView())
+                NavigationLink("Choose a template", destination: ScheduleTemplateChooserView())
+                NavigationLink("Edit schedule", destination: ScheduleEditorView())
+            }
+            Section("Make it fit your life") {
+                NavigationLink("Time anchors", destination: ScheduleAnchorEditorView())
+                NavigationLink("Implementation intentions", destination: ImplementationIntentionsView())
+            }
+        }
+        .navigationTitle("Advanced Setup")
+        .scrollContentBackground(.hidden)
+        .background(DojoBackground())
+        .accessibilityIdentifier("advancedSetup.screen")
     }
 }
 

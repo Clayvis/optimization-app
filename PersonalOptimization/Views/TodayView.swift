@@ -1,10 +1,15 @@
 import SwiftUI
 import SwiftData
 import WidgetKit
+import HealthKit
+import UIKit
 
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
+    @Query private var dailyLogs: [DailyLog]
+    @Query(sort: [SortDescriptor(\HealthKitWriteFailure.timestamp, order: .reverse)])
+    private var healthKitWriteFailures: [HealthKitWriteFailure]
     @State private var now: Date = Date()
     @State private var characterService = CharacterStateService.shared
     @State private var logFeedback = LogFeedbackCenter.shared
@@ -14,6 +19,7 @@ struct TodayView: View {
     @State private var dailyQuote: DailyQuote?
     @State private var pendingCelebration: MilestoneUnlock?
     @State private var showingMemorySheet = false
+    @State private var insightsExpanded = false
 
     // V11 launch-polish (Item 6): services held in @State so they survive
     // body evaluations. Pre-refactor these were computed every render
@@ -51,24 +57,7 @@ struct TodayView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let svc = hkSyncService, svc.isSyncing {
-                    Section {
-                        HStack(spacing: 10) {
-                            ProgressView().controlSize(.small)
-                            Text("Catching up with Apple Health…")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                        }
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 12)
-                        .background(Theme.inkSunken)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
-                    }
-                }
+                Section { healthKitStatusCard }
 
                 if let profile, profile.mascotEnabled {
                     Section {
@@ -117,140 +106,23 @@ struct TodayView: View {
                 }
 
                 Section {
-                    streakStrip
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                Section {
-                    PartnerStatusCard()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                Section {
-                    PartnerChallengeCard()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                Section {
-                    DailyProgressBars()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                Section {
-                    RecoveryCard()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                Section {
                     PrescribedWorkoutCard()
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
                 }
 
-                // M4.2 followup: weekly persona question card. Shows at most
-                // once per 7 days when there's still an unanswered question
-                // in PersonaQuestion.library. Each answer flows into
-                // UserPersona which gets injected into every Coach prompt.
                 Section {
-                    PersonaWeeklyQuestionCard()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                // M4.2 followup v2: passive behavioral inference. Watches
-                // training timing, recovery-vs-workout patterns, post-skip
-                // behavior, suggestion accept/dismiss rates — proposes
-                // persona updates the user can accept or reject. Hidden when
-                // no signal clears its sample-size threshold.
-                Section {
-                    PersonaSignalCard()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                if isSunday {
-                    Section {
-                        WeeklyProgramCard()
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                    }
-                    Section {
-                        WeeklyReflectionCard()
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                    }
-                }
-
-                Section {
-                    IntentionsStrip()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                Section {
-                    ScheduleSuggestionInbox()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                Section {
-                    SurpriseInsightCard()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
-                }
-
-                Section {
-                    CoachInsightCard()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
-                }
-
-                Section {
-                    Button {
-                        showingMemorySheet = true
+                    DisclosureGroup(isExpanded: $insightsExpanded) {
+                        insightsStack
+                            .padding(.top, Theme.Space.m)
                     } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "text.bubble.fill")
-                            Text("Tell the Coach what's going on")
-                                .font(.caption.weight(.semibold))
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Theme.inkSunken)
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                                .stroke(Theme.hairline, lineWidth: 1)
-                        )
+                        Label("Review & insights", systemImage: "scroll.fill")
+                            .font(.headline)
+                            .foregroundStyle(Theme.textPrimary)
                     }
-                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("today.reviewInsights")
                     .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
                 }
 
                 Section {
@@ -346,6 +218,144 @@ struct TodayView: View {
             .sheet(isPresented: $showingMemorySheet) {
                 CoachMemoryEntrySheet()
             }
+        }
+    }
+
+    private var healthKitAuthorization: HKAuthorizationStatus {
+        guard HKHealthStore.isHealthDataAvailable() else { return .sharingDenied }
+        return HKHealthStore().authorizationStatus(for: HKObjectType.workoutType())
+    }
+
+    private var mostRecentHealthKitSync: Date? {
+        dailyLogs.compactMap(\.healthKitSyncedAt).max()
+    }
+
+    private var activeHealthKitError: String? {
+        if let serviceError = hkSyncService?.lastSyncError { return serviceError }
+        return healthKitWriteFailures.first(where: { !$0.resolved })?.errorDescription
+    }
+
+    private var healthKitStatusCard: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
+            HStack(spacing: Theme.Space.m) {
+                Image(systemName: activeHealthKitError == nil ? "heart.text.square.fill" : "exclamationmark.heart.fill")
+                    .font(.title2)
+                    .foregroundStyle(activeHealthKitError == nil ? Theme.kurenai : Color.orange)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Apple Health").font(.headline)
+                    Text(healthKitAuthorizationText)
+                        .font(.caption)
+                        .foregroundStyle(healthKitAuthorizationColor)
+                }
+                Spacer()
+                if hkSyncService?.isSyncing == true {
+                    ProgressView().controlSize(.small)
+                }
+            }
+
+            if let error = activeHealthKitError {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("healthkit.error")
+            } else {
+                Label(lastSyncText, systemImage: "clock.arrow.circlepath")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("healthkit.lastSync")
+            }
+
+            HStack {
+                Button(healthKitAuthorization == .notDetermined ? "Connect" : "Sync now") {
+                    Task { await requestAndSyncHealthKit() }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(hkSyncService?.isSyncing == true)
+
+                if healthKitAuthorization == .sharingDenied {
+                    Button("Open Settings") {
+                        UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        }
+        .padding(Theme.Space.m)
+        .dojoCardSurface()
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
+        .accessibilityIdentifier("today.healthKitStatus")
+    }
+
+    private var healthKitAuthorizationText: String {
+        guard HKHealthStore.isHealthDataAvailable() else { return "Unavailable on this device" }
+        switch healthKitAuthorization {
+        case .notDetermined: return "Not connected"
+        case .sharingDenied: return "Workout write access denied"
+        case .sharingAuthorized: return "Workout write access allowed"
+        @unknown default: return "Access state unknown"
+        }
+    }
+
+    private var healthKitAuthorizationColor: Color {
+        switch healthKitAuthorization {
+        case .sharingAuthorized: return .green
+        case .sharingDenied: return .orange
+        default: return .secondary
+        }
+    }
+
+    private var lastSyncText: String {
+        guard let date = hkSyncService?.lastSyncedAt ?? mostRecentHealthKitSync else {
+            return "Never synced"
+        }
+        return "Last sync \(date.formatted(.relative(presentation: .named)))"
+    }
+
+    private func requestAndSyncHealthKit() async {
+        if healthKitAuthorization == .notDetermined {
+            do {
+                _ = try await LiveHealthKitService.shared.requestAuthorization()
+            } catch {
+                // The sync service owns the durable/visible error state after
+                // the authorization sheet; denied access is shown above.
+            }
+        }
+        guard let service = hkSyncService else { return }
+        await service.refreshToday()
+        NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
+    }
+
+    @ViewBuilder
+    private var insightsStack: some View {
+        VStack(spacing: Theme.Space.m) {
+            streakStrip
+            PartnerStatusCard()
+            PartnerChallengeCard()
+            DailyProgressBars()
+            RecoveryCard()
+            PersonaWeeklyQuestionCard()
+            PersonaSignalCard()
+            if isSunday {
+                WeeklyProgramCard()
+                WeeklyReflectionCard()
+            }
+            IntentionsStrip()
+            ScheduleSuggestionInbox()
+            SurpriseInsightCard()
+            CoachInsightCard()
+            Button {
+                showingMemorySheet = true
+            } label: {
+                Label("Tell the Coach what's going on", systemImage: "text.bubble.fill")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Theme.Space.m)
+                    .background(Theme.inkSunken)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip))
+            }
+            .buttonStyle(.plain)
         }
     }
 

@@ -193,6 +193,7 @@ struct HydrationView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Log \(Int(oz)) ounces of \(customBeverage.displayName)")
+                    .accessibilityIdentifier("hydration.quick.\(Int(oz))")
                 }
             }
         }

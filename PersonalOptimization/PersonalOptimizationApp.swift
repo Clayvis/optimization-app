@@ -10,6 +10,8 @@ struct PersonalOptimizationApp: App {
     /// under XCTest, and the unit tests stub their dependencies directly anyway.
     private static let isRunningTests: Bool =
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    private static let isUITesting: Bool =
+        ProcessInfo.processInfo.arguments.contains("--ui-testing")
 
     let container: ModelContainer
 
@@ -24,9 +26,16 @@ struct PersonalOptimizationApp: App {
 
         // Tests build their own services against an in-memory container and
         // must not touch CloudKit/HealthKit/BG tasks/the watch bridge.
-        if PersonalOptimizationApp.isRunningTests {
+        if PersonalOptimizationApp.isRunningTests || PersonalOptimizationApp.isUITesting {
             container = PersistenceBootstrap.inMemory()
             persistenceMode = .full
+            if PersonalOptimizationApp.isUITesting {
+                let profile = UserProfile(name: "UI Test")
+                profile.onboardingCompleted = true
+                profile.mascotEnabled = false
+                container.mainContext.insert(profile)
+                try? container.mainContext.save()
+            }
             return
         }
 
@@ -211,7 +220,8 @@ struct PersonalOptimizationApp: App {
             // the Move bar matches Apple Fitness without a pull-to-refresh.
             guard newPhase == .active,
                   persistenceMode.isDurable,
-                  !PersonalOptimizationApp.isRunningTests else { return }
+                  !PersonalOptimizationApp.isRunningTests,
+                  !PersonalOptimizationApp.isUITesting else { return }
             Task { @MainActor in
                 await HealthKitSyncService(modelContext: container.mainContext).refreshToday()
             }

@@ -62,6 +62,7 @@ final class HealthKitSyncService {
     func sync(for date: Date) async -> DailyLog {
         let started = Date()
         isSyncing = true
+        lastSyncError = nil
         defer {
             isSyncing = false
             lastSyncedAt = Date()
@@ -161,7 +162,6 @@ final class HealthKitSyncService {
         log.healthKitSyncedAt = now()
         do {
             try modelContext.save()
-            lastSyncError = nil
         } catch {
             logger.error("HealthKit sync save failed: \(error.localizedDescription, privacy: .public)")
             lastSyncError = error.localizedDescription
@@ -200,6 +200,7 @@ final class HealthKitSyncService {
             return try await healthKit.fetchLatestQuantity(id, unit: unit, on: date)
         } catch {
             logger.warning("HK latest \(id.rawValue, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            recordFetchError(error)
             return nil
         }
     }
@@ -211,6 +212,7 @@ final class HealthKitSyncService {
             return try await healthKit.fetchSumQuantity(id, unit: unit, for: date)
         } catch {
             logger.warning("HK sum \(id.rawValue, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            recordFetchError(error)
             return nil
         }
     }
@@ -219,6 +221,7 @@ final class HealthKitSyncService {
         do { return try await healthKit.fetchSleepHours(for: date) }
         catch {
             logger.warning("HK sleep failed: \(error.localizedDescription, privacy: .public)")
+            recordFetchError(error)
             return nil
         }
     }
@@ -227,7 +230,14 @@ final class HealthKitSyncService {
         do { return try await healthKit.fetchMindfulMinutes(for: date) }
         catch {
             logger.warning("HK mindful failed: \(error.localizedDescription, privacy: .public)")
+            recordFetchError(error)
             return nil
+        }
+    }
+
+    private func recordFetchError(_ error: Error) {
+        if lastSyncError == nil {
+            lastSyncError = error.localizedDescription
         }
     }
 }
