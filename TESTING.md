@@ -234,6 +234,10 @@ iPhone 17 Pro / iOS 26.4.1 simulator. It runs schema parity, asset validation,
 the full unit suite, code coverage, and the repository's zero-warning policy.
 The `.xcresult` bundle and complete build log are retained for 14 days.
 
+The CI test process is pinned to `TZ=Asia/Tokyo` because legacy fixtures use
+JST-normalized day keys with `Calendar.current`. New tests should inject an
+explicit calendar/timezone so this compatibility pin can eventually be removed.
+
 TestFlight delivery remains in Xcode Cloud because it owns the Apple signing
 configuration. Protect `main` with the `Build and test` status check so Xcode
 Cloud only sees commits that passed GitHub CI before merge.
