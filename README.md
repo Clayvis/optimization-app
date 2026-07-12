@@ -14,6 +14,7 @@ Shipped and on `main` at `v1.0.0-rc3+`. The original M1-M7 plan was reorganized 
 - **Externally gated:** live partner-dyad CloudKit transport, TestFlight, and re-adding the iOS widget all need a paid Apple Developer account.
 - **Design system:** all colors/typography/surfaces are tokens in `PersonalOptimization/Components/Theme.swift` + `DojoComponents.swift`.
 - **Latest repo audit:** `docs/audits/AUDIT_2026-06-10.md`.
+- **Visual roadmap:** [`docs/roadmap/index.html`](docs/roadmap/index.html) — current state, priorities, and future features.
 
 ## Quick Start
 

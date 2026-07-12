@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Optimization App の現在地、改善優先順位、将来機能をまとめたプロダクトロードマップ。">
+  <meta name="theme-color" content="#111114">
+  <title>Optimization Dojo — Product Roadmap</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">ロードマップへ移動</a>
+
+  <header class="hero" id="top">
+    <nav class="nav shell" aria-label="ページ内ナビゲーション">
+      <a class="brand" href="#top" aria-label="Optimization Dojo トップ">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>OPTIMIZATION <b>DOJO</b></span>
+      </a>
+      <a class="repo-link" href="https://github.com/Clayvis/optimization-app">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+
+    <div class="hero-grid shell">
+      <div class="hero-copy">
+        <p class="eyebrow">PRODUCT ROADMAP · 2026</p>
+        <h1>毎日の規律を、<br><span>迷わない一手</span>に。</h1>
+        <p class="lede">
+          Optimization App は、運動・水分・断食・学習・回復を一つの達成度にまとめる、
+          Apple Watch 中心のプライベートコーチです。
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#roadmap">優先順位を見る</a>
+          <a class="button button-quiet" href="#current">現在地を見る</a>
+        </div>
+      </div>
+
+      <div class="mascot-stage">
+        <span class="sun-disc" aria-hidden="true"></span>
+        <img src="../design/Mascot.svg" alt="赤い鉢巻の忍者マスコット" width="1024" height="1024">
+        <div class="status-stamp">
+          <span>現在</span>
+          <strong>RC3+</strong>
+          <small>BUILD READY</small>
+        </div>
+      </div>
+    </div>
+
+    <ul class="project-stats shell">
+      <li><strong>724</strong><span>テスト合格</span></li>
+      <li><strong>iOS 18+</strong><span>ネイティブ</span></li>
+      <li><strong>watchOS 11+</strong><span>Watch対応</span></li>
+      <li><strong>0</strong><span>外部Swift依存</span></li>
+    </ul>
+  </header>
+
+  <main id="main">
+    <section class="section shell" id="current" aria-labelledby="current-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">CURRENT STATE</p>
+          <h2 id="current-title">すでにできていること</h2>
+        </div>
+        <p>基盤は完成済み。次の焦点は、機能追加よりも毎日使う画面の単純化と実機での信頼性です。</p>
+      </div>
+
+      <div class="current-grid">
+        <article class="current-card current-card-featured">
+          <div class="card-number">01</div>
+          <span class="status status-done">実装済み</span>
+          <h3>HealthKit 自動連携</h3>
+          <p>Apple Fitness や他アプリの運動を取り込み、重複を防ぎながらプロトコル達成度と Move に反映。</p>
+          <ul class="check-list">
+            <li>外部ワークアウトの取り込み</li>
+            <li>UUIDによる重複防止</li>
+            <li>前面復帰・背景通知・手動同期</li>
+          </ul>
+        </article>
+
+        <article class="current-card">
+          <div class="card-number">02</div>
+          <span class="status status-done">実装済み</span>
+          <h3>道場デザイン</h3>
+          <p>深い墨色、紅、金を軸に、トレーニング・学習・Today を統一。</p>
+        </article>
+
+        <article class="current-card">
+          <div class="card-number">03</div>
+          <span class="status status-done">実装済み</span>
+          <h3>Apple Watch 連携</h3>
+          <p>ワークアウト、クイック記録、コンプリケーション、マスコット状態を手首へ。</p>
+        </article>
+
+        <article class="current-card">
+          <div class="card-number">04</div>
+          <span class="status status-done">実装済み</span>
+          <h3>長期コーチング基盤</h3>
+          <p>回復、傾向、バイオマーカー、ストリーク、週次レビューを端末内の履歴から判断。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section roadmap-section" id="roadmap" aria-labelledby="roadmap-title">
+      <div class="shell">
+        <div class="section-heading roadmap-heading">
+          <div>
+            <p class="eyebrow">PRIORITY ROADMAP</p>
+            <h2 id="roadmap-title">次にやること</h2>
+          </div>
+          <div class="filters" role="group" aria-label="優先順位で絞り込む">
+            <button class="filter is-active" type="button" data-filter="all" aria-pressed="true">すべて</button>
+            <button class="filter" type="button" data-filter="p0" aria-pressed="false">P0</button>
+            <button class="filter" type="button" data-filter="p1" aria-pressed="false">P1</button>
+            <button class="filter" type="button" data-filter="p2" aria-pressed="false">P2</button>
+          </div>
+        </div>
+
+        <ul class="priority-legend">
+          <li><i class="dot dot-p0"></i><b>P0</b> 毎日の使いやすさ</li>
+          <li><i class="dot dot-p1"></i><b>P1</b> リリース準備</li>
+          <li><i class="dot dot-p2"></i><b>P2</b> 継続率の強化</li>
+        </ul>
+
+        <div class="roadmap-list" aria-live="polite">
+          <article class="roadmap-item" data-priority="p0">
+            <div class="priority priority-p0">P0</div>
+            <div class="roadmap-copy">
+              <p class="roadmap-kicker">NAVIGATION</p>
+              <h3>8つのタブを、迷わない構造へ</h3>
+              <p>Today、Train、Journey、More を中心に再編し、水分・断食・学習・Labs は目的に沿ってまとめる。</p>
+            </div>
+            <div class="definition">
+              <span>完了条件</span>
+              <strong>主要操作が2タップ以内</strong>
+            </div>
+          </article>
+
+          <article class="roadmap-item" data-priority="p0">
+            <div class="priority priority-p0">P0</div>
+            <div class="roadmap-copy">
+              <p class="roadmap-kicker">TODAY EXPERIENCE</p>
+              <h3>Today を「次の一手」に集中</h3>
+              <p>マスコット、達成度、次の行動、3本の進捗、予定を最上部に固定し、条件付きカードは折りたたむ。</p>
+            </div>
+            <div class="definition">
+              <span>完了条件</span>
+              <strong>スクロール前に次の行動が見える</strong>
+            </div>
+          </article>
+
+          <article class="roadmap-item" data-priority="p0">
+            <div class="priority priority-p0">P0</div>
+            <div class="roadmap-copy">
+              <p class="roadmap-kicker">HOME SCREEN WIDGET</p>
+              <h3>マスコットをiPhoneホーム画面へ</h3>
+              <p>現在の表情、今日の達成数、次の行動を表示。既存WidgetKitコードを署名設定とともに復元する。</p>
+            </div>
+            <div class="definition">
+              <span>外部条件</span>
+              <strong>Apple Developer有料登録</strong>
+            </div>
+          </article>
+
+          <article class="roadmap-item" data-priority="p1">
+            <div class="priority priority-p1">P1</div>
+            <div class="roadmap-copy">
+              <p class="roadmap-kicker">REAL-WORLD VALIDATION</p>
+              <h3>14日間の実機テストとTestFlight</h3>
+              <p>iPhoneとWatchを日常使用し、同期漏れ、通知疲れ、入力の摩擦、バッテリー消費を記録して修正する。</p>
+            </div>
+            <div class="definition">
+              <span>完了条件</span>
+              <strong>重大な同期漏れ 0件</strong>
+            </div>
+          </article>
+
+          <article class="roadmap-item" data-priority="p1">
+            <div class="priority priority-p1">P1</div>
+            <div class="roadmap-copy">
+              <p class="roadmap-kicker">PARTNER MODE</p>
+              <h3>夫婦の週次チャレンジをライブ化</h3>
+              <p>完成済みの共有ゾーン境界とチャレンジUIをCloudKitへ接続し、相手の進捗を安全に同期する。</p>
+            </div>
+            <div class="definition">
+              <span>原則</span>
+              <strong>順位表ではなく相互支援</strong>
+            </div>
+          </article>
+
+          <article class="roadmap-item" data-priority="p1">
+            <div class="priority priority-p1">P1</div>
+            <div class="roadmap-copy">
+              <p class="roadmap-kicker">HEALTH RELIABILITY</p>
+              <h3>HealthKit同期を実機で堅牢化</h3>
+              <p>背景配信、長時間未起動、日付変更、他アプリ由来の運動を検証し、診断画面で同期状態を説明可能にする。</p>
+            </div>
+            <div class="definition">
+              <span>完了条件</span>
+              <strong>取り込みと表示が常に一致</strong>
+            </div>
+          </article>
+
+          <article class="roadmap-item" data-priority="p2">
+            <div class="priority priority-p2">P2</div>
+            <div class="roadmap-copy">
+              <p class="roadmap-kicker">MASCOT LIFE</p>
+              <h3>静かな待機アニメーション</h3>
+              <p>まばたき、あくび、小さな手振りだけを追加。身体を作り直さず、状態フィードバックを邪魔しない。</p>
+            </div>
+            <div class="definition">
+              <span>原則</span>
+              <strong>演出より実データを優先</strong>
+            </div>
+          </article>
+
+          <article class="roadmap-item" data-priority="p2">
+            <div class="priority priority-p2">P2</div>
+            <div class="roadmap-copy">
+              <p class="roadmap-kicker">LONG-TERM STORY</p>
+              <h3>30・60・90日の成長チャプター</h3>
+              <p>過去の自分との比較、達成の節目、回復からの復帰をJourneyにまとめ、継続の意味を見せる。</p>
+            </div>
+            <div class="definition">
+              <span>完了条件</span>
+              <strong>新しい主指標は増やさない</strong>
+            </div>
+          </article>
+
+          <article class="roadmap-item" data-priority="p2">
+            <div class="priority priority-p2">P2</div>
+            <div class="roadmap-copy">
+              <p class="roadmap-kicker">FAMILY MODE</p>
+              <h3>家族で続けられる小さな習慣</h3>
+              <p>散歩、外遊び、家族チャレンジを個人のプロトコルへ無理なく加える。子どもの競争データは作らない。</p>
+            </div>
+            <div class="definition">
+              <span>原則</span>
+              <strong>家族の時間を管理しすぎない</strong>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section principles shell" aria-labelledby="principles-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">DECISION RULES</p>
+          <h2 id="principles-title">作らないものも決める</h2>
+        </div>
+        <p>追加機能は、行動を楽にするか、判断を正確にする場合だけ採用します。</p>
+      </div>
+
+      <div class="principle-grid">
+        <article><span>一</span><h3>主指標は一つ</h3><p>競合するダッシュボードを増やさない。</p></article>
+        <article><span>二</span><h3>サーバーなし</h3><p>個人データはAppleの仕組みと端末内を基本にする。</p></article>
+        <article><span>三</span><h3>罰より復帰</h3><p>硬いストリークや通知攻勢で追い込まない。</p></article>
+        <article><span>四</span><h3>機能より摩擦</h3><p>新機能の前に、毎日の操作を短くする。</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-inner">
+      <div>
+        <p class="eyebrow">OPTIMIZATION APP</p>
+        <strong>Build discipline. See progress.</strong>
+      </div>
+      <p>SwiftUI · SwiftData · HealthKit · WatchKit</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
