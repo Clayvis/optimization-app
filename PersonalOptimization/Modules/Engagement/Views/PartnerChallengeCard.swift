@@ -147,29 +147,43 @@ struct PartnerChallengeCard: View {
     }
 }
 
+#if DEBUG
 #Preview {
-    let schema = AppSchema.schema()
-    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
-    let container = try! ModelContainer(for: schema, configurations: [config])
-    let profile = UserProfile(name: "Clay")
-    profile.partnerRecordID = "wife-record"
-    container.mainContext.insert(profile)
-
-    let zone = MemoryPartnerSharedZone()
-    let weekStart = Calendar.current.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
-    zone.preloadPartner(PartnerSharedRecord(
-        userID: "wife-record",
-        currentStreak: 9,
-        masterMetric: 0.75,
-        mascotState: "proud",
-        challengeWeekStart: weekStart,
-        challengeWeekPoints: 14
-    ))
-
-    return ScrollView {
-        PartnerChallengeCard(zoneOverride: zone)
-            .padding()
-    }
-    .dojoBackground()
-    .modelContainer(container)
+    PartnerChallengePreview()
 }
+
+@MainActor
+private struct PartnerChallengePreview: View {
+    private let container: ModelContainer
+    private let zone: MemoryPartnerSharedZone
+
+    init() {
+        let schema = AppSchema.schema()
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        container = try! ModelContainer(for: schema, configurations: [config])
+        let profile = UserProfile(name: "Clay")
+        profile.partnerRecordID = "wife-record"
+        container.mainContext.insert(profile)
+
+        zone = MemoryPartnerSharedZone()
+        let weekStart = Calendar.current.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+        zone.preloadPartner(PartnerSharedRecord(
+            userID: "wife-record",
+            currentStreak: 9,
+            masterMetric: 0.75,
+            mascotState: "proud",
+            challengeWeekStart: weekStart,
+            challengeWeekPoints: 14
+        ))
+    }
+
+    var body: some View {
+        ScrollView {
+            PartnerChallengeCard(zoneOverride: zone)
+                .padding()
+        }
+        .dojoBackground()
+        .modelContainer(container)
+    }
+}
+#endif
