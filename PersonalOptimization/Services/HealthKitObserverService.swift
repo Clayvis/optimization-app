@@ -79,12 +79,17 @@ final class HealthKitObserverService {
     private var modelContainer: ModelContainer?
     private let logger = Logger.healthkit
     private(set) var isObserving: Bool = false
+    private let skipsDataSync: Bool
 
-    /// The default initializer wires the live backend. Tests use
-    /// `init(backend: FakeHKObserverBackend())` to control the
-    /// observer/background-delivery surface without touching HK.
-    init(backend: HKObserverBackend = LiveHKObserverBackend()) {
+    /// The default initializer wires the live backend and performs data syncs.
+    /// Observer-routing tests can inject a fake backend and skip the separate
+    /// HealthKit query pipeline so they remain deterministic in XCTest.
+    init(
+        backend: HKObserverBackend = LiveHKObserverBackend(),
+        skipsDataSync: Bool = false
+    ) {
         self.backend = backend
+        self.skipsDataSync = skipsDataSync
     }
 
     /// Sample types we observe with the full 7-day resync + workout import.
@@ -185,21 +190,25 @@ final class HealthKitObserverService {
             return
         }
         lastFastSyncAt = Date()
-        await HealthKitSyncService(modelContext: container.mainContext).refreshToday()
+        if !skipsDataSync {
+            await HealthKitSyncService(modelContext: container.mainContext).refreshToday()
+        }
         NotificationCenter.default.post(name: .healthKitObserverDidFire, object: nil)
     }
 
     private func handleUpdate() async {
         guard let container = modelContainer else { return }
-        let context = container.mainContext
-        let sync = HealthKitSyncService(modelContext: context)
-        // 7 day window covers Garmin's typical late-upload behavior plus
-        // weekend / travel gaps.
-        await sync.syncRange(days: 7)
-        // Import any workouts the Watch or a third-party app recorded so the
-        // app realizes the user trained without them opening it and starting a
-        // manual timer. Deduped by HealthKit UUID, so it is safe on every fire.
-        await importRecentWorkouts(modelContext: context)
+        if !skipsDataSync {
+            let context = container.mainContext
+            let sync = HealthKitSyncService(modelContext: context)
+            // 7 day window covers Garmin's typical late-upload behavior plus
+            // weekend / travel gaps.
+            await sync.syncRange(days: 7)
+            // Import any workouts the Watch or a third-party app recorded so the
+            // app realizes the user trained without them opening it and starting a
+            // manual timer. Deduped by HealthKit UUID, so it is safe on every fire.
+            await importRecentWorkouts(modelContext: context)
+        }
         // Test hook: fire a notification so tests can assert the observer
         // path reached the sync layer without depending on SwiftData state.
         NotificationCenter.default.post(name: .healthKitObserverDidFire, object: nil)
