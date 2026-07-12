@@ -388,6 +388,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.rawlins.PersonalOptimization.uitests
         SWIFT_TREAT_WARNINGS_AS_ERRORS: NO
         GENERATE_INFOPLIST_FILE: YES
+        ENABLE_APPINTENTS_METADATA_EXTRACTION: NO
     dependencies:
       - target: PersonalOptimization
 

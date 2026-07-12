@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class PersonalOptimizationSmokeTests: XCTestCase {
     private var app: XCUIApplication!
 
