@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000000000000000000001 /* WorkoutPresenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* WorkoutPresenceService.swift */; };
+		A10000000000000000000002 /* WorkoutPresenceServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* WorkoutPresenceServiceTests.swift */; };
 		0D0A0B0C0D0E0F1011121314 /* MascotHomeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A1B1C1D1E1F2021222324 /* MascotHomeWidget.swift */; };
 		2D2A2B2C2D2E2F3031323334 /* MascotAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C942A3B6AA926D8BA6E755B7 /* MascotAssets.xcassets */; };
 		00284E75632C7BB1BD6A2181 /* PartnerSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17FB8A4BB496CEA2762528C /* PartnerSettingsView.swift */; };
@@ -563,6 +565,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A10000000000000000000003 /* WorkoutPresenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPresenceService.swift; sourceTree = "<group>"; };
+		A10000000000000000000004 /* WorkoutPresenceServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPresenceServiceTests.swift; sourceTree = "<group>"; };
 		1D1A1B1C1D1E1F2021222324 /* MascotHomeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotHomeWidget.swift; sourceTree = "<group>"; };
 		00706BB90BB75A496A3D1606 /* LearningTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTimerView.swift; sourceTree = "<group>"; };
 		026062AB166F1C6F733696D7 /* FastingServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingServiceTests.swift; sourceTree = "<group>"; };
@@ -1377,6 +1381,7 @@
 				0EC1E5AEAA192F1D347DE0AB /* TokenBudgetServiceTests.swift */,
 				7B853C53D5B3357F8FEA0BFB /* WatchConnectivityServiceTests.swift */,
 				BA5FFEBC9F3F6FF8A281F5CB /* WorkoutImportServiceTests.swift */,
+				A10000000000000000000004 /* WorkoutPresenceServiceTests.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -1386,6 +1391,7 @@
 			children = (
 				1BCE71AEA316FE1447CBB073 /* AppGroupContainer.swift */,
 				10321A55932502F23BC01B7D /* AppNotifications.swift */,
+				A10000000000000000000003 /* WorkoutPresenceService.swift */,
 				256B1B8FB28C96B3F972B502 /* ArchiveBackgroundScheduler.swift */,
 				37E7C9764A9D195C10496DDE /* BuildConfig.swift */,
 				DD5231D3360B7F4C3F3E005C /* ClaudeAPIClient.swift */,
@@ -1938,6 +1944,7 @@
 				4FA6830942428A7E4C250FEE /* WatchConnectivityServiceTests.swift in Sources */,
 				46BFADC7B9162271EA9D2BA0 /* WeeklyReflectionServiceTests.swift in Sources */,
 				C48B153EE6963A620608B233 /* WorkoutImportServiceTests.swift in Sources */,
+				A10000000000000000000002 /* WorkoutPresenceServiceTests.swift in Sources */,
 				F22702A13673F54BE226AE9C /* WorkoutLiveActivityControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1956,6 +1963,7 @@
 				3D1E11A0B19547AE3605B9ED /* AdminTask.swift in Sources */,
 				7B424E19C9AA862FEA1F2ED6 /* AppGroupContainer.swift in Sources */,
 				439758708E6DADC709D31657 /* AppNotifications.swift in Sources */,
+				A10000000000000000000001 /* WorkoutPresenceService.swift in Sources */,
 				E3349B1918B8708CE7987745 /* AppSchema.swift in Sources */,
 				0B10F72BCCFD1DA5F75A39CC /* AppShortcuts.swift in Sources */,
 				C2AF6BC9BEB297D75F8B4223 /* ArchiveBackgroundScheduler.swift in Sources */,

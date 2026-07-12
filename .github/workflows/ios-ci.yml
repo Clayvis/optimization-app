@@ -42,6 +42,20 @@ jobs:
           brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
           xcodegen generate
 
+      - name: Build Release configuration
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project PersonalOptimization.xcodeproj \
+            -scheme PersonalOptimization \
+            -configuration Release \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/ReleaseDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            | tee "$RUNNER_TEMP/release-xcodebuild.log" \
+            | xcbeautify --renderer github-actions
+
       - name: Build and run unit and UI smoke tests
         run: |
           set -o pipefail
@@ -78,5 +92,6 @@ jobs:
           path: |
             ${{ runner.temp }}/PersonalOptimization.xcresult
             ${{ runner.temp }}/xcodebuild.log
+            ${{ runner.temp }}/release-xcodebuild.log
           if-no-files-found: warn
           retention-days: 14
