@@ -179,6 +179,7 @@ final class CoachService {
             recentInsightsBlock: recentInsightsBlock,
             lapseStateNote: lapseNote,
             recoveryNote: recoveryNote,
+            activeWorkoutNote: WorkoutPresenceService.shared.coachSummary,
             personaBlock: personaBlock
         )
     }

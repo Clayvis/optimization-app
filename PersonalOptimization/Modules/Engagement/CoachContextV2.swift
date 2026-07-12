@@ -30,6 +30,9 @@ struct CoachContextV2: Sendable {
     /// RecoveryGate verdict for today, if downgraded or rest. Empty when
     /// recovery is normal.
     var recoveryNote: String = ""
+    /// Live Watch workout presence. Prevents the Coach from prescribing a
+    /// second session while the user is already moving.
+    var activeWorkoutNote: String = ""
 
     /// M4.2 followup: structured user-persona block — motivation driver,
     /// communication style, accountability preference, identity anchors,
@@ -76,6 +79,11 @@ struct CoachContextV2: Sendable {
             lines.append("")
             lines.append("=== Recovery state ===")
             lines.append(recoveryNote)
+        }
+        if !activeWorkoutNote.isEmpty {
+            lines.append("")
+            lines.append("=== Live workout state ===")
+            lines.append(activeWorkoutNote)
         }
         if !lapseStateNote.isEmpty {
             lines.append("")

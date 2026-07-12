@@ -542,7 +542,7 @@ struct SettingsView: View {
                 NavigationLink {
                     PartnerSettingsView()
                 } label: {
-                    Label("Partner mode", systemImage: "person.2.fill")
+                    Label("Partner mode (Preview)", systemImage: "person.2.fill")
                 }
             }
 

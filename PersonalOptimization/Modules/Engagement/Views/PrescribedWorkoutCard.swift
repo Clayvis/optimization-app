@@ -17,6 +17,9 @@ struct PrescribedWorkoutCard: View {
     @State private var showingDetail = false
     @State private var skipReason: String = ""
     @State private var showingSkipSheet = false
+    @State private var showingAdaptSheet = false
+    @State private var adaptation = "Make it shorter"
+    @State private var customAdaptation = ""
 
     private var profile: UserProfile? { profiles.first }
 
@@ -50,6 +53,9 @@ struct PrescribedWorkoutCard: View {
         }
         .sheet(isPresented: $showingSkipSheet) {
             skipSheet
+        }
+        .sheet(isPresented: $showingAdaptSheet) {
+            adaptSheet
         }
     }
 
@@ -133,7 +139,7 @@ struct PrescribedWorkoutCard: View {
                              systemImage: "pencil",
                              role: nil,
                              prominent: false) {
-                    showingDetail = true
+                    showingAdaptSheet = true
                 }
                 actionButton(label: "Skip",
                              systemImage: "xmark",
@@ -216,6 +222,59 @@ struct PrescribedWorkoutCard: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var adaptSheet: some View {
+        NavigationStack {
+            Form {
+                Section("Adapt today's session") {
+                    Picker("Change", selection: $adaptation) {
+                        Text("Make it shorter").tag("Make it shorter")
+                        Text("Lower the intensity").tag("Lower the intensity")
+                        Text("Swap the equipment").tag("Swap the equipment")
+                        Text("Work around pain").tag("Work around pain")
+                        Text("Something else").tag("Something else")
+                    }
+                    if adaptation == "Something else" {
+                        TextField("What needs to change?", text: $customAdaptation, axis: .vertical)
+                            .lineLimit(2...4)
+                    }
+                }
+                Section {
+                    Text("The Coach will keep your goal and recovery data, then rebuild the session around this constraint.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Adapt Workout")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showingAdaptSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Rebuild") {
+                        Task { await adaptWorkout() }
+                    }
+                    .disabled(adaptation == "Something else" && customAdaptation.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+
+    private func adaptWorkout() async {
+        let request = adaptation == "Something else" ? customAdaptation : adaptation
+        do {
+            _ = try CoachMemoryService(modelContext: modelContext).add(
+                value: "For today's workout: \(request). Use flexible RPE targets and substitutions.",
+                key: "workout_adaptation_today",
+                expiresIn: 1
+            )
+            showingAdaptSheet = false
+            await generate(force: true)
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 

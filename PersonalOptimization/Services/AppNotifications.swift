@@ -16,4 +16,7 @@ extension Notification.Name {
     /// in tab/screen code can route the user to the matching session
     /// screen with the template pre-filled.
     static let handoffActivityContinued = Notification.Name("com.rawlins.PersonalOptimization.handoffActivityContinued")
+
+    /// Fired when the paired Watch reports a workout beginning or ending.
+    static let workoutPresenceChanged = Notification.Name("com.rawlins.PersonalOptimization.workoutPresenceChanged")
 }

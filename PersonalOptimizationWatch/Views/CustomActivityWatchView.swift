@@ -89,6 +89,7 @@ struct CustomActivityWatchView: View {
                 .font(.caption2)
                 .accessibilityLabel(String(localized: "Workout intensity"))
                 .accessibilityValue(intensity)
+                .accessibilityHint(String(localized: "Choose easy, moderate, or hard effort"))
 
                 Button(role: .destructive) {
                     Task { await end(service: service, session: session) }
