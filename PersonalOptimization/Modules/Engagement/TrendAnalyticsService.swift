@@ -342,14 +342,24 @@ final class TrendAnalyticsService {
     /// Fasting consistency: completion rate trending down over time.
     private func detectFastingConsistency(over range: DateRange) -> DetectedPattern? {
         let logs = modelContext.fetchOrEmpty(FetchDescriptor<DailyLog>())
-        let inRange = logs.filter { range.contains($0.date) }
-        guard inRange.count >= 14 else { return nil }
-        let sorted = inRange.sorted(by: { $0.date < $1.date })
-        let mid = sorted.count / 2
-        let firstHalf = sorted.prefix(mid)
-        let secondHalf = sorted.suffix(mid)
-        let firstRate = Double(firstHalf.filter { $0.fastEnd != nil }.count) / Double(max(firstHalf.count, 1))
-        let secondRate = Double(secondHalf.filter { $0.fastEnd != nil }.count) / Double(max(secondHalf.count, 1))
+        let days = enumerateDays(in: range)
+        guard days.count >= 14 else { return nil }
+
+        // Measure calendar days, not raw row count. Imports can leave retained
+        // tombstones, and multiple rows for one day must never inflate the
+        // sample size or move the midpoint. Missing days count as incomplete.
+        var completedByDay: [Date: Bool] = [:]
+        for log in logs where log.supersededAt == nil && range.contains(log.date) {
+            let day = startOfDay(for: log.date)
+            completedByDay[day] = (completedByDay[day] ?? false) || log.fastEnd != nil
+        }
+
+        let completion = days.map { completedByDay[$0] ?? false }
+        let mid = completion.count / 2
+        let firstHalf = completion.prefix(mid)
+        let secondHalf = completion.suffix(completion.count - mid)
+        let firstRate = Double(firstHalf.filter { $0 }.count) / Double(max(firstHalf.count, 1))
+        let secondRate = Double(secondHalf.filter { $0 }.count) / Double(max(secondHalf.count, 1))
         let delta = secondRate - firstRate
         guard abs(delta) >= 0.2 else { return nil }
         let direction = delta > 0 ? "rising" : "declining"
@@ -358,7 +368,7 @@ final class TrendAnalyticsService {
             patternType: .fastingConsistency,
             confidence: min(1.0, abs(delta) * 2),
             summary: "Fasting completion \(direction) (\(Int(firstRate * 100))% → \(Int(secondRate * 100))%).",
-            detail: "Across \(sorted.count) days. \(direction.capitalized).",
+            detail: "Across \(days.count) days. \(direction.capitalized).",
             actionableSuggestion: delta < 0
                 ? "Re-anchor your fast end to a clear post-event trigger (after morning walk, after first meeting)."
                 : "Lock in the rhythm. The trend is real."
