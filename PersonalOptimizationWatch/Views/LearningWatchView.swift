@@ -39,9 +39,12 @@ struct LearningWatchView: View {
     @ViewBuilder
     private var summaryRow: some View {
         let log = todayLog()
+        let totalMinutes = (log?.japaneseMinutes ?? 0)
+            + (log?.guitarMinutes ?? 0)
+            + (log?.courseworkMinutes ?? 0)
         HStack {
             Image(systemName: "book.fill").foregroundStyle(.green)
-            Text("\((log?.japaneseMinutes ?? 0) + (log?.guitarMinutes ?? 0) + (log?.courseworkMinutes ?? 0)) min")
+            Text("\(totalMinutes) min")
                 .font(.title3.weight(.bold))
                 .monospacedDigit()
             Spacer()
@@ -53,7 +56,7 @@ struct LearningWatchView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Learning today")
-        .accessibilityValue("\((log?.japaneseMinutes ?? 0) + (log?.guitarMinutes ?? 0) + (log?.courseworkMinutes ?? 0)) minutes")
+        .accessibilityValue("\(totalMinutes) minutes")
     }
 
     @ViewBuilder
