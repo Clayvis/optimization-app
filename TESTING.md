@@ -230,7 +230,7 @@ For v1, use `#Preview` macros with seeded data and visually verify on simulator.
 GitHub Actions runs `.github/workflows/ios-ci.yml` on every pull request to
 `main`, every push to `main`, and manual dispatch. The workflow pins the
 generally available `macos-26` runner to Xcode 26.4.1 and tests against the
-iPhone 17 Pro / iOS 26.4 simulator. It runs schema parity, asset validation,
+iPhone 17 Pro / iOS 26.4.1 simulator. It runs schema parity, asset validation,
 the full unit suite, code coverage, and the repository's zero-warning policy.
 The `.xcresult` bundle and complete build log are retained for 14 days.
 

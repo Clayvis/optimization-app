@@ -44,7 +44,7 @@ jobs:
           xcodebuild test \
             -project PersonalOptimization.xcodeproj \
             -scheme PersonalOptimization \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4' \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -resultBundlePath "$RUNNER_TEMP/PersonalOptimization.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
