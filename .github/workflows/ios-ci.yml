@@ -37,6 +37,11 @@ jobs:
           bash scripts/check_schema_parity.sh
           bash scripts/check_assets.sh
 
+      - name: Generate Xcode project
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate
+
       - name: Build and run unit and UI smoke tests
         run: |
           set -o pipefail

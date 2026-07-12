@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 58501)
-Total output lines: 2866
+Warning: truncated output (original token count: 57578)
+Total output lines: 2779
 
 // !$*UTF8*$!
 {
@@ -10,7 +10,6 @@ Total output lines: 2866
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA0000000000000000000001 /* PersonalOptimizationSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* PersonalOptimizationSmokeTests.swift */; };
 		0D0A0B0C0D0E0F1011121314 /* MascotHomeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A1B1C1D1E1F2021222324 /* MascotHomeWidget.swift */; };
 		2D2A2B2C2D2E2F3031323334 /* MascotAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C942A3B6AA926D8BA6E755B7 /* MascotAssets.xcassets */; };
 		00284E75632C7BB1BD6A2181 /* PartnerSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17FB8A4BB496CEA2762528C /* PartnerSettingsView.swift */; };
@@ -500,13 +499,6 @@ Total output lines: 2866
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		AA0000000000000000000008 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 496A0317F23D5B15FD688A31 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 692B5EE5792A31D5D1CC07D5;
-			remoteInfo = PersonalOptimization;
-		};
 		027B840879AAB6B52F72FA7F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 496A0317F23D5B15FD688A31 /* Project object */;
@@ -632,8 +624,6 @@ Total output lines: 2866
 		1F314247853D2FD971ACFBD7 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
 		1F84967C0773B287E1F8B349 /* ProtocolDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolDetailView.swift; sourceTree = "<group>"; };
 		206905E3BDC577894B8FAD18 /* PersonalOptimizationTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PersonalOptimizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA0000000000000000000002 /* PersonalOptimizationSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalOptimizationSmokeTests.swift; sourceTree = "<group>"; };
-		AA0000000000000000000003 /* PersonalOptimizationUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PersonalOptimizationUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		20720458002BC92586A3B91F /* EngagementMetricsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngagementMetricsService.swift; sourceTree = "<group>"; };
 		21796439F3D7569CB9B4EF96 /* default_schedule_blank.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_schedule_blank.json; sourceTree = "<group>"; };
 		21944B1F901A56BDCCD187D5 /* HydrationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationServiceTests.swift; sourceTree = "<group>"; };
@@ -673,7 +663,27 @@ Total output lines: 2866
 		38E2F176E45BD213279FBE22 /* HealthKitWriteFailure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitWriteFailure.swift; sourceTree = "<group>"; };
 		39D17EF8A1B9A58C15B86F49 /* WeeklyProgramCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyProgramCard.swift; sourceTree = "<group>"; };
 		3A4985E865B7FE2268CC0631 /* LabDraw.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabDraw.swift; sourceTree = "<group>"; };
-		3A8B7DAAA4338CBBCB16151F /* ComplicationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplicationStore.swi…8501 tokens truncated…ileType = sourcecode.swift; path = SurpriseInsightServiceTests.swift; sourceTree = "<group>"; };
+		3A8B7DAAA4338CBBCB16151F /* ComplicationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplicationStore.swift; sourceTree = "<group>"; };
+		3B2B0266D3524538E14A5EB6 /* TrendAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendAnalyticsService.swift; sourceTree = "<group>"; };
+		3C0FDED3EF727D9B15FC65D5 /* SchemaV9.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV9.swift; sourceTree = "<group>"; };
+		3C1405D527E3E5318F280D4F /* TrainingWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingWatchView.swift; sourceTree = "<group>"; };
+		3C21B1F183A1B8E72B77E9EE /* SchemaV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV1.swift; sourceTree = "<group>"; };
+		3CDD02E05635F577AB5F176A /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"…7578 tokens truncated…Type = sourcecode.swift; path = PartnerChallengeTests.swift; sourceTree = "<group>"; };
+		C942A3B6AA926D8BA6E755B7 /* MascotAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = MascotAssets.xcassets; sourceTree = "<group>"; };
+		CA2773372A4E5001F3A6F618 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
+		CAF4652FE69EA281396290FC /* SchemaV5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV5.swift; sourceTree = "<group>"; };
+		CB066DB5EFCD1728DA590409 /* ProtocolAdherenceTallyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolAdherenceTallyTests.swift; sourceTree = "<group>"; };
+		CE5F407DE69792F708AAA331 /* SchemaV10.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV10.swift; sourceTree = "<group>"; };
+		CEBEF298E4B2B2C50CE9BA61 /* SchemaV3ThroughV9MigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV3ThroughV9MigrationTests.swift; sourceTree = "<group>"; };
+		CEE759FC5B3BDC3B6248856B /* LiftWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftWatchView.swift; sourceTree = "<group>"; };
+		CEF05F9C5ED65B9EDF34C363 /* LiftService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftService.swift; sourceTree = "<group>"; };
+		D1B2C04F97651585073980FF /* PersonalOptimization.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimization.entitlements; sourceTree = "<group>"; };
+		D2185CF84672213ECD67A035 /* CoachInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachInsight.swift; sourceTree = "<group>"; };
+		D2890BCBC13A3A36541B1425 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D2AF00868B5A4EEB46CEE823 /* ActivityArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityArchive.swift; sourceTree = "<group>"; };
+		D336D7B9EFE5E76B62ADDB3F /* PersonalOptimizationWatchComplications.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalOptimizationWatchComplications.entitlements; sourceTree = "<group>"; };
+		D3DE72E68A979B73C9CAB33E /* QuickLogIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogIntents.swift; sourceTree = "<group>"; };
+		D74FE0148587F4355650EB2F /* SurpriseInsightServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurpriseInsightServiceTests.swift; sourceTree = "<group>"; };
 		D886CDA3D6F4F983C7587DA2 /* ProfileServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileServiceTests.swift; sourceTree = "<group>"; };
 		D89ABB69B067CB7A980AD7A2 /* BackgroundTaskLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskLog.swift; sourceTree = "<group>"; };
 		D94D519E7210353AC798BC25 /* ScheduleAIServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleAIServiceTests.swift; sourceTree = "<group>"; };
@@ -768,7 +778,6 @@ Total output lines: 2866
 				B68F807399134D4E375D023D /* PersonalOptimization.app */,
 				2C29948B8A14CDCA289C2B6E /* PersonalOptimizationLiveActivity.appex */,
 				206905E3BDC577894B8FAD18 /* PersonalOptimizationTests.xctest */,
-				AA0000000000000000000003 /* PersonalOptimizationUITests.xctest */,
 				40D8C43A57A2F3EFD7F5A8BD /* PersonalOptimizationWatch.app */,
 				E46D2FE0AD37E504371C8F05 /* PersonalOptimizationWatchComplications.appex */,
 			);
@@ -1356,7 +1365,6 @@ Total output lines: 2866
 				5E8DF68DB309BD5D61DC4539 /* PersonalOptimization */,
 				46A53FE4EEB7105579AA2039 /* PersonalOptimizationLiveActivity */,
 				E7EB987FEDBF768594B0919B /* PersonalOptimizationTests */,
-				AA0000000000000000000004 /* PersonalOptimizationUITests */,
 				35549F935C6A83DE7059536F /* PersonalOptimizationWatch */,
 				E36BB1747AD928926C4AD7EE /* PersonalOptimizationWatchComplications */,
 				C639785B92A808472899B083 /* References */,
@@ -1400,14 +1408,6 @@ Total output lines: 2866
 				5549BE89F7F0322F90FDF0B9 /* ProtocolRulesTests.swift */,
 			);
 			path = PersonalOptimizationTests;
-			sourceTree = "<group>";
-		};
-		AA0000000000000000000004 /* PersonalOptimizationUITests */ = {
-			isa = PBXGroup;
-			children = (
-				AA0000000000000000000002 /* PersonalOptimizationSmokeTests.swift */,
-			);
-			path = PersonalOptimizationUITests;
 			sourceTree = "<group>";
 		};
 		EB906736BAB606ABC5590473 /* SharedModels */ = {
@@ -1495,24 +1495,6 @@ Total output lines: 2866
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA0000000000000000000005 /* PersonalOptimizationUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = AA000000000000000000000B /* Build configuration list for PBXNativeTarget "PersonalOptimizationUITests" */;
-			buildPhases = (
-				AA0000000000000000000006 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				AA0000000000000000000007 /* PBXTargetDependency */,
-			);
-			name = PersonalOptimizationUITests;
-			packageProductDependencies = (
-			);
-			productName = PersonalOptimizationUITests;
-			productReference = AA0000000000000000000003 /* PersonalOptimizationUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 		64278B1349F1AAB7E16AFDA2 /* PersonalOptimizationTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 84E3FFD5ED06C9E311939903 /* Build configuration list for PBXNativeTarget "PersonalOptimizationTests" */;
@@ -1657,7 +1639,6 @@ Total output lines: 2866
 				692B5EE5792A31D5D1CC07D5 /* PersonalOptimization */,
 				B6201484E68115E04CC159C4 /* PersonalOptimizationLiveActivity */,
 				64278B1349F1AAB7E16AFDA2 /* PersonalOptimizationTests */,
-				AA0000000000000000000005 /* PersonalOptimizationUITests */,
 				DCD2789BA57123BBBDA8BB4C /* PersonalOptimizationWatch */,
 				F3CFED518427A5D76A61AD72 /* PersonalOptimizationWatchComplications */,
 			);
@@ -1711,14 +1692,6 @@ Total output lines: 2866
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		AA0000000000000000000006 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				AA0000000000000000000001 /* PersonalOptimizationSmokeTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		1A4580FB4D3CFEF58F93428A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2225,11 +2198,6 @@ Total output lines: 2866
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		AA0000000000000000000007 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 692B5EE5792A31D5D1CC07D5 /* PersonalOptimization */;
-			targetProxy = AA0000000000000000000008 /* PBXContainerItemProxy */;
-		};
 		06B0006B8ADF799E6CD0A3FC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F3CFED518427A5D76A61AD72 /* PersonalOptimizationWatchComplications */;
@@ -2253,32 +2221,6 @@ Total output lines: 2866
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		AA0000000000000000000009 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rawlins.PersonalOptimization.uitests;
-				SDKROOT = iphoneos;
-				SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = PersonalOptimization;
-			};
-			name = Debug;
-		};
-		AA000000000000000000000A /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rawlins.PersonalOptimization.uitests;
-				SDKROOT = iphoneos;
-				SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = PersonalOptimization;
-			};
-			name = Release;
-		};
 		0737A696C570E3AC64F21CFE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2616,15 +2558,6 @@ Total output lines: 2866
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA000000000000000000000B /* Build configuration list for PBXNativeTarget "PersonalOptimizationUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA0000000000000000000009 /* Debug */,
-				AA000000000000000000000A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
 		0DD3FF0049391A9E7ADAA399 /* Build configuration list for PBXNativeTarget "PersonalOptimizationWatchComplications" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
