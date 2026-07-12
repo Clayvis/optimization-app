@@ -13,10 +13,10 @@ final class LapseDetectionServiceTests: XCTestCase {
         try await super.setUp()
         container = try InMemoryContainer.make()
         context = container.mainContext
-        service = LapseDetectionService(modelContext: context)
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "Asia/Tokyo")!
         jstCal = cal
+        service = LapseDetectionService(modelContext: context, timezone: cal.timeZone)
     }
 
     override func tearDown() async throws {

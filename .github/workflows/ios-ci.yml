@@ -21,12 +21,6 @@ jobs:
     name: Build and test
     runs-on: macos-26
     timeout-minutes: 45
-    # Legacy fixtures intentionally model the user's pinned Okinawa/JST day.
-    # Pin the process timezone so Calendar.current does not reinterpret those
-    # day keys as UTC on hosted runners. New tests should inject calendars.
-    env:
-      TZ: Asia/Tokyo
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
