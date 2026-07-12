@@ -19,6 +19,9 @@ struct CharacterView: View {
     @State private var breathing = false
     @State private var pulseScale: CGFloat = 1.0
     @State private var lastAlertState: CharacterState?
+    @State private var tapScale: CGFloat = 1
+    @State private var interactionCount = 0
+    @State private var workoutPresence = WorkoutPresenceService.shared
 
     init(service: CharacterStateService = .shared, size: CGFloat = 200, showsReason: Bool = true) {
         self.service = service
@@ -38,11 +41,24 @@ struct CharacterView: View {
                     .interpolation(.high)
                     .aspectRatio(contentMode: .fit)
                     .frame(width: size, height: size)
-                    .scaleEffect(reduceMotion ? 1.0 : (breathing ? 1.02 : 1.0) * pulseScale)
+                    .scaleEffect(reduceMotion ? 1.0 : (breathing ? 1.02 : 1.0) * pulseScale * tapScale)
+                    .offset(y: reduceMotion ? 0 : (workoutPresence.isActive ? (breathing ? -5 : 3) : (breathing ? -2 : 2)))
+                    .rotationEffect(.degrees(reduceMotion ? 0 : (breathing ? 0.7 : -0.7)))
                     .id(service.currentState)
                     .transition(.opacity)
                     .accessibilityLabel(service.currentState.rawValue.capitalized)
                     .accessibilityHint(service.triggerReason)
+                    .onTapGesture { interact() }
+
+                if workoutPresence.isActive {
+                    Label("Training", systemImage: "figure.run")
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .offset(y: size * 0.39)
+                        .accessibilityLabel("Workout in progress")
+                }
             }
             .frame(width: size, height: size)
             .animation(.easeInOut(duration: 0.5), value: service.currentState)
@@ -70,6 +86,7 @@ struct CharacterView: View {
             default:           return nil
             }
         }
+        .sensoryFeedback(.impact(weight: .light), trigger: interactionCount)
     }
 
     /// Filters internal placeholder reasons that shouldn't be shown to the user.
@@ -83,6 +100,22 @@ struct CharacterView: View {
     private func startBreathing() {
         withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
             breathing = true
+        }
+    }
+
+    private func interact() {
+        interactionCount += 1
+        guard !reduceMotion else { return }
+        withAnimation(.spring(response: 0.18, dampingFraction: 0.45)) {
+            tapScale = 0.92
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(160))
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.55)) {
+                tapScale = workoutPresence.isActive ? 1.05 : 1
+            }
+            try? await Task.sleep(for: .milliseconds(180))
+            withAnimation(.easeOut(duration: 0.2)) { tapScale = 1 }
         }
     }
 

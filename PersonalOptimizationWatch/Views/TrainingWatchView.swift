@@ -18,21 +18,29 @@ struct TrainingWatchView: View {
                 } label: {
                     rowLabel(icon: "figure.strengthtraining.traditional", title: "Lift A")
                 }
+                .accessibilityLabel("Start Lift A")
+                .accessibilityHint("Opens the strength workout session")
                 NavigationLink {
                     LiftWatchView(templateName: CustomLiftTemplateStore.templateName)
                 } label: {
                     rowLabel(icon: "figure.strengthtraining.functional", title: CustomLiftTemplateStore.templateName)
                 }
+                .accessibilityLabel("Start \(CustomLiftTemplateStore.templateName)")
+                .accessibilityHint("Opens your custom strength workout")
                 NavigationLink {
                     BasketballWatchView()
                 } label: {
                     rowLabel(icon: "basketball.fill", title: "Basketball")
                 }
+                .accessibilityLabel("Start Basketball")
+                .accessibilityHint("Begins a live basketball workout")
                 NavigationLink {
                     SwimWatchView()
                 } label: {
                     rowLabel(icon: "figure.pool.swim", title: "Swim")
                 }
+                .accessibilityLabel("Start Swim")
+                .accessibilityHint("Begins a live pool workout")
                 if !visibleCustom.isEmpty {
                     Section("Activities") {
                         ForEach(visibleCustom, id: \.persistentModelID) { template in
@@ -41,11 +49,14 @@ struct TrainingWatchView: View {
                             } label: {
                                 rowLabel(icon: template.systemImageName, title: template.name)
                             }
+                            .accessibilityLabel("Start \(template.name)")
+                            .accessibilityHint("Begins this custom activity")
                         }
                     }
                 }
             }
             .navigationTitle("Train")
+            .accessibilityLabel("Training choices")
         }
     }
 

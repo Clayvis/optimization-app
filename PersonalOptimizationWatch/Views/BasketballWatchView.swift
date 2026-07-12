@@ -66,6 +66,7 @@ struct BasketballWatchView: View {
                     .font(.caption)
                     .accessibilityLabel(String(localized: "Water intake during session"))
                     .accessibilityValue(String(localized: "\(Int(hydration)) ounces"))
+                    .accessibilityHint(String(localized: "Swipe up or down to adjust in 8 ounce increments"))
 
                 Picker("Achilles", selection: $achilles) {
                     ForEach(1...10, id: \.self) { Text("\($0)").tag($0) }
@@ -73,6 +74,7 @@ struct BasketballWatchView: View {
                 .font(.caption2)
                 .accessibilityLabel(String(localized: "Achilles pain rating"))
                 .accessibilityValue(String(localized: "\(achilles) out of 10"))
+                .accessibilityHint(String(localized: "Choose the current pain level before ending the session"))
 
                 Button(role: .destructive) {
                     Task { await end(service: service, session: session) }

@@ -157,6 +157,7 @@ struct PersonalOptimizationApp: App {
         // just finished.
         Task { @MainActor in
             for await event in WatchConnectivityService.shared.lastEventStream {
+                WorkoutPresenceService.shared.handle(event)
                 NotificationCenter.default.post(name: .userStateChanged, object: event)
                 switch event.kind {
                 case .workoutStarted, .workoutEnded:

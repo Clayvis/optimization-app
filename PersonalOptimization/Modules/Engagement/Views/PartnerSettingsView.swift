@@ -1,10 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// Settings → Partnership. Lets the user generate a pairing code or accept
-/// one from their partner. v1 ships UI + state; the CloudKit shared zone
-/// that actually moves data between Apple IDs is post-paid-dev work and is
-/// disabled visibly so the user understands the limitation.
+/// Settings → Partner Preview. The cross-Apple-ID transport is not shipped,
+/// so this surface is deliberately read-only instead of simulating a pairing.
 @MainActor
 struct PartnerSettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -14,11 +12,17 @@ struct PartnerSettingsView: View {
     @State private var showingUnpairConfirm = false
 
     private var profile: UserProfile? { profiles.first }
+    private let liveSharingAvailable = false
 
     var body: some View {
         Form {
             Section {
-                Text("Couples who exercise together have a 6× lower 12-month dropout rate. Partner mode shares only the lighter signals — current streaks, today's master metric, mascot state — never your specific weights or notes.")
+                Label("Preview — not connected", systemImage: "hammer.fill")
+                    .font(.headline)
+                    .foregroundStyle(.orange)
+                Text("Partner sharing is not live in this build. Codes, nudges, shared streaks, and challenge scores do not travel to another person's phone yet.")
+                    .font(.footnote.weight(.semibold))
+                Text("When released, only current streaks, today's protocol score, and mascot state will be shared. Workout details, weights, HealthKit data, Coach messages, and notes stay private.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -30,20 +34,13 @@ struct PartnerSettingsView: View {
                 acceptSection(profile: profile)
             }
 
-            Section {
-                Label("Cross-device sync requires a paid Apple Developer membership. Until then, pairing state is local-only.",
-                      systemImage: "info.circle")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
             if let feedback {
                 Section {
                     Text(feedback).font(.footnote).foregroundStyle(.secondary)
                 }
             }
         }
-        .navigationTitle("Partnership")
+        .navigationTitle("Partner Preview")
         .confirmationDialog("Unpair from your partner?",
                             isPresented: $showingUnpairConfirm,
                             titleVisibility: .visible) {
@@ -73,6 +70,7 @@ struct PartnerSettingsView: View {
                 }
                 Button("Generate a new code") { generate() }
                     .buttonStyle(.bordered)
+                    .disabled(!liveSharingAvailable)
             } else {
                 Button {
                     generate()
@@ -80,6 +78,7 @@ struct PartnerSettingsView: View {
                     Label("Generate code", systemImage: "person.2.badge.gearshape")
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(!liveSharingAvailable)
             }
         }
     }
@@ -98,7 +97,10 @@ struct PartnerSettingsView: View {
                 Label("Pair", systemImage: "person.2.fill")
             }
             .buttonStyle(.borderedProminent)
-            .disabled(enteredCode.trimmingCharacters(in: .whitespaces).count != 6)
+            .disabled(!liveSharingAvailable || enteredCode.trimmingCharacters(in: .whitespaces).count != 6)
+            Text("Pairing will unlock when secure cross-account sharing ships.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -108,8 +110,11 @@ struct PartnerSettingsView: View {
             HStack {
                 Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Linked with partner")
+                    Text("Local preview link")
                         .font(.body.weight(.semibold))
+                    Text("No data is reaching another device")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
                     if let date = profile.partnerLinkedAt {
                         Text("Since \(date.formatted(date: .abbreviated, time: .omitted))")
                             .font(.caption2)
@@ -124,6 +129,7 @@ struct PartnerSettingsView: View {
                     try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
                 }
             ))
+            .disabled(!liveSharingAvailable)
             Button(role: .destructive) {
                 showingUnpairConfirm = true
             } label: {

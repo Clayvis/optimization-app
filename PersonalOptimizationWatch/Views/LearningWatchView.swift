@@ -51,6 +51,9 @@ struct LearningWatchView: View {
         .frame(maxWidth: .infinity)
         .background(Color.gray.opacity(0.18))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Learning today")
+        .accessibilityValue("\((log?.japaneseMinutes ?? 0) + (log?.guitarMinutes ?? 0) + (log?.courseworkMinutes ?? 0)) minutes")
     }
 
     @ViewBuilder
@@ -73,6 +76,9 @@ struct LearningWatchView: View {
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(label) practice")
+            .accessibilityValue("\(minutes) minutes today")
             HStack(spacing: 4) {
                 ForEach(increments, id: \.self) { inc in
                     Button {

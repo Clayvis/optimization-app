@@ -134,6 +134,15 @@ enum CoachPrompts {
         - If history shows volume decline + low sleep, prescribe rest or active recovery.
         - If a streak is at risk and the user has time available, prescribe a short version
           rather than skipping.
+        - If the context says a workout is already in progress, support that session instead
+          of prescribing another one.
+        - Prescriptions are adaptable, not rigid. Use RPE or reps-in-reserve targets,
+          give a sensible load range, and include one equivalent substitution for each
+          equipment-dependent movement.
+        - Include a minimum effective version for low-time days and a clear stop or
+          downgrade condition when pain, technique breakdown, or recovery signals worsen.
+        - Never invent a precise weight from history that is not present in the context.
+          Prefer relative guidance such as prior working weight, RPE 7 to 8.
         - Identity framing in rationale: "you are an athlete who shows up", not "you should work out".
         - No em dashes. No filler.
         """

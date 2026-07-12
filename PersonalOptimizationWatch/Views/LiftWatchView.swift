@@ -42,6 +42,7 @@ struct LiftWatchView: View {
                 liveStatsRow
                 if let active {
                     Text(active.name).font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     let sets = (active.sets ?? []).sorted { $0.orderIndex < $1.orderIndex }
                     Text("\(sets.count) sets logged").font(.caption2).foregroundStyle(.secondary)
 
@@ -67,6 +68,8 @@ struct LiftWatchView: View {
                         Image(systemName: "chevron.left")
                     }
                     .accessibilityLabel(String(localized: "Previous exercise"))
+                    .accessibilityHint(String(localized: "Moves to the previous exercise in this workout"))
+                    .disabled(currentExerciseIndex == 0)
                     Spacer()
                     Text("\(currentExerciseIndex + 1) / \(exercises.count)").font(.caption2)
                         .accessibilityLabel(String(localized: "Exercise \(currentExerciseIndex + 1) of \(exercises.count)"))
@@ -77,6 +80,8 @@ struct LiftWatchView: View {
                         Image(systemName: "chevron.right")
                     }
                     .accessibilityLabel(String(localized: "Next exercise"))
+                    .accessibilityHint(String(localized: "Moves to the next exercise in this workout"))
+                    .disabled(currentExerciseIndex >= exercises.count - 1)
                 }
 
                 Button(role: .destructive) {

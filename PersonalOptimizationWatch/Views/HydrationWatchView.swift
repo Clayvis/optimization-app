@@ -44,12 +44,17 @@ struct HydrationWatchView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Hydration progress")
+            .accessibilityValue("\(Int(intake)) ounces logged, target \(Int(target.lowerBound)) to \(Int(target.upperBound)) ounces, \(dayType.rawValue) day")
             ProgressView(value: min(intake / target.upperBound, 1.0))
                 .tint(progressTint(intake: intake, target: target))
+                .accessibilityHidden(true)
             Text(dayType.rawValue.capitalized)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityHidden(true)
 
             ForEach(bottleSizes, id: \.self) { oz in
                 Button {
@@ -64,6 +69,7 @@ struct HydrationWatchView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .accessibilityLabel("Log \(Int(oz)) ounces of water")
+                .accessibilityHint("Adds \(Int(oz)) ounces to today's total")
             }
 
             Button {
@@ -78,6 +84,7 @@ struct HydrationWatchView: View {
             }
             .buttonStyle(.bordered)
             .accessibilityLabel("Log an electrolyte session")
+            .accessibilityHint("Records one electrolyte serving for today")
         }
         .padding(.horizontal, 4)
         .id(refreshTrigger)

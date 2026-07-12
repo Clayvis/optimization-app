@@ -86,6 +86,7 @@ struct IdleHomeWatchView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Mascot \(mascotState.rawValue), \(tally.completed) of \(tally.scheduled) goals done. Tap for status.")
+            .accessibilityHint("Double tap to hear the alternate daily status")
 
             if showingTallyCaption {
                 Text("\(tally.completed) of \(tally.scheduled) goals today")
@@ -160,6 +161,10 @@ struct IdleHomeWatchView: View {
                 .frame(maxWidth: .infinity)
                 .background(Color.gray.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(state == .fasting
+                    ? "Fasting, \(remaining.map { "\(formatHM($0)) remaining" } ?? "end time unavailable"), \(formatHM(elapsed)) elapsed"
+                    : "Eating window open")
             }
         }
     }
@@ -179,6 +184,7 @@ struct IdleHomeWatchView: View {
             .buttonStyle(.borderedProminent)
             .tint(.blue)
             .accessibilityLabel("Log 16 ounces of water")
+            .accessibilityHint("Adds water to today's hydration total")
 
             Button {
                 endFastIfActive()
@@ -191,6 +197,7 @@ struct IdleHomeWatchView: View {
             }
             .buttonStyle(.bordered)
             .accessibilityLabel("End current fast")
+            .accessibilityHint(fastIsActive ? "Ends and records the current fast" : "No fast is currently active")
             .disabled(!fastIsActive)
         }
     }
@@ -201,14 +208,14 @@ struct IdleHomeWatchView: View {
         let hydration = streakValue(.hydration)
         let learning = streakValue(.learning)
         HStack(spacing: 6) {
-            streakChip(systemImage: "figure.strengthtraining.traditional", days: workout)
-            streakChip(systemImage: "drop.fill", days: hydration)
-            streakChip(systemImage: "book.fill", days: learning)
+            streakChip(systemImage: "figure.strengthtraining.traditional", label: "Workout", days: workout)
+            streakChip(systemImage: "drop.fill", label: "Hydration", days: hydration)
+            streakChip(systemImage: "book.fill", label: "Learning", days: learning)
         }
         .padding(.top, 2)
     }
 
-    private func streakChip(systemImage: String, days: Int) -> some View {
+    private func streakChip(systemImage: String, label: String, days: Int) -> some View {
         HStack(spacing: 3) {
             Image(systemName: systemImage)
                 .font(.caption2)
@@ -226,6 +233,9 @@ struct IdleHomeWatchView: View {
         .frame(maxWidth: .infinity)
         .background(Color.gray.opacity(0.18))
         .clipShape(Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label) streak")
+        .accessibilityValue("\(days) days")
     }
 
     // MARK: - Actions
