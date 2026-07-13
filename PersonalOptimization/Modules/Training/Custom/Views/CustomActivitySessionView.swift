@@ -62,7 +62,7 @@ struct CustomActivitySessionView: View {
                     }
                 }
                 if hkActivityType != .other {
-                    LastWorkoutRecapRow { [hkActivityType] in $0 == hkActivityType }
+                    LastWorkoutRecapRow(activityTypes: [hkActivityType])
                 }
             }
 

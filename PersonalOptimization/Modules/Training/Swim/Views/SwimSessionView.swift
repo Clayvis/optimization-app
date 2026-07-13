@@ -123,7 +123,7 @@ struct SwimSessionView: View {
             }
 
             Section {
-                LastWorkoutRecapRow { $0 == .swimming }
+                LastWorkoutRecapRow(activityTypes: [.swimming])
                 Button {
                     start()
                 } label: {

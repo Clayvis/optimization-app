@@ -51,7 +51,7 @@ struct BasketballSessionView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                LastWorkoutRecapRow { $0 == .basketball }
+                LastWorkoutRecapRow(activityTypes: [.basketball])
             }
 
             if achillesCheckInEnabled {

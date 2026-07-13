@@ -80,7 +80,7 @@ struct LiftSessionView: View {
                 Text(template.focus)
                     .font(.body)
                     .foregroundStyle(.secondary)
-                LastWorkoutRecapRow { $0 == .functionalStrengthTraining || $0 == .traditionalStrengthTraining }
+                LastWorkoutRecapRow(activityTypes: [.functionalStrengthTraining, .traditionalStrengthTraining])
             } header: {
                 Text("Focus")
             } footer: {

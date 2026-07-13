@@ -56,10 +56,11 @@ struct LiveWorkoutStatsSection: View {
 }
 
 /// "Last session" line for the pre-start screens, fed by the most recent
-/// HealthKit workout of the activity's type. Quietly absent when HealthKit
-/// has nothing.
+/// HealthKit workout of the given activity types. Quietly absent when
+/// HealthKit has nothing. Takes a value set, not a match closure: closures
+/// over HKWorkout sequences tripped Swift 6 region analysis in Release WMO.
 struct LastWorkoutRecapRow: View {
-    let activityMatches: @Sendable (HKWorkoutActivityType) -> Bool
+    let activityTypes: Set<HKWorkoutActivityType>
 
     @State private var recap: WorkoutRecap?
 
@@ -94,8 +95,9 @@ struct LastWorkoutRecapRow: View {
         guard let workouts = try? await LiveHealthKitService.shared.fetchWorkouts(
             in: DateInterval(start: start, end: now)
         ) else { return }
-        if let match = workouts.first(where: { activityMatches($0.workoutActivityType) }) {
-            recap = WorkoutRecap.from(workout: match)
+        for workout in workouts where activityTypes.contains(workout.workoutActivityType) {
+            recap = WorkoutRecap.from(workout: workout)
+            break
         }
     }
 }

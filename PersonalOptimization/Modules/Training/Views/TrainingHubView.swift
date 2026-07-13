@@ -294,6 +294,8 @@ private struct StartSessionGrid: View {
     /// One workouts fetch over the trailing 30 days, distributed to tiles by
     /// activity type. HealthKit is the source so watch-recorded and
     /// third-party workouts count too. Absence of data just hides the line.
+    /// Plain loops throughout: closure-based matching tripped Swift 6 region
+    /// analysis ("sending closure risks data races") under Release WMO.
     private func loadRecaps() async {
         let now = Date()
         let start = Calendar.current.date(byAdding: .day, value: -30, to: now) ?? now
@@ -301,20 +303,30 @@ private struct StartSessionGrid: View {
             in: DateInterval(start: start, end: now)
         ) else { return } // MARK: try? justified - recap line is decorative; unauthorized/no-data hides it.
 
-        var next: [String: WorkoutRecap] = [:]
-        func assign(_ key: String, matches: (HKWorkoutActivityType) -> Bool) {
-            // fetchWorkouts sorts newest-first; first match is the recap.
-            if let workout = workouts.first(where: { matches($0.workoutActivityType) }) {
-                next[key] = WorkoutRecap.from(workout: workout)
-            }
-        }
-        assign("lift") { $0 == .functionalStrengthTraining || $0 == .traditionalStrengthTraining }
-        assign("basketball") { $0 == .basketball }
-        assign("swim") { $0 == .swimming }
+        var customTypes: [String: HKWorkoutActivityType] = [:]
         for template in visible {
             let type = WorkoutMetrics.hkActivityType(forTemplateNamed: template.name)
-            guard type != .other else { continue }
-            assign("custom:\(template.name)") { $0 == type }
+            if type != .other {
+                customTypes["custom:\(template.name)"] = type
+            }
+        }
+
+        // fetchWorkouts sorts newest-first; keep the first hit per tile key.
+        var next: [String: WorkoutRecap] = [:]
+        for workout in workouts {
+            let type = workout.workoutActivityType
+            var keys: [String] = []
+            if type == .functionalStrengthTraining || type == .traditionalStrengthTraining {
+                keys.append("lift")
+            }
+            if type == .basketball { keys.append("basketball") }
+            if type == .swimming { keys.append("swim") }
+            for (key, customType) in customTypes where customType == type {
+                keys.append(key)
+            }
+            for key in keys where next[key] == nil {
+                next[key] = WorkoutRecap.from(workout: workout)
+            }
         }
         recaps = next
     }
