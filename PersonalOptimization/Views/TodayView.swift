@@ -20,6 +20,7 @@ struct TodayView: View {
     @State private var pendingCelebration: MilestoneUnlock?
     @State private var showingMemorySheet = false
     @State private var insightsExpanded = false
+    @State private var showingBodyInfoSheet = false
 
     // V11 launch-polish (Item 6): services held in @State so they survive
     // body evaluations. Pre-refactor these were computed every render
@@ -70,6 +71,35 @@ struct TodayView: View {
                 }
 
                 graceBannerSection
+
+                // One-time nudge for profiles created before the body-info
+                // onboarding step existed. Disappears forever once DOB is set.
+                if let profile, profile.dob == .distantPast {
+                    Section {
+                        Button {
+                            showingBodyInfoSheet = true
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "figure.arms.open")
+                                    .font(.title3)
+                                    .foregroundStyle(.tint)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Add your body info")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                    Text("Age, height, weight. Unlocks calorie estimates and biological-age math.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .accessibilityIdentifier("today.bodyInfoPrompt")
+                    }
+                }
 
                 Section {
                     WelcomeBackCard()
@@ -217,6 +247,9 @@ struct TodayView: View {
             }
             .sheet(isPresented: $showingMemorySheet) {
                 CoachMemoryEntrySheet()
+            }
+            .sheet(isPresented: $showingBodyInfoSheet) {
+                BodyInfoSheet()
             }
         }
     }

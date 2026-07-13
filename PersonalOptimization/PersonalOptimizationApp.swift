@@ -33,6 +33,9 @@ struct PersonalOptimizationApp: App {
                 let profile = UserProfile(name: "UI Test")
                 profile.onboardingCompleted = true
                 profile.mascotEnabled = false
+                // Body info set so the one-time Today prompt (dob sentinel)
+                // stays out of smoke-test screenshots.
+                profile.dob = Calendar.current.date(from: DateComponents(year: 1995, month: 1, day: 1)) ?? .distantPast
                 container.mainContext.insert(profile)
                 try? container.mainContext.save()
             }

@@ -3,7 +3,7 @@ import SwiftData
 import HealthKit
 import UserNotifications
 
-/// First-launch onboarding wizard. Five screens, identity-framed, locked
+/// First-launch onboarding wizard. Six screens, identity-framed, locked
 /// progression so the user can't skip critical permission asks. Sets
 /// `UserProfile.onboardingCompleted = true` on finish so RootView routes past
 /// it on subsequent launches.
@@ -16,6 +16,13 @@ struct OnboardingView: View {
     @State private var primaryGoal: String = ""
     @State private var equipmentAccess: String = "gym"
     @State private var pickedVariant: MascotVariant = .ninjaMale
+    // Body step draft. Written to the profile on finish; prefilled from
+    // Apple Health right after the permissions step when access was granted.
+    @State private var bodyDob: Date = Calendar.current.date(from: DateComponents(year: 1995, month: 1, day: 1)) ?? Date()
+    @State private var bodySex: String = "male"
+    @State private var bodyHeightInches: Double = 70
+    @State private var bodyWeightLbs: Double = 180
+    @State private var bodyPrefillAttempted = false
     @State private var scheduleTemplate: ScheduleTemplate = .balanced
     @State private var hkRequested = false
     @State private var notifRequested = false
@@ -31,7 +38,7 @@ struct OnboardingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ProgressView(value: Double(step + 1), total: 5)
+            ProgressView(value: Double(step + 1), total: 6)
                 .tint(.accentColor)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -39,9 +46,10 @@ struct OnboardingView: View {
             TabView(selection: $step) {
                 welcomeScreen.tag(0)
                 permissionsScreen.tag(1)
-                goalsScreen.tag(2)
-                mascotScreen.tag(3)
-                wrapUpScreen.tag(4)
+                bodyScreen.tag(2)
+                goalsScreen.tag(3)
+                mascotScreen.tag(4)
+                wrapUpScreen.tag(5)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut, value: step)
@@ -107,6 +115,60 @@ struct OnboardingView: View {
             Spacer()
         }
         .padding(.top, 32)
+    }
+
+    /// Body-info step. Sits right after permissions so a granted HealthKit
+    /// read can prefill everything and this becomes a confirm-and-continue
+    /// screen. Feeds calorie estimates, PhenoAge, and Coach context.
+    @ViewBuilder
+    private var bodyScreen: some View {
+        Form {
+            Section {
+                VStack(spacing: 12) {
+                    Image(systemName: "figure.arms.open")
+                        .font(.system(size: 44))
+                        .foregroundStyle(.tint)
+                        .frame(maxWidth: .infinity)
+                    Text("About you")
+                        .font(.title2.weight(.bold))
+                        .frame(maxWidth: .infinity)
+                    Text("Powers calorie estimates for phone-only workouts, biological-age math, and Coach context. Stays on your devices.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .listRowBackground(Color.clear)
+            }
+            Section("Body") {
+                BodyInfoForm(
+                    dob: $bodyDob,
+                    sex: $bodySex,
+                    heightInches: $bodyHeightInches,
+                    weightLbs: $bodyWeightLbs
+                )
+            }
+        }
+        .task { await prefillBodyFromHealthIfNeeded() }
+    }
+
+    /// One silent prefill attempt when the step first appears. The form's
+    /// explicit "Fill from Apple Health" button stays available for retries.
+    private func prefillBodyFromHealthIfNeeded() async {
+        guard !bodyPrefillAttempted else { return }
+        bodyPrefillAttempted = true
+        // Existing profile values win over defaults (re-onboarding path).
+        if let profile, profile.dob != .distantPast {
+            bodyDob = profile.dob
+            bodySex = profile.sex
+            bodyHeightInches = profile.heightInches
+            bodyWeightLbs = profile.weightLbs
+            return
+        }
+        let snapshot = await LiveHealthKitService.shared.fetchBodyProfile()
+        if let date = snapshot.dateOfBirth { bodyDob = date }
+        if let sex = snapshot.biologicalSex { bodySex = sex }
+        if let inches = snapshot.heightInches { bodyHeightInches = inches.rounded() }
+        if let lbs = snapshot.weightLbs { bodyWeightLbs = (lbs * 10).rounded() / 10 }
     }
 
     @ViewBuilder
@@ -414,10 +476,7 @@ struct OnboardingView: View {
                         pickedVariant = variant
                     } label: {
                         VStack(spacing: 8) {
-                            Image("\(variant.assetPrefix)_Neutral")
-                                .resizable()
-                                .interpolation(.high)
-                                .aspectRatio(contentMode: .fit)
+                            MascotView(state: .neutral, variant: variant.rawValue)
                                 .frame(width: 100, height: 100)
                                 .padding(8)
                                 .background(pickedVariant == variant ? Color.accentColor.opacity(0.20) : Color.gray.opacity(0.10))
@@ -478,7 +537,7 @@ struct OnboardingView: View {
                     .buttonStyle(.bordered)
             }
             Spacer()
-            if step < 4 {
+            if step < 5 {
                 Button("Continue") { step += 1 }
                     .buttonStyle(.borderedProminent)
                     .disabled(canAdvance == false)
@@ -494,7 +553,7 @@ struct OnboardingView: View {
         switch step {
         case 0: return true
         case 1: return true // permissions are optional but encouraged
-        case 2: return true
+        case 2: return true // body info has typed defaults; nothing blocks
         default: return true
         }
     }
@@ -591,6 +650,10 @@ struct OnboardingView: View {
         }
         profile.equipmentAccess = equipmentAccess
         profile.mascotVariant = pickedVariant.rawValue
+        profile.dob = bodyDob
+        profile.sex = bodySex
+        profile.heightInches = bodyHeightInches
+        profile.weightLbs = bodyWeightLbs
         // Start useful immediately. Fine-grained anchors and alternative
         // templates are deliberately deferred to Advanced Setup in Dojo.
         applyScheduleTemplate(.balanced)

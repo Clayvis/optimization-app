@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State private var iCloudAccountStatus: CKAccountStatus = .couldNotDetermine
     @State private var exportData: Data?
     @State private var exportFeedback: String?
+    @State private var bodySyncFeedback: String?
     var embedded: Bool = false
 
     enum APIKeyStatus {
@@ -287,21 +288,37 @@ struct SettingsView: View {
                     TextField("Name", text: $profile.name)
                         .multilineTextAlignment(.trailing)
                 }
-                DatePicker("Date of birth", selection: $profile.dob, displayedComponents: .date)
-                Picker("Sex", selection: $profile.sex) {
-                    Text("Male").tag("male")
-                    Text("Female").tag("female")
+            }
+
+            Section {
+                BodyInfoForm(
+                    dob: $profile.dob,
+                    sex: $profile.sex,
+                    heightInches: $profile.heightInches,
+                    weightLbs: $profile.weightLbs
+                )
+                Button {
+                    let lbs = profile.weightLbs
+                    Task {
+                        do {
+                            try await LiveHealthKitService.shared.saveBodyMass(lbs: lbs)
+                            bodySyncFeedback = "Weight saved to Apple Health."
+                        } catch {
+                            bodySyncFeedback = "Could not save: \(error.localizedDescription)"
+                        }
+                    }
+                } label: {
+                    Label("Save weight to Apple Health", systemImage: "arrow.up.heart")
                 }
-                LabeledContent("Height (in)") {
-                    TextField("74", value: $profile.heightInches, format: .number)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
+                if let bodySyncFeedback {
+                    Text(bodySyncFeedback)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                LabeledContent("Weight (lb)") {
-                    TextField("205", value: $profile.weightLbs, format: .number)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                }
+            } header: {
+                Text("Body")
+            } footer: {
+                Text("Used for workout calorie estimates, biological-age math, and Coach context.")
             }
 
             Section("Time zone") {
