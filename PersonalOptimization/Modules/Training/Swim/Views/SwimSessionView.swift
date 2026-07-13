@@ -1,9 +1,11 @@
 import SwiftUI
 import SwiftData
+import HealthKit
 
 struct SwimSessionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var profiles: [UserProfile]
 
     /// When true (Training hub tile), the session starts immediately using the
     /// most recent session's water type, pool length, and location instead of
@@ -21,6 +23,7 @@ struct SwimSessionView: View {
     @State private var lapsExact: Int = 0
     @State private var metersExact: Double = 0
     @State private var completionCount: Int = 0
+    @State private var liveMetrics: LiveWorkoutMetrics?
 
     var body: some View {
         Group {
@@ -32,6 +35,7 @@ struct SwimSessionView: View {
         }
         .navigationTitle("Swim")
         .task { resumeIfNeeded() }
+        .onDisappear { liveMetrics?.end() }
         .sensoryFeedback(.success, trigger: completionCount)
     }
 
@@ -50,6 +54,7 @@ struct SwimSessionView: View {
             waterType = active.waterType
             lapsExact = active.laps
             metersExact = active.totalMeters
+            beginLiveMetrics(from: active.date)
             return
         }
         if autoStart {
@@ -118,6 +123,7 @@ struct SwimSessionView: View {
             }
 
             Section {
+                LastWorkoutRecapRow { $0 == .swimming }
                 Button {
                     start()
                 } label: {
@@ -125,6 +131,7 @@ struct SwimSessionView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("swim.start")
             }
         }
     }
@@ -144,6 +151,10 @@ struct SwimSessionView: View {
                             .font(.subheadline.weight(.medium))
                     }
                 }
+            }
+
+            if let liveMetrics {
+                LiveWorkoutStatsSection(metrics: liveMetrics)
             }
 
             if session.waterType == .pool {
@@ -247,16 +258,36 @@ struct SwimSessionView: View {
             service = svc
             lapsExact = s.laps
             metersExact = s.totalMeters
+            beginLiveMetrics(from: startedAt)
             Task { _ = await WorkoutLiveActivityController.start(workoutType: "Swim", startDate: startedAt) }
         } catch {
             // logged inside service
         }
     }
 
+    private func beginLiveMetrics(from start: Date) {
+        let metrics = LiveWorkoutMetrics(
+            healthKit: LiveHealthKitService.shared,
+            sessionStart: start,
+            activityType: .swimming
+        )
+        metrics.begin()
+        liveMetrics = metrics
+    }
+
     private func end(service: SwimService, session: SwimSession) async {
         let mins = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
+        // Measured energy when available, MET fallback otherwise, so the
+        // Health workout row carries calories for phone-only swims too.
+        await liveMetrics?.refreshOnce()
+        let kcal = liveMetrics?.closingKcal(
+            met: WorkoutMetrics.met(for: .swim),
+            weightLbs: profiles.first?.weightLbs,
+            elapsedMinutes: Double(mins)
+        )
         do {
-            try service.endSession(session, durationMinutes: mins)
+            try service.endSession(session, durationMinutes: mins, estimatedCalories: kcal)
+            liveMetrics?.end()
             await WorkoutLiveActivityController.endAll()
             completionCount &+= 1
             LogFeedbackCenter.shared.confirm(IdentityCopy.workoutLogged)

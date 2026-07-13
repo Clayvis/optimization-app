@@ -21,6 +21,26 @@ protocol HealthKitServiceProtocol: AnyObject, Sendable {
     func fetchSleepHours(for date: Date) async throws -> Double?
     func fetchMindfulMinutes(for date: Date) async throws -> Double?
     func fetchWorkouts(in range: DateInterval) async throws -> [HKWorkout]
+
+    // Live-session surface — arbitrary interval instead of day bounds, so
+    // active workouts can show energy/distance/HR accumulated since start.
+    // Defaulted (returns nil) in a protocol extension so existing fakes and
+    // any future conformers stay source-compatible.
+    func fetchSumQuantity(_ identifier: HKQuantityTypeIdentifier,
+                          unit: HKUnit,
+                          in interval: DateInterval) async throws -> Double?
+    func fetchLatestQuantity(_ identifier: HKQuantityTypeIdentifier,
+                             unit: HKUnit,
+                             in interval: DateInterval) async throws -> Double?
+}
+
+extension HealthKitServiceProtocol {
+    func fetchSumQuantity(_ identifier: HKQuantityTypeIdentifier,
+                          unit: HKUnit,
+                          in interval: DateInterval) async throws -> Double? { nil }
+    func fetchLatestQuantity(_ identifier: HKQuantityTypeIdentifier,
+                             unit: HKUnit,
+                             in interval: DateInterval) async throws -> Double? { nil }
 }
 
 enum HealthKitError: LocalizedError {
@@ -49,10 +69,17 @@ final class LiveHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
             throw HealthKitError.dataNotAvailable
         }
 
+        // Workout metadata samples (energy + per-activity distance) need
+        // their own share authorization or HKWorkoutBuilder.addSamples
+        // throws and the workout lands in Health with no calories/distance.
         let writeTypes: Set<HKSampleType> = [
             HKObjectType.workoutType(),
             HKQuantityType(.dietaryWater),
-            HKQuantityType(.bodyMass)
+            HKQuantityType(.bodyMass),
+            HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.distanceWalkingRunning),
+            HKQuantityType(.distanceSwimming),
+            HKQuantityType(.distanceCycling)
         ]
 
         // M4.2 — expanded read scope. Each addition surfaces a specific
@@ -70,6 +97,11 @@ final class LiveHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
             HKQuantityType(.stepCount),
             HKQuantityType(.vo2Max),
             HKQuantityType(.bodyMass),
+            HKQuantityType(.height),
+            HKQuantityType(.distanceSwimming),
+            HKQuantityType(.distanceCycling),
+            HKCharacteristicType(.dateOfBirth),
+            HKCharacteristicType(.biologicalSex),
             HKCategoryType(.sleepAnalysis),
             HKQuantityType(.respiratoryRate),
             HKQuantityType(.oxygenSaturation),
@@ -123,9 +155,22 @@ final class LiveHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
             )
             samples.append(energySample)
         }
+        // Distance samples must use the activity-appropriate type; writing
+        // everything as swim meters put basketball/run distance in the wrong
+        // Health category. Swimming → distanceSwimming, cycling →
+        // distanceCycling, everything else → distanceWalkingRunning.
         if let meters = totalDistanceMeters {
+            let distanceIdentifier: HKQuantityTypeIdentifier
+            switch activityType {
+            case .swimming:
+                distanceIdentifier = .distanceSwimming
+            case .cycling:
+                distanceIdentifier = .distanceCycling
+            default:
+                distanceIdentifier = .distanceWalkingRunning
+            }
             let distanceSample = HKQuantitySample(
-                type: HKQuantityType(.distanceSwimming),
+                type: HKQuantityType(distanceIdentifier),
                 quantity: HKQuantity(unit: .meter(), doubleValue: meters),
                 start: start,
                 end: end
@@ -275,6 +320,127 @@ final class LiveHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
             }
             store.execute(query)
         }
+    }
+
+    // MARK: - Live-session interval fetches
+
+    func fetchSumQuantity(_ identifier: HKQuantityTypeIdentifier,
+                          unit: HKUnit,
+                          in interval: DateInterval) async throws -> Double? {
+        let quantityType = HKQuantityType(identifier)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: interval.start, end: interval.end, options: .strictStartDate
+        )
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: quantityType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, statistics, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let sum = statistics?.sumQuantity() else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                continuation.resume(returning: sum.doubleValue(for: unit))
+            }
+            store.execute(query)
+        }
+    }
+
+    func fetchLatestQuantity(_ identifier: HKQuantityTypeIdentifier,
+                             unit: HKUnit,
+                             in interval: DateInterval) async throws -> Double? {
+        let quantityType = HKQuantityType(identifier)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: interval.start, end: interval.end, options: .strictStartDate
+        )
+        return try await withCheckedThrowingContinuation { continuation in
+            let sort = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+            let query = HKSampleQuery(
+                sampleType: quantityType,
+                predicate: predicate,
+                limit: 1,
+                sortDescriptors: [sort]
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let sample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                continuation.resume(returning: sample.quantity.doubleValue(for: unit))
+            }
+            store.execute(query)
+        }
+    }
+
+    // MARK: - Body characteristics (onboarding prefill)
+
+    /// Snapshot of the body data HealthKit already knows, used to prefill
+    /// the body-info form instead of making the user type it twice.
+    /// Every field is optional: characteristics the user never granted or
+    /// never set simply come back nil.
+    struct BodyProfileSnapshot: Sendable {
+        var dateOfBirth: Date?
+        var biologicalSex: String?   // "male" | "female" | nil for other/unset
+        var weightLbs: Double?
+        var heightInches: Double?
+    }
+
+    /// Reads DOB + biological sex characteristics and the most recent body
+    /// mass / height samples. Characteristic reads throw when unauthorized;
+    /// those are swallowed into nils because prefill is best-effort.
+    func fetchBodyProfile() async -> BodyProfileSnapshot {
+        var snapshot = BodyProfileSnapshot()
+
+        // MARK: try? justified - characteristics are optional prefill; unauthorized or unset reads mean "no value".
+        if let components = try? store.dateOfBirthComponents(),
+           let date = Calendar.current.date(from: components) {
+            snapshot.dateOfBirth = date
+        }
+        // MARK: try? justified - same best-effort prefill contract as above.
+        if let sexObject = try? store.biologicalSex() {
+            switch sexObject.biologicalSex {
+            case .male:   snapshot.biologicalSex = "male"
+            case .female: snapshot.biologicalSex = "female"
+            default:      snapshot.biologicalSex = nil
+            }
+        }
+
+        let now = Date()
+        let lookback = DateInterval(
+            start: Calendar.current.date(byAdding: .year, value: -5, to: now) ?? now,
+            end: now
+        )
+        // MARK: try? justified - missing samples mean "no value"; prefill continues with typed defaults.
+        if let lbs = try? await fetchLatestQuantity(.bodyMass, unit: .pound(), in: lookback) {
+            snapshot.weightLbs = lbs
+        }
+        // MARK: try? justified - same best-effort prefill contract as above.
+        if let inches = try? await fetchLatestQuantity(.height, unit: .inch(), in: lookback) {
+            snapshot.heightInches = inches
+        }
+        return snapshot
+    }
+
+    /// Writes a body-mass sample so weight edits made in the app reach the
+    /// rest of the Health ecosystem. Fire-and-forget from Settings.
+    /// - Throws: HealthKit framework errors (unauthorized, store unavailable).
+    func saveBodyMass(lbs: Double, at date: Date = Date()) async throws {
+        let sample = HKQuantitySample(
+            type: HKQuantityType(.bodyMass),
+            quantity: HKQuantity(unit: .pound(), doubleValue: lbs),
+            start: date,
+            end: date
+        )
+        try await store.save(sample)
+        logger.info("Saved body mass \(lbs, privacy: .private) lbs to HealthKit")
     }
 
     // MARK: - Helpers

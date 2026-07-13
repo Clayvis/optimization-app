@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import HealthKit
 
 /// Training hub, dojo-styled. Card stack instead of a grouped list:
 /// prescription on top, a resume banner when a session is live, a
@@ -218,9 +219,14 @@ private struct WeekDayDots: View {
 
 /// Two-column tile grid. Each discipline keeps its pigment: crimson for iron,
 /// gold for court, indigo for water, jade for everything the user defines.
+/// Tiles open the activity's prep screen (explicit Start Session inside),
+/// never auto-start, and show the last completed workout's HealthKit recap.
 private struct StartSessionGrid: View {
     @Query(sort: [SortDescriptor(\CustomActivityTemplate.createdAt, order: .forward)])
     private var templates: [CustomActivityTemplate]
+
+    /// Latest completed workout recap per tile, keyed by tile identity.
+    @State private var recaps: [String: WorkoutRecap] = [:]
 
     private var visible: [CustomActivityTemplate] {
         templates.filter { !$0.archived }
@@ -238,32 +244,37 @@ private struct StartSessionGrid: View {
                 ActivityTile(icon: "figure.strengthtraining.traditional",
                              title: "Lift A",
                              subtitle: "legs, push, pull",
-                             tint: Theme.kurenai) {
-                    LiftSessionView(templateName: "Lift A", autoStart: true)
+                             tint: Theme.kurenai,
+                             recap: recaps["lift"]?.line) {
+                    LiftSessionView(templateName: "Lift A")
                 }
                 ActivityTile(icon: "figure.strengthtraining.functional",
                              title: "My Workout",
                              subtitle: "your custom lift",
-                             tint: Theme.kurenai) {
-                    LiftSessionView(templateName: CustomLiftTemplateStore.templateName, autoStart: true)
+                             tint: Theme.kurenai,
+                             recap: recaps["lift"]?.line) {
+                    LiftSessionView(templateName: CustomLiftTemplateStore.templateName)
                 }
                 ActivityTile(icon: "basketball.fill",
                              title: "Basketball",
                              subtitle: "DeepWater Elite",
-                             tint: Theme.kin) {
+                             tint: Theme.kin,
+                             recap: recaps["basketball"]?.line) {
                     BasketballSessionView()
                 }
                 ActivityTile(icon: "figure.pool.swim",
                              title: "Swim",
                              subtitle: "McTureous, 25m",
-                             tint: Theme.ai) {
-                    SwimSessionView(autoStart: true)
+                             tint: Theme.ai,
+                             recap: recaps["swim"]?.line) {
+                    SwimSessionView()
                 }
                 ForEach(visible, id: \.persistentModelID) { template in
                     ActivityTile(icon: template.systemImageName,
                                  title: template.name,
                                  subtitle: "\(template.defaultDurationMinutes) min default",
-                                 tint: Theme.matcha) {
+                                 tint: Theme.matcha,
+                                 recap: recaps["custom:\(template.name)"]?.line) {
                         CustomActivitySessionView(template: template)
                     }
                 }
@@ -277,15 +288,46 @@ private struct StartSessionGrid: View {
                 }
             }
         }
+        .task { await loadRecaps() }
+    }
+
+    /// One workouts fetch over the trailing 30 days, distributed to tiles by
+    /// activity type. HealthKit is the source so watch-recorded and
+    /// third-party workouts count too. Absence of data just hides the line.
+    private func loadRecaps() async {
+        let now = Date()
+        let start = Calendar.current.date(byAdding: .day, value: -30, to: now) ?? now
+        guard let workouts = try? await LiveHealthKitService.shared.fetchWorkouts(
+            in: DateInterval(start: start, end: now)
+        ) else { return } // MARK: try? justified - recap line is decorative; unauthorized/no-data hides it.
+
+        var next: [String: WorkoutRecap] = [:]
+        func assign(_ key: String, matches: (HKWorkoutActivityType) -> Bool) {
+            // fetchWorkouts sorts newest-first; first match is the recap.
+            if let workout = workouts.first(where: { matches($0.workoutActivityType) }) {
+                next[key] = WorkoutRecap.from(workout: workout)
+            }
+        }
+        assign("lift") { $0 == .functionalStrengthTraining || $0 == .traditionalStrengthTraining }
+        assign("basketball") { $0 == .basketball }
+        assign("swim") { $0 == .swimming }
+        for template in visible {
+            let type = WorkoutMetrics.hkActivityType(forTemplateNamed: template.name)
+            guard type != .other else { continue }
+            assign("custom:\(template.name)") { $0 == type }
+        }
+        recaps = next
     }
 }
 
-/// One tappable tile: tinted icon plate, title, subtitle, lacquer surface.
+/// One tappable tile: tinted icon plate, title, subtitle, and the last
+/// session's HealthKit recap when one exists. Lacquer surface.
 private struct ActivityTile<Destination: View>: View {
     let icon: String
     let title: String
     let subtitle: String
     let tint: Color
+    var recap: String?
     @ViewBuilder let destination: () -> Destination
 
     var body: some View {
@@ -312,6 +354,14 @@ private struct ActivityTile<Destination: View>: View {
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(2, reservesSpace: true)
                     .multilineTextAlignment(.leading)
+                if let recap {
+                    Text(recap)
+                        .font(.caption2.weight(.medium))
+                        .monospacedDigit()
+                        .foregroundStyle(tint)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
             }
             .padding(Theme.Space.m)
             .frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
@@ -319,7 +369,7 @@ private struct ActivityTile<Destination: View>: View {
             .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
         }
         .buttonStyle(DojoPressStyle())
-        .accessibilityLabel("\(title). \(subtitle)")
+        .accessibilityLabel(recap == nil ? "\(title). \(subtitle)" : "\(title). \(subtitle). Last session \(recap ?? "")")
     }
 }
 

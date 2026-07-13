@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import HealthKit
 
 struct LiftSessionView: View {
     @Environment(\.modelContext) private var modelContext
@@ -24,6 +25,7 @@ struct LiftSessionView: View {
     @State private var customExerciseName: String = ""
     @State private var completionCount: Int = 0
     @State private var showingTemplateEditor = false
+    @State private var liveMetrics: LiveWorkoutMetrics?
 
     private var isCustomTemplate: Bool {
         templateName == CustomLiftTemplateStore.templateName
@@ -65,6 +67,7 @@ struct LiftSessionView: View {
             }
         }
         .task { loadPreview() }
+        .onDisappear { liveMetrics?.end() }
         .sensoryFeedback(.success, trigger: completionCount)
     }
 
@@ -77,6 +80,7 @@ struct LiftSessionView: View {
                 Text(template.focus)
                     .font(.body)
                     .foregroundStyle(.secondary)
+                LastWorkoutRecapRow { $0 == .functionalStrengthTraining || $0 == .traditionalStrengthTraining }
             } header: {
                 Text("Focus")
             } footer: {
@@ -138,6 +142,10 @@ struct LiftSessionView: View {
     @ViewBuilder
     private func activeContent(session: LiftSession, service: LiftService) -> some View {
         List {
+            if let liveMetrics {
+                LiveWorkoutStatsSection(metrics: liveMetrics)
+            }
+
             if let endsAt = restTimerEndsAt {
                 Section("Rest timer") {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
@@ -386,6 +394,7 @@ struct LiftSessionView: View {
         if let resumed = inProgressSession(for: templateName) {
             session = resumed
             startedAt = resumed.date
+            beginLiveMetrics(from: resumed.date)
             Task {
                 _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)
             }
@@ -395,12 +404,23 @@ struct LiftSessionView: View {
             let s = try service.startSession(templateName: templateName)
             startedAt = Date()
             session = s
+            beginLiveMetrics(from: startedAt)
             Task {
                 _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)
             }
         } catch {
             loadError = error.localizedDescription
         }
+    }
+
+    private func beginLiveMetrics(from start: Date) {
+        let metrics = LiveWorkoutMetrics(
+            healthKit: LiveHealthKitService.shared,
+            sessionStart: start,
+            activityType: .functionalStrengthTraining
+        )
+        metrics.begin()
+        liveMetrics = metrics
     }
 
     /// Active LiftSession matching `templateName` from today (durationMinutes==0).
@@ -422,8 +442,18 @@ struct LiftSessionView: View {
 
     private func endWorkout(service: LiftService, session: LiftSession) async {
         let durationMinutes = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
+        // HealthKit-measured energy (watch worn) wins; otherwise a MET
+        // estimate from body weight so the Health workout isn't calorie-less.
+        await liveMetrics?.refreshOnce()
+        let kcal = liveMetrics?.closingKcal(
+            met: WorkoutMetrics.met(for: .lift),
+            weightLbs: profiles.first?.weightLbs,
+            elapsedMinutes: Double(durationMinutes)
+        )
+        let avgHR = liveMetrics?.heartRateBPM.map { Int($0.rounded()) }
         do {
-            try service.endSession(session, durationMinutes: durationMinutes)
+            try service.endSession(session, durationMinutes: durationMinutes, avgHR: avgHR, estimatedCalories: kcal)
+            liveMetrics?.end()
             await WorkoutLiveActivityController.endAll()
             completionCount &+= 1
             LogFeedbackCenter.shared.confirm(IdentityCopy.workoutLogged)

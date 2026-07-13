@@ -11,12 +11,15 @@ import os
 final class CustomActivityService {
     private let modelContext: ModelContext
     private let timezone: TimeZone
+    private let healthKit: HealthKitServiceProtocol?
     private let logger = Logger.app
 
     init(modelContext: ModelContext,
-         timezone: TimeZone = TimeZone.current) {
+         timezone: TimeZone = TimeZone.current,
+         healthKit: HealthKitServiceProtocol? = nil) {
         self.modelContext = modelContext
         self.timezone = timezone
+        self.healthKit = healthKit
     }
 
     // MARK: - Templates
@@ -155,5 +158,19 @@ final class CustomActivityService {
         try modelContext.save()
         CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
         logger.info("Ended custom activity \(session.templateName, privacy: .public) duration=\(session.durationMinutes, privacy: .public)")
+
+        // Mirror the typed services: custom activities reach Apple Health as
+        // real workouts (mapped by template name; "Running" → .running) so
+        // rings, trends, and the Training-hub recaps see them.
+        let end = session.date.addingTimeInterval(TimeInterval(session.durationMinutes * 60))
+        SessionLifecycleService.shared.dispatchHealthKitWorkout(
+            activityType: WorkoutMetrics.hkActivityType(forTemplateNamed: session.templateName),
+            start: session.date,
+            end: end,
+            totalEnergyKcal: caloriesKcal,
+            totalDistanceMeters: distanceMeters,
+            healthKit: healthKit,
+            modelContainer: modelContext.container
+        )
     }
 }
