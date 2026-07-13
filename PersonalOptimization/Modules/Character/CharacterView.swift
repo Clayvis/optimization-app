@@ -36,10 +36,7 @@ struct CharacterView: View {
     var body: some View {
         VStack(spacing: 12) {
             ZStack {
-                Image(service.currentState.assetName(for: variant))
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
+                MascotView(state: service.currentState, variant: variant)
                     .frame(width: size, height: size)
                     .scaleEffect(reduceMotion ? 1.0 : (breathing ? 1.02 : 1.0) * pulseScale * tapScale)
                     .offset(y: reduceMotion ? 0 : (workoutPresence.isActive ? (breathing ? -5 : 3) : (breathing ? -2 : 2)))

@@ -262,6 +262,10 @@ targets:
       - path: PersonalOptimization/Modules/Fasting/LiveActivity/FastingActivityAttributes.swift
       - path: PersonalOptimization/Modules/Training/LiveActivity/WorkoutActivityAttributes.swift
       - path: PersonalOptimization/Modules/Engagement/LiveActivity/DailyGoalActivityAttributes.swift
+      # Shared vector mascot so the Home Screen widget renders without the
+      # optional PNG catalog. Dependency-free by design (no models, no Theme).
+      - path: PersonalOptimization/Modules/Character/MascotIllustration.swift
+        name: SharedCharacter
     resources:
       - path: PersonalOptimization/MascotAssets.xcassets
         name: SharedMascotAssets

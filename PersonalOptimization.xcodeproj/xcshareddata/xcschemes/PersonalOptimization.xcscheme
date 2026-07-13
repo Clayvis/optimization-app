@@ -51,6 +51,17 @@
                ReferencedContainer = "container:PersonalOptimization.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "27E09317DA8B0CB94AF08C38"
+               BuildableName = "PersonalOptimizationUITests.xctest"
+               BlueprintName = "PersonalOptimizationUITests"
+               ReferencedContainer = "container:PersonalOptimization.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

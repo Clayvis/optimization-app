@@ -80,10 +80,7 @@ struct ShareCardLayout: View {
             )
             VStack(spacing: 14) {
                 Spacer()
-                Image(milestone.mascotState.assetName(for: mascotVariant))
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
+                MascotView(state: milestone.mascotState, variant: mascotVariant)
                     .frame(maxWidth: 280, maxHeight: 280)
                 Text(milestone.unlockTitle)
                     .font(.title3.weight(.bold))

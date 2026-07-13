@@ -59,19 +59,17 @@ struct MascotVariantPickerView: View {
 
     @ViewBuilder
     private func variantRow(_ variant: MascotVariant) -> some View {
-        let neutralAsset = "\(variant.assetPrefix)_Neutral"
         let isCurrent = profiles.first?.mascotVariant == variant.rawValue
         HStack(spacing: 16) {
-            Image(neutralAsset)
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
+            MascotView(state: .neutral, variant: variant.rawValue)
                 .frame(width: 72, height: 72)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             VStack(alignment: .leading, spacing: 4) {
                 Text(variant.displayName)
                     .font(.body.weight(.semibold))
-                Text("8 states · breathing animation")
+                Text(MascotVariantPreflight.missingAssets(for: variant) == nil
+                     ? "Custom art · 8 states"
+                     : "Built-in art · 8 states")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -93,13 +91,15 @@ struct MascotVariantPickerView: View {
             preflightError = "No user profile loaded; cannot apply variant."
             return
         }
-        if let missing = MascotVariantPreflight.missingAssets(for: variant) {
-            preflightError = "Cannot switch to \(variant.displayName): \(missing.count)/8 assets missing — \(missing.joined(separator: ", ")). See M3.7_MASCOT_PROMPTS.md."
-            return
-        }
         profile.mascotVariant = variant.rawValue
         try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
-        preflightError = nil
+        // PNG art is optional now that the vector fallback ships. Surface a
+        // note (not a block) when the drop-in art isn't installed.
+        if MascotVariantPreflight.missingAssets(for: variant) != nil {
+            preflightError = "\(variant.displayName) is using the built-in drawn mascot. Drop PNG art into MascotAssets.xcassets to override (see References/gemini_workflow.md)."
+        } else {
+            preflightError = nil
+        }
     }
 }
 

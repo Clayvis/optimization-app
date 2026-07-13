@@ -130,6 +130,10 @@ struct RootView: View {
 /// deliberate home for the slower-cadence modules while Today, Fast, Water,
 /// and Train remain one tap away.
 private struct DojoHubView: View {
+    @Query private var profiles: [UserProfile]
+    @Query private var streaks: [StreakCounter]
+    @Query private var achievements: [Achievement]
+
     private let columns = [
         GridItem(.flexible(), spacing: Theme.Space.m),
         GridItem(.flexible(), spacing: Theme.Space.m)
@@ -192,8 +196,15 @@ private struct DojoHubView: View {
                                 destination: BiomarkersView(embedded: true)
                             )
                             dojoTile(
+                                title: "Achievements",
+                                subtitle: "Earned wins and milestones",
+                                systemImage: "trophy.fill",
+                                tint: Theme.kin,
+                                destination: AchievementsView()
+                            )
+                            dojoTile(
                                 title: "Settings",
-                                subtitle: "Profile, schedule, devices",
+                                subtitle: "Profile, body, devices",
                                 systemImage: "gearshape.fill",
                                 tint: Theme.textSecondary,
                                 destination: SettingsView(embedded: true)
@@ -208,29 +219,54 @@ private struct DojoHubView: View {
         }
     }
 
+    /// Mascot hero. The Dojo is the character's home: the live state view
+    /// (breathing, tap feedback, trigger reason) plus the earned-numbers
+    /// strip. Falls back to the torii mark when the mascot is disabled.
     private var dojoHeader: some View {
         DojoCard(accent: Theme.kurenai) {
-            HStack(spacing: Theme.Space.l) {
-                ZStack {
-                    Circle()
-                        .fill(Theme.kurenai.opacity(0.14))
-                    Image(systemName: "torii.gate")
-                        .font(.system(size: 32, weight: .semibold))
-                        .foregroundStyle(Theme.kurenai)
+            VStack(spacing: Theme.Space.m) {
+                if profiles.first?.mascotEnabled ?? true {
+                    CharacterView(size: 150)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    ZStack {
+                        Circle()
+                            .fill(Theme.kurenai.opacity(0.14))
+                        Image(systemName: "torii.gate")
+                            .font(.system(size: 32, weight: .semibold))
+                            .foregroundStyle(Theme.kurenai)
+                    }
+                    .frame(width: 64, height: 64)
                 }
-                .frame(width: 64, height: 64)
 
-                VStack(alignment: .leading, spacing: Theme.Space.xs) {
-                    Text("Sharpen the whole system")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(Theme.textPrimary)
-                    Text("Review progress, practice skills, inspect health, and tune your protocol.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                Text("Sharpen the whole system")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Theme.textPrimary)
+
+                HStack(spacing: Theme.Space.s) {
+                    if workoutStreak > 0 {
+                        StatChip(systemImage: "flame.fill", text: "\(workoutStreak)d streak", tint: Theme.kin)
+                    }
+                    if longestStreak > 0 {
+                        StatChip(systemImage: "crown.fill", text: "best \(longestStreak)d", tint: Theme.textSecondary)
+                    }
+                    StatChip(systemImage: "trophy.fill",
+                             text: "\(achievements.count) earned",
+                             tint: achievements.isEmpty ? Theme.textSecondary : Theme.kin)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Workout streak \(workoutStreak) days, longest \(longestStreak) days, \(achievements.count) achievements earned")
             }
+            .frame(maxWidth: .infinity)
         }
+    }
+
+    private var workoutStreak: Int {
+        streaks.first { $0.domain == StreakDomain.workout.rawValue }?.currentStreak ?? 0
+    }
+
+    private var longestStreak: Int {
+        streaks.map(\.longestStreak).max() ?? 0
     }
 
     private func dojoTile<Destination: View>(

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WidgetKit
 
 /// The small value object passed from the app to WidgetKit through the shared
@@ -91,6 +92,25 @@ struct MascotHomeWidget: Widget {
     }
 }
 
+/// Renders the mascot inside the widget: PNG art when installed, the shared
+/// vector illustration otherwise. Mirrors the app-side `MascotView` without
+/// importing the model layer (the entry carries plain strings).
+private struct WidgetMascot: View {
+    let assetName: String
+    let state: String
+
+    var body: some View {
+        if UIImage(named: assetName) != nil {
+            Image(assetName)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+        } else {
+            MascotIllustration(stateName: state, palette: .forVariant(assetName))
+        }
+    }
+}
+
 private struct MascotHomeWidgetView: View {
     let entry: MascotHomeEntry
     @Environment(\.widgetFamily) private var family
@@ -119,10 +139,7 @@ private struct MascotHomeWidgetView: View {
                         style: StrokeStyle(lineWidth: 7, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                Image(entry.assetName)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
+                WidgetMascot(assetName: entry.assetName, state: entry.state)
                     .padding(10)
             }
             .frame(width: 92, height: 92)
@@ -140,10 +157,7 @@ private struct MascotHomeWidgetView: View {
 
     private var mediumLayout: some View {
         HStack(spacing: 14) {
-            Image(entry.assetName)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
+            WidgetMascot(assetName: entry.assetName, state: entry.state)
                 .frame(width: 116, height: 116)
 
             VStack(alignment: .leading, spacing: 8) {
