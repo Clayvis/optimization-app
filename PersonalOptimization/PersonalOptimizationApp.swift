@@ -9,7 +9,9 @@ struct PersonalOptimizationApp: App {
     /// initialization. Those modules touch system-services that fail or stall
     /// under XCTest, and the unit tests stub their dependencies directly anyway.
     private static let isRunningTests: Bool =
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        ProcessInfo.processInfo.arguments.contains("--unit-testing")
+            || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.environment["XCTestBundlePath"] != nil
     private static let isUITesting: Bool =
         ProcessInfo.processInfo.arguments.contains("--ui-testing")
 

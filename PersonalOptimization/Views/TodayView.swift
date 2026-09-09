@@ -6,6 +6,7 @@ import UIKit
 
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query private var profiles: [UserProfile]
     @Query private var dailyLogs: [DailyLog]
     @Query(sort: [SortDescriptor(\HealthKitWriteFailure.timestamp, order: .reverse)])
@@ -19,7 +20,10 @@ struct TodayView: View {
     @State private var dailyQuote: DailyQuote?
     @State private var pendingCelebration: MilestoneUnlock?
     @State private var showingMemorySheet = false
-    @State private var insightsExpanded = false
+    @AppStorage("today.insightsExpanded") private var insightsExpanded = false
+    @AppStorage("today.planExpanded") private var planExpanded = false
+    @State private var healthExpanded = false
+    @State private var healthKitAuthorization: HKAuthorizationStatus?
     @State private var showingBodyInfoSheet = false
 
     // V11 launch-polish (Item 6): services held in @State so they survive
@@ -58,122 +62,63 @@ struct TodayView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section { healthKitStatusCard }
-
-                if let profile, profile.mascotEnabled {
-                    Section {
-                        CharacterView(service: characterService, size: 200)
-                            .frame(maxWidth: .infinity)
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
-                    }
-                }
-
-                graceBannerSection
-
-                // One-time nudge for profiles created before the body-info
-                // onboarding step existed. Disappears forever once DOB is set.
-                if let profile, profile.dob == .distantPast {
-                    Section {
-                        Button {
-                            showingBodyInfoSheet = true
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: "figure.arms.open")
-                                    .font(.title3)
-                                    .foregroundStyle(.tint)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Add your body info")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(.primary)
-                                    Text("Age, height, weight. Unlocks calorie estimates and biological-age math.")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .accessibilityIdentifier("today.bodyInfoPrompt")
-                    }
-                }
-
                 Section {
-                    WelcomeBackCard()
-                        .listRowSeparator(.hidden)
+                    DailyWorkoutCard(now: now)
                         .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                if let quote = dailyQuote {
-                    Section {
-                        Text(quote.displayText)
-                            .font(.footnote.italic())
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
-                            .accessibilityLabel(quote.displayText)
-                    }
-                }
-
-                Section {
-                    masterMetricCard
                         .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 }
 
                 Section {
-                    NextBlockCard()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                    DisclosureGroup(isExpanded: $healthExpanded) {
+                        healthKitStatusCard
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("Apple Health", systemImage: "heart.fill")
+                                .foregroundStyle(Theme.kurenai)
+                            Text(activeHealthKitError == nil ? lastSyncText : "Sync needs attention. Tap to retry.")
+                                .font(.caption)
+                                .foregroundStyle(activeHealthKitError == nil ? Color.secondary : Color.orange)
+                        }
+                    }
+                    .accessibilityIdentifier("today.healthDetails")
                 }
 
                 Section {
-                    PrescribedWorkoutCard()
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                    DisclosureGroup(isExpanded: $planExpanded) {
+                        NextBlockCard()
+                        PrescribedWorkoutCard()
+                        let blocks = service.todayBlocks(for: now)
+                        if blocks.isEmpty {
+                            Text("Your day is open. A workout can fit whenever you're ready.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(blocks) { block in tappableBlock(block: block) }
+                        }
+                    } label: {
+                        Label("Schedule & training plan", systemImage: "calendar")
+                            .font(.headline)
+                    }
+                    .accessibilityIdentifier("today.trainingPlan")
                 }
 
                 Section {
                     DisclosureGroup(isExpanded: $insightsExpanded) {
-                        insightsStack
-                            .padding(.top, Theme.Space.m)
+                        masterMetricCard
+                        insightsStack.padding(.top, Theme.Space.m)
+                        if let profile, profile.dob == .distantPast {
+                            Button("Add body info for calorie estimates") { showingBodyInfoSheet = true }
+                                .accessibilityIdentifier("today.bodyInfoPrompt")
+                        }
                     } label: {
-                        Label("Review & insights", systemImage: "scroll.fill")
+                        Label("Habits & insights", systemImage: "scroll.fill")
                             .font(.headline)
                             .foregroundStyle(Theme.textPrimary)
                     }
                     .accessibilityIdentifier("today.reviewInsights")
                     .listRowSeparator(.hidden)
                 }
-
-                Section {
-                    headerCard
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                Section("Today's blocks") {
-                    let blocks = service.todayBlocks(for: now)
-                    if blocks.isEmpty {
-                        Text("Open day. You write the plan.")
-                            .foregroundStyle(.secondary)
-                            .accessibilityLabel("No blocks scheduled today")
-                    } else {
-                        ForEach(blocks) { block in
-                            tappableBlock(block: block)
-                        }
-                    }
-                }
+                graceBannerSection
             }
             .navigationTitle(weekdayTitle)
             .listStyle(.insetGrouped)
@@ -196,7 +141,6 @@ struct TodayView: View {
                 bootstrapServices()
                 characterService.start(modelContext: modelContext)
                 refreshMascotWidget()
-                Task { await loadDailyQuote() }
                 refreshLapseAndMilestones()
                 durabilityHeadline = DurabilityHeadlineService(modelContext: modelContext).headline(asOf: now)
                 // Update an already-running daily-goal Live Activity, but do not
@@ -204,6 +148,8 @@ struct TodayView: View {
                 Task { await refreshDailyGoalActivity(startIfNeeded: false) }
             }
             .onChange(of: logFeedback.token) { _, _ in
+                now = Date()
+                refreshLapseAndMilestones()
                 // A real log happened: surface / refresh the daily-goal Live
                 // Activity so today's shape updates on the lock screen.
                 Task { await refreshDailyGoalActivity(startIfNeeded: true) }
@@ -214,7 +160,14 @@ struct TodayView: View {
                 refreshMascotWidget()
             }
             .onReceive(NotificationCenter.default.publisher(for: .dailyLogsRecomputed)) { _ in
+                now = Date()
                 refreshMascotWidget()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { now = Date() }
+            }
+            .onChange(of: activeHealthKitError) { _, error in
+                if error != nil { healthExpanded = true }
             }
             .onDisappear {
                 characterService.stop()
@@ -233,12 +186,16 @@ struct TodayView: View {
             .task(id: "todayview.bootstrap") {
                 bootstrapServices()
             }
+            .task(id: scenePhase) {
+                if scenePhase == .active { await refreshHealthKitAuthorization() }
+            }
             // SwiftUI-native ticker. The OS pauses the task when the view
             // leaves the screen and resumes it when it returns; no manual
             // Timer lifecycle to manage and no battery cost while idle.
             .task(id: "todayview.tick") {
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(60))  // MARK: try? justified - best-effort; failure logged inside the called function.
+                    do { try await Task.sleep(for: .seconds(60)) }
+                    catch { break }
                     now = Date()
                 }
             }
@@ -254,9 +211,20 @@ struct TodayView: View {
         }
     }
 
-    private var healthKitAuthorization: HKAuthorizationStatus {
-        guard HKHealthStore.isHealthDataAvailable() else { return .sharingDenied }
-        return HKHealthStore().authorizationStatus(for: HKObjectType.workoutType())
+    /// HealthKit's synchronous authorization query can wait on its daemon.
+    /// Keep that IPC out of SwiftUI rendering so Today remains usable while
+    /// Health is starting, unavailable, or unresponsive.
+    private func refreshHealthKitAuthorization() async {
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+            healthKitAuthorization = .notDetermined
+            return
+        }
+        let status = await Task.detached(priority: .utility) {
+            guard HKHealthStore.isHealthDataAvailable() else { return HKAuthorizationStatus.sharingDenied }
+            return HKHealthStore().authorizationStatus(for: HKObjectType.workoutType())
+        }.value
+        guard !Task.isCancelled else { return }
+        healthKitAuthorization = status
     }
 
     private var mostRecentHealthKitSync: Date? {
@@ -300,7 +268,7 @@ struct TodayView: View {
             }
 
             HStack {
-                Button(healthKitAuthorization == .notDetermined ? "Connect" : "Sync now") {
+                Button(healthKitAuthorization == nil || healthKitAuthorization == .notDetermined ? "Connect" : "Sync now") {
                     Task { await requestAndSyncHealthKit() }
                 }
                 .buttonStyle(.borderedProminent)
@@ -308,7 +276,9 @@ struct TodayView: View {
 
                 if healthKitAuthorization == .sharingDenied {
                     Button("Open Settings") {
-                        UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
                     }
                     .buttonStyle(.bordered)
                 }
@@ -324,6 +294,7 @@ struct TodayView: View {
 
     private var healthKitAuthorizationText: String {
         guard HKHealthStore.isHealthDataAvailable() else { return "Unavailable on this device" }
+        guard let healthKitAuthorization else { return "Checking access…" }
         switch healthKitAuthorization {
         case .notDetermined: return "Not connected"
         case .sharingDenied: return "Workout write access denied"
@@ -348,7 +319,7 @@ struct TodayView: View {
     }
 
     private func requestAndSyncHealthKit() async {
-        if healthKitAuthorization == .notDetermined {
+        if healthKitAuthorization == nil || healthKitAuthorization == .notDetermined {
             do {
                 _ = try await LiveHealthKitService.shared.requestAuthorization()
             } catch {
@@ -356,6 +327,7 @@ struct TodayView: View {
                 // the authorization sheet; denied access is shown above.
             }
         }
+        await refreshHealthKitAuthorization()
         guard let service = hkSyncService else { return }
         await service.refreshToday()
         NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
@@ -364,6 +336,13 @@ struct TodayView: View {
     @ViewBuilder
     private var insightsStack: some View {
         VStack(spacing: Theme.Space.m) {
+            WelcomeBackCard()
+            if let quote = dailyQuote {
+                Text(quote.displayText)
+                    .font(.footnote.italic())
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             streakStrip
             PartnerStatusCard()
             PartnerChallengeCard()
@@ -390,6 +369,7 @@ struct TodayView: View {
             }
             .buttonStyle(.plain)
         }
+        .task { await loadDailyQuote() }
     }
 
     /// Publishes a compact, privacy-safe snapshot to the App Group. WidgetKit
@@ -733,45 +713,6 @@ struct TodayView: View {
         .accessibilityLabel("\(label) \(days) \(dayLabel)")
     }
 
-    @ViewBuilder
-    private var headerCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let current = service.currentBlock(at: now) {
-                Text("NOW")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                Text(current.activity)
-                    .font(.title2.weight(.semibold))
-                Text("\(current.startTime) – \(current.endTime)")
-                    .foregroundStyle(.secondary)
-                    .font(.subheadline)
-            } else if let next = service.nextBlock(after: now) {
-                Text("NEXT")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                Text(next.activity)
-                    .font(.title2.weight(.semibold))
-                Text("starts \(next.startTime)")
-                    .foregroundStyle(.secondary)
-                    .font(.subheadline)
-            } else {
-                Text("Day complete.")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-
-            if let interval = service.timeUntilNextTransition(from: now) {
-                Text("Next transition in \(formattedInterval(interval))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel("Next transition in \(formattedInterval(interval))")
-            }
-        }
-        .padding(Theme.Space.l)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .dojoCardSurface()
-    }
-
     /// M4.2 followup: wraps blockRow in a NavigationLink when the block's
     /// module maps to a session view, otherwise renders the plain row. Today
     /// the user can tap a Lift A / Lift B / Basketball / Swim / cardio /
@@ -882,14 +823,6 @@ struct TodayView: View {
         formatter.timeZone = TimeZone.current
         formatter.dateFormat = "EEEE, MMM d"
         return formatter.string(from: now)
-    }
-
-    private func formattedInterval(_ interval: TimeInterval) -> String {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour, .minute]
-        formatter.unitsStyle = .abbreviated
-        formatter.maximumUnitCount = 2
-        return formatter.string(from: interval) ?? "—"
     }
 
     private var isSunday: Bool {

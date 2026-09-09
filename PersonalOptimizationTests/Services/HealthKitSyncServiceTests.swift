@@ -26,6 +26,27 @@ final class HealthKitSyncServiceTests: XCTestCase {
 
     // MARK: - Empty HealthKit case
 
+    func test_foregroundRefreshFetchesWorkoutsAlongsideActivityTotals() async {
+        let service = HealthKitSyncService(modelContext: context, healthKit: fake)
+        await service.refreshToday()
+        XCTAssertEqual(fake.workoutFetchCount, 1)
+    }
+
+    func test_failedWorkoutFetchDoesNotAdvanceSuccessfulSyncTime() async throws {
+        let day = Date(timeIntervalSince1970: 1_788_864_000)
+        let previous = day.addingTimeInterval(-3600)
+        let log = DailyLog(date: day)
+        log.healthKitSyncedAt = previous
+        context.insert(log)
+        try context.save()
+        fake.setWorkoutFetchFails(true)
+        let service = HealthKitSyncService(modelContext: context, healthKit: fake, now: { day })
+        _ = await service.syncToday()
+        XCTAssertNotNil(service.lastSyncError)
+        XCTAssertNil(service.lastSyncedAt)
+        XCTAssertEqual(log.healthKitSyncedAt, previous)
+    }
+
     func test_syncToday_emptyHealthKit_leavesDailyLogEmpty() async throws {
         let service = HealthKitSyncService(modelContext: context, healthKit: fake)
         let log = await service.syncToday()

@@ -20,11 +20,20 @@ struct CustomActivityWatchView: View {
     @State private var live = LiveWorkoutSessionService.shared
     @State private var distanceMeters: Double = 0
     @State private var intensity: String = "moderate"
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var finishedSummary: LiveSessionSummary?
+    @State private var finishedMinutes: Int?
 
     var body: some View {
         Group {
             if let session, let service {
                 content(session: session, service: service)
+            } else if let errorMessage {
+                VStack {
+                    Text(errorMessage).font(.caption)
+                    Button("Retry start") { start() }
+                }
             } else {
                 ProgressView().task { start() }
             }
@@ -38,6 +47,9 @@ struct CustomActivityWatchView: View {
     private func content(session: CustomActivitySession, service: CustomActivityService) -> some View {
         ScrollView {
             VStack(spacing: 8) {
+                if let errorMessage {
+                    Text(errorMessage).font(.caption2).foregroundStyle(.orange)
+                }
                 if live.isActive {
                     HStack(spacing: 6) {
                         Label("\(Int(live.heartRate))", systemImage: "heart.fill")
@@ -91,11 +103,14 @@ struct CustomActivityWatchView: View {
                 .accessibilityValue(intensity)
                 .accessibilityHint(String(localized: "Choose easy, moderate, or hard effort"))
 
-                Button(role: .destructive) {
+                Button {
+                    guard !isSaving else { return }
+                    isSaving = true
                     Task { await end(service: service, session: session) }
                 } label: {
-                    Label("End", systemImage: "stop.circle")
+                    Label(isSaving ? "Saving" : "Finish & save", systemImage: "checkmark.circle")
                 }
+                .disabled(isSaving)
                 .accessibilityLabel(String(localized: "End \(template.name) session"))
                 .accessibilityHint(String(localized: "Saves the session and returns home"))
             }
@@ -106,10 +121,15 @@ struct CustomActivityWatchView: View {
     private func start() {
         let svc = CustomActivityService(modelContext: modelContext)
         do {
-            session = try svc.startSession(for: template)
+            let active = try svc.startSession(for: template)
+            session = active
             service = svc
-            startedAt = Date()
-            try? live.start(activityType: hkActivityType, locationType: locationType)
+            startedAt = active.date
+            errorMessage = nil
+            if !live.isActive {
+                do { try live.start(activityType: hkActivityType, locationType: locationType) }
+                catch { errorMessage = "Live metrics unavailable. Your session timer is running." }
+            }
             // V11 Handoff parity: phone Lock Screen banner names the template.
             _ = HandoffService.startActivity(type: .customActivity, template: template.name)
             WatchConnectivityService.shared.send(
@@ -117,13 +137,18 @@ struct CustomActivityWatchView: View {
                                        payload: ["type": "custom", "template": template.name])
             )
         } catch {
-            // logged inside service
+            errorMessage = "Couldn't start. Please try again."
         }
     }
 
     private func end(service: CustomActivityService, session: CustomActivitySession) async {
-        let summary = await live.end()
-        let mins = max(1, summary?.durationMinutes ?? Int(Date().timeIntervalSince(startedAt) / 60))
+        defer { isSaving = false }
+        if finishedMinutes == nil {
+            finishedSummary = await live.end()
+            finishedMinutes = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
+        }
+        let summary = finishedSummary
+        let mins = finishedMinutes ?? 1
         do {
             try service.endSession(
                 session,
@@ -141,7 +166,7 @@ struct CustomActivityWatchView: View {
             )
             dismiss()
         } catch {
-            // logged inside service
+            errorMessage = "Not saved yet. Tap Finish & save to retry."
         }
     }
 

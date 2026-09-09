@@ -104,10 +104,11 @@ final class CustomActivityService {
 
     // MARK: - Sessions
 
-    /// Starts a new session against a template. Pre-fills duration with the
-    /// template default; user adjusts before ending.
+    /// Starts or resumes today's unfinished session. Browsing back and starting
+    /// again must not leave multiple active timers for the same activity.
     @discardableResult
     func startSession(for template: CustomActivityTemplate, at start: Date = Date()) throws -> CustomActivitySession {
+        if let active = currentSession(for: template, asOf: start) { return active }
         let session = CustomActivitySession(
             date: start,
             templateName: template.name,
@@ -144,19 +145,31 @@ final class CustomActivityService {
                     avgHR: Int? = nil,
                     caloriesKcal: Double? = nil,
                     notes: String? = nil) throws {
-        session.durationMinutes = max(1, durationMinutes)
-        session.distanceMeters = distanceMeters
-        session.intensity = intensity
-        session.avgHR = avgHR
-        session.caloriesKcal = caloriesKcal
-        session.notes = notes
-        try modelContext.save()
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = timezone
-        let day = cal.startOfDay(for: session.date)
-        modelContext.insert(WorkoutEvent(date: day, completed: true, source: .custom))
-        try modelContext.save()
-        CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
+        // Duration is the persisted completion marker. Repeated taps / watch
+        // delivery must not create another ledger entry or HealthKit workout.
+        guard session.durationMinutes == 0 else { return }
+        // Save the session, credit, and history atomically. A failure restores
+        // the unfinished session so the visible Retry can actually retry.
+        do {
+            try modelContext.transaction {
+                session.durationMinutes = max(1, durationMinutes)
+                session.distanceMeters = distanceMeters
+                session.intensity = intensity
+                session.avgHR = avgHR
+                session.caloriesKcal = caloriesKcal
+                session.notes = notes
+                var cal = Calendar(identifier: .gregorian)
+                cal.timeZone = timezone
+                let day = cal.startOfDay(for: session.date)
+                modelContext.insert(WorkoutEvent(date: day, completed: true, source: .custom))
+                let finishedAt = session.date.addingTimeInterval(TimeInterval(session.durationMinutes) * 60)
+                modelContext.insert(CompletionHistory(domain: .workout, timestamp: finishedAt))
+            }
+        } catch {
+            modelContext.rollback()
+            logger.error("Custom activity save failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
         logger.info("Ended custom activity \(session.templateName, privacy: .public) duration=\(session.durationMinutes, privacy: .public)")
 
         // Mirror the typed services: custom activities reach Apple Health as

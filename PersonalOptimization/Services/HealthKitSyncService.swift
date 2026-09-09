@@ -53,6 +53,7 @@ final class HealthKitSyncService {
     /// must be Sendable — which `@Model` types are not.
     func refreshToday() async {
         _ = await syncToday()
+        NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
     }
 
     /// Pulls HealthKit data for a specific day into its DailyLog row.
@@ -65,7 +66,7 @@ final class HealthKitSyncService {
         lastSyncError = nil
         defer {
             isSyncing = false
-            lastSyncedAt = Date()
+            if lastSyncError == nil { lastSyncedAt = now() }
             lastSyncDurationMs = Int(Date().timeIntervalSince(started) * 1000)
         }
         let log = ensureLog(for: date)
@@ -159,10 +160,28 @@ final class HealthKitSyncService {
             log.mindfulMinutes = Int(mindful.rounded())
         }
 
-        log.healthKitSyncedAt = now()
+        // Foreground and manual refresh must import workouts too. Previously
+        // only the background observer granted workout credit, so Move could
+        // update while the workout goal and streak stayed empty.
+        let calendar = UserCalendar.current(modelContext: modelContext)
+        let day = calendar.startOfDay(for: date)
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: day) {
+            do {
+                let workouts = try await healthKit.fetchWorkouts(in: DateInterval(start: day, end: tomorrow))
+                let imported = workouts.filter { $0.startDate >= day && $0.startDate < tomorrow }
+                    .compactMap { ImportedWorkout(hkWorkout: $0) }
+                try WorkoutImportService(modelContext: modelContext, calendar: calendar).importWorkouts(imported)
+            } catch {
+                recordFetchError(error)
+            }
+        }
+
+        let previousSync = log.healthKitSyncedAt
+        if lastSyncError == nil { log.healthKitSyncedAt = now() }
         do {
             try modelContext.save()
         } catch {
+            log.healthKitSyncedAt = previousSync
             logger.error("HealthKit sync save failed: \(error.localizedDescription, privacy: .public)")
             lastSyncError = error.localizedDescription
         }

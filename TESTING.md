@@ -5,7 +5,7 @@ Test strategy for the v1 build. Tests are required for every milestone close per
 ## Frameworks
 
 - XCTest for unit tests.
-- XCTest with `XCUIApplication` for UI tests (deferred to v0.5+).
+- XCTest with `XCUIApplication` for navigation, quick logging, and workout/rest UI smoke tests.
 - No third-party mocking framework. Hand-rolled test doubles only.
 
 ## Coverage Targets
@@ -20,6 +20,50 @@ Test strategy for the v1 build. Tests are required for every milestone close per
 | Formula calculators (PhenoAge, streaks, adherence) | 95%+ |
 
 Run coverage report: `xcodebuild test -scheme PersonalOptimization -enableCodeCoverage YES`.
+
+## Local Xcode setup
+
+The active checkout on this Mac is `~/Developer/optimization-app`. The previous
+Desktop location links to it. Keep the active checkout outside iCloud-managed
+Desktop/Documents folders: Xcode's file coordination stalled on the cloud copy.
+
+Local verification uses Xcode 26.6 and the iPhone 17 Pro / iOS 26.5 simulator.
+CI remains pinned to its version below. After installing Xcode, complete its
+first-launch setup, install the simulator runtime, and select Xcode under
+Settings > Locations > Command Line Tools. If macOS requests developer-tool
+authorization, complete that system dialog before running hosted tests.
+
+```sh
+xcode-select -p
+xcodebuild -version
+/usr/sbin/DevToolsSecurity -status
+xcodebuild test \
+  -project PersonalOptimization.xcodeproj \
+  -scheme PersonalOptimization \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+  -parallel-testing-enabled NO \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO
+```
+
+The shared Test action supplies `--unit-testing`, which uses an in-memory
+container and suppresses production launch side effects, and it launches
+the unit-test host without LLDB attached (`debugEnabled: false` in
+project.yml). UI tests launch the app separately with `--ui-testing` and
+seed an onboarded test profile. Normal Run actions do not use either flag.
+Five Keychain tests skip when the unsigned simulator lacks Keychain
+entitlements; verify them with signing on a device.
+
+Known local flake (Xcode 26.6, iOS 26.5 simulator): xcodebuild sometimes
+launches the unit-test host with no arguments and no XCTest environment,
+so the test bundle never loads. An unsigned host then dies with `Early
+unexpected exit ... signal trap before establishing connection`; a signed
+host sits idle until xcodebuild gives up. Confirm with
+`xcrun simctl spawn <udid> launchctl procinfo <host pid>`, which reports
+`argument count = 1` in that state. Shut the simulator down
+(`xcrun simctl shutdown <udid>`) and rerun; a fresh boot has cleared it.
+`CODE_SIGNING_ALLOWED=NO` is not the cause; the suite passes with and
+without it once the host launches correctly.
 
 ## Test File Organization
 
@@ -250,8 +294,10 @@ sh scripts/install_git_hooks.sh
 ```
 
 `scripts/pre_push_test_gate.sh` then runs on every `git push`: schema-parity
-guard, asset guard, the full unit suite, and a zero-warning check. A red suite
-or any build warning blocks the push.
+guard, asset guard, the unit and UI smoke suites, and a zero-warning check.
+Like CI, it exempts only Xcode's `appintentsmetadataprocessor` diagnostic
+`Metadata extraction skipped. No AppIntents.framework dependency found.`
+for test bundles. A red suite or any other build warning blocks the push.
 
 - Bypass once (use sparingly): `git push --no-verify`
 - Fast push, parity guards only: `SKIP_TESTS=1 git push`

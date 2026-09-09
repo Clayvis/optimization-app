@@ -98,4 +98,50 @@ final class WorkoutImportServiceTests: XCTestCase {
         XCTAssertEqual(WorkoutEventSource.from(.running), .custom)
         XCTAssertEqual(WorkoutEventSource.from(.yoga), .custom)
     }
+
+    func test_ownPhoneExportsDoNotEarnDuplicateCredit() throws {
+        let start = Date(timeIntervalSince1970: 1_760_000_000)
+        for bundle in [BuildConfig.bundlePrefix] {
+            let workout = ImportedWorkout(hkUUID: UUID(), source: .custom, start: start,
+                                          end: start.addingTimeInterval(600), sourceBundleIdentifier: bundle)
+            XCTAssertEqual(try service().importWorkouts([workout]), 0)
+        }
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<WorkoutEvent>()), 0)
+    }
+
+    func test_watchWorkoutArrivingBeforeCloudKitStillEarnsCredit() throws {
+        let start = Date(timeIntervalSince1970: 1_760_000_000)
+        let workout = ImportedWorkout(hkUUID: UUID(), source: .custom, start: start,
+                                      end: start.addingTimeInterval(600),
+                                      sourceBundleIdentifier: "\(BuildConfig.bundlePrefix).watchkitapp")
+        XCTAssertEqual(try service().importWorkouts([workout]), 1)
+    }
+
+    func test_watchWorkoutWithMatchingLocalSessionIsNotCountedAgain() throws {
+        let start = Date(timeIntervalSince1970: 1_760_000_000)
+        context.insert(CustomActivitySession(date: start, templateName: "Walking", durationMinutes: 10))
+        context.insert(WorkoutEvent(date: calendar().startOfDay(for: start), completed: true, source: .custom))
+        try context.save()
+        let workout = ImportedWorkout(hkUUID: UUID(), source: .custom, start: start,
+                                      end: start.addingTimeInterval(610),
+                                      sourceBundleIdentifier: "\(BuildConfig.bundlePrefix).watchkitapp")
+        XCTAssertEqual(try service().importWorkouts([workout]), 0)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<WorkoutEvent>()), 1)
+    }
+
+    func test_thirdPartyWorkoutStillEarnsCredit() throws {
+        let start = Date(timeIntervalSince1970: 1_760_000_000)
+        let workout = ImportedWorkout(hkUUID: UUID(), source: .custom, start: start,
+                                      end: start.addingTimeInterval(600), sourceBundleIdentifier: "com.example.workout")
+        XCTAssertEqual(try service().importWorkouts([workout]), 1)
+    }
+
+    func test_zeroLengthAndReversedWorkoutsAreIgnored() throws {
+        let start = Date(timeIntervalSince1970: 1_760_000_000)
+        for duration: TimeInterval in [0, -60] {
+            let workout = ImportedWorkout(hkUUID: UUID(), source: .custom, start: start,
+                                          end: start.addingTimeInterval(duration))
+            XCTAssertEqual(try service().importWorkouts([workout]), 0)
+        }
+    }
 }

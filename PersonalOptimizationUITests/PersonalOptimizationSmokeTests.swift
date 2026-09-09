@@ -36,4 +36,31 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         quickLog.tap()
         XCTAssertTrue(app.staticTexts["Streak alive."].waitForExistence(timeout: 10))
     }
+
+    func testTodayCoachCanStartAndSaveWorkoutWithoutSetup() {
+        continueAfterFailure = false
+        let app = launchApp()
+        let start = app.buttons["today.startWorkout"]
+        XCTAssertTrue(start.waitForExistence(timeout: 15))
+        for _ in 0..<4 where !start.isHittable { app.swipeUp() }
+        start.tap()
+        let finish = app.buttons["customActivity.finish"]
+        XCTAssertTrue(finish.waitForExistence(timeout: 10), "The Today action starts the timer directly")
+        for _ in 0..<4 where !finish.isHittable { app.swipeUp() }
+        finish.tap()
+        XCTAssertTrue(app.staticTexts["Daily win earned · +50 XP"].waitForExistence(timeout: 30))
+        XCTAssertFalse(app.buttons["today.resumePlan"].exists, "Starting a workout must not also select rest")
+    }
+
+    func testTodayRestDayDoesNotStartWorkout() {
+        continueAfterFailure = false
+        let app = launchApp()
+        let rest = app.buttons["today.restDay"]
+        XCTAssertTrue(rest.waitForExistence(timeout: 15))
+        for _ in 0..<4 where !rest.isHittable { app.swipeUp() }
+        rest.tap()
+        XCTAssertTrue(app.buttons["today.resumePlan"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["customActivity.finish"].exists)
+        XCTAssertFalse(app.staticTexts["Daily win earned · +50 XP"].exists)
+    }
 }

@@ -505,6 +505,9 @@
 		FDF4BD146C8F10FDFCE6258D /* BiomarkerInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC95B76CDC3A02EE8278F6B7 /* BiomarkerInsights.swift */; };
 		FEE0CA719335CD12E7091C0B /* EngagementMetricsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF27A7DB17992CFB76C16F0 /* EngagementMetricsServiceTests.swift */; };
 		FFF0502D54A687E6A77D4865 /* PomodoroSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBC6A799A4179DC17D2A708 /* PomodoroSession.swift */; };
+		9914434043C0E844E1E2B6B5 /* DailyWorkoutProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B9A4DEEAABD8DCF58BAACA0 /* DailyWorkoutProgress.swift */; };
+		61DDA4305BA785D48A002EB3 /* DailyWorkoutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43BE56053161521315D4165 /* DailyWorkoutCard.swift */; };
+		095192BD59544A0D6AD21614 /* DailyWorkoutProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFDFE18AF98AD3963891EEAB /* DailyWorkoutProgressTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -927,6 +930,9 @@
 		FF3E8E2C56CA679596E1AC22 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		FFE7DF0CFB3575D37BEBB8A7 /* HydrationComplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationComplication.swift; sourceTree = "<group>"; };
 		FFE9E9465BD252E3D3BE2D98 /* StreakService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakService.swift; sourceTree = "<group>"; };
+		9B9A4DEEAABD8DCF58BAACA0 /* DailyWorkoutProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyWorkoutProgress.swift; sourceTree = "<group>"; };
+		D43BE56053161521315D4165 /* DailyWorkoutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyWorkoutCard.swift; sourceTree = "<group>"; };
+		CFDFE18AF98AD3963891EEAB /* DailyWorkoutProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyWorkoutProgressTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -1055,6 +1061,7 @@
 				4AE7C01549C09E53CD7FC603 /* CoachMemoryServiceTests.swift */,
 				E830049B609842EAD6F36461 /* CoachServiceTests.swift */,
 				5C173E33E25CD319154523F5 /* CoachServiceV2Tests.swift */,
+				CFDFE18AF98AD3963891EEAB /* DailyWorkoutProgressTests.swift */,
 				1A712E2954DC8575FD6F4A7C /* CustomActivityServiceTests.swift */,
 				544B3043A8B3D32DE6E259BD /* CustomLiftTemplateStoreTests.swift */,
 				915812EB1D57BF7E834BF4F3 /* DailyGoalLiveActivityControllerTests.swift */,
@@ -1126,6 +1133,7 @@
 				768FF38C73B55D4B98A7A1AD /* AchievementsView.swift */,
 				7CCB1BA881B0FE9B6E1BC548 /* CoachInsightCard.swift */,
 				DB0195CEBEAED3A47253B204 /* CoachMemoryEntrySheet.swift */,
+				D43BE56053161521315D4165 /* DailyWorkoutCard.swift */,
 				B2BA26E7796EB71FC1E0CB0A /* DailyProgressBars.swift */,
 				C0C275068EB991EE7F2A58B5 /* ImplementationIntentionsView.swift */,
 				2EEA301AFC3A5EEFB07D90BD /* IntentionsStrip.swift */,
@@ -1374,6 +1382,7 @@
 				F05848408357125EDFCFDB85 /* PartnerService.swift */,
 				05D28643EE501CEAEE75175E /* PersonaBehavioralInference.swift */,
 				989E480F10D6817804A0C890 /* PersonaService.swift */,
+				9B9A4DEEAABD8DCF58BAACA0 /* DailyWorkoutProgress.swift */,
 				ED7470D9C54626DCDFF25C9B /* ProtocolGoalSnapshot.swift */,
 				6525F274C22AF0DB515D9230 /* ProtocolRules.swift */,
 				908DCE315AB371A354909F0F /* RecoveryGate.swift */,
@@ -1934,6 +1943,7 @@
 				50ED7CC8632D7C59B0DA5103 /* CoachMemoryServiceTests.swift in Sources */,
 				DFE8A50A55E73145CDF2482B /* CoachServiceTests.swift in Sources */,
 				804602218C61E851AA9FBBB7 /* CoachServiceV2Tests.swift in Sources */,
+				095192BD59544A0D6AD21614 /* DailyWorkoutProgressTests.swift in Sources */,
 				376D6F2678DB8252E110130C /* CustomActivityServiceTests.swift in Sources */,
 				0D7B85560A3C4CE50D334D39 /* CustomLiftTemplateStoreTests.swift in Sources */,
 				A31708A5B8103B3B6C6276EC /* DSTBoundaryTests.swift in Sources */,
@@ -2070,6 +2080,8 @@
 				5BED69E6C74E936195E2902C /* DailyGoalLiveActivityController.swift in Sources */,
 				A512C5031B5B03CBBFE4C1CC /* DailyLog.swift in Sources */,
 				8B396248E2FA0762E6036F09 /* DailyLogStore.swift in Sources */,
+				9914434043C0E844E1E2B6B5 /* DailyWorkoutProgress.swift in Sources */,
+				61DDA4305BA785D48A002EB3 /* DailyWorkoutCard.swift in Sources */,
 				203E10B5EA43D6168562B123 /* DailyProgressBars.swift in Sources */,
 				893261C32866D3A46BF02D4C /* DailyQuoteService.swift in Sources */,
 				80F190EC809095AAF10F7623 /* DailySummaryService.swift in Sources */,

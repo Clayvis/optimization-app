@@ -16,12 +16,12 @@ cd "$REPO_ROOT"
 
 echo "[pre-push] schema parity guard"
 if [ -x scripts/check_schema_parity.sh ]; then
-    sh scripts/check_schema_parity.sh
+    bash scripts/check_schema_parity.sh
 fi
 
 echo "[pre-push] asset guard"
 if [ -x scripts/check_assets.sh ]; then
-    sh scripts/check_assets.sh
+    bash scripts/check_assets.sh
 fi
 
 if [ "${SKIP_TESTS:-0}" = "1" ]; then
@@ -44,7 +44,12 @@ RESULT=${PIPESTATUS:-$?}
 set -e
 
 if grep -q "TEST EXECUTE SUCCEEDED\|TEST SUCCEEDED" /tmp/pre_push_test.log; then
-    if grep -q "warning:" /tmp/pre_push_test.log; then
+    # Match the CI exception for Xcode's UI-test metadata diagnostic. Real
+    # compiler warnings still block pushes.
+    WARNINGS=$(grep -E '(^|[[:space:]])warning:' /tmp/pre_push_test.log \
+        | grep -v 'appintentsmetadataprocessor.*Metadata extraction skipped. No AppIntents.framework dependency found.' || true)
+    if [ -n "$WARNINGS" ]; then
+        echo "$WARNINGS"
         echo "[pre-push] FAILED: build produced warnings (zero-warning gate). See /tmp/pre_push_test.log"
         exit 1
     fi

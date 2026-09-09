@@ -66,4 +66,26 @@ final class CustomActivityServiceTests: XCTestCase {
         try service.endSession(s, durationMinutes: 30)
         XCTAssertNil(service.currentSession(for: t))
     }
+
+    func test_repeatedStartResumesSameSession() throws {
+        let template = try service.addTemplate(name: "Walking")
+        let first = try service.startSession(for: template)
+        let second = try service.startSession(for: template)
+        XCTAssertEqual(first.persistentModelID, second.persistentModelID)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<CustomActivitySession>()), 1)
+    }
+
+    func test_repeatedFinishCannotDuplicateCreditOrOverwriteDuration() throws {
+        let template = try service.addTemplate(name: "Walking")
+        let session = try service.startSession(for: template)
+        try service.endSession(session, durationMinutes: 7)
+        try service.endSession(session, durationMinutes: 30)
+        XCTAssertEqual(session.durationMinutes, 7)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<WorkoutEvent>()), 1)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<CompletionHistory>()), 1)
+        let freshContext = ModelContext(container)
+        XCTAssertEqual(try freshContext.fetchCount(FetchDescriptor<WorkoutEvent>()), 1,
+                       "Completion must be committed, not merely visible in the writer's context")
+        XCTAssertEqual(try freshContext.fetch(FetchDescriptor<CustomActivitySession>()).first?.durationMinutes, 7)
+    }
 }

@@ -44,7 +44,9 @@ struct RecoveryGate {
         let baseline = sevenDayBaseline(endingBefore: date)
 
         // Sleep is the most actionable signal we have on the watch + phone.
-        let sleepHours = log?.sleepHours ?? baseline.sleepMean
+        // A historical average is context, not a measurement of last night.
+        // Zero is the classifier's existing "no sleep reading" sentinel.
+        let sleepHours = log?.sleepHours ?? 0
         let hrvDelta = baseline.hrvMean.map { mean in
             mean > 0 ? ((log?.hrvRmssd ?? mean) - mean) / mean : 0
         } ?? 0
@@ -239,7 +241,7 @@ struct RecoveryGate {
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         let all = modelContext.fetchOrEmpty(descriptor)
-        let window = all.filter { $0.date >= weekAgo && $0.date < today }
+        let window = all.filter { $0.supersededAt == nil && $0.date >= weekAgo && $0.date < today }
 
         let sleepValues = window.compactMap(\.sleepHours)
         let hrvValues = window.compactMap(\.hrvRmssd)

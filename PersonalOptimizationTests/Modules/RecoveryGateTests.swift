@@ -30,6 +30,23 @@ final class RecoveryGateTests: XCTestCase {
         XCTAssertEqual(status.recommendation, .normal)
     }
 
+    func test_oldPoorSleepIsNotReportedAsLastNightsSleep() throws {
+        let profile = UserProfile()
+        context.insert(profile)
+        let calendar = cal()
+        let today = calendar.date(from: DateComponents(year: 2026, month: 9, day: 8, hour: 12))!
+        for offset in 1...7 {
+            let day = calendar.date(byAdding: .day, value: -offset, to: today)!
+            let log = DailyLog(date: day, calendar: calendar)
+            log.sleepHours = 4.0
+            context.insert(log)
+        }
+        try context.save()
+        let detail = gate.evaluateDetailed(profile: profile, asOf: today)
+        XCTAssertEqual(detail.recommendation, .normal)
+        XCTAssertFalse(detail.hasData)
+    }
+
     func test_lowSleep_returnsDowngrade() throws {
         let profile = UserProfile()
         context.insert(profile)

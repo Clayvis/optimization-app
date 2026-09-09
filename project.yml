@@ -109,6 +109,7 @@ targets:
         UIBackgroundModes:
           - processing
           - fetch
+          - remote-notification
     entitlements:
       path: PersonalOptimization/PersonalOptimization.entitlements
       properties:
@@ -404,6 +405,10 @@ schemes:
         PersonalOptimization: all
     test:
       config: Debug
+      debugEnabled: false
+      shouldUseLaunchSchemeArgsEnv: false
+      commandLineArguments:
+        "--unit-testing": true
       gatherCoverageData: true
       coverageTargets:
         - PersonalOptimization

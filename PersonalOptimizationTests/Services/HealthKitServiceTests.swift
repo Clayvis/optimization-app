@@ -43,6 +43,11 @@ final class FakeHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
     private var _stubbedSleepHours: Double?
     private var _stubbedMindfulMin: Double?
     private var _stubbedWorkouts: [HKWorkout] = []
+    private var _workoutFetchCount = 0
+    private var _workoutFetchFails = false
+
+    var workoutFetchCount: Int { lock.withLock { _workoutFetchCount } }
+    func setWorkoutFetchFails(_ value: Bool) { lock.withLock { _workoutFetchFails = value } }
 
     func stubLatest(_ identifier: HKQuantityTypeIdentifier, value: Double?) {
         lock.withLock {
@@ -87,7 +92,13 @@ final class FakeHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
     }
 
     func fetchWorkouts(in range: DateInterval) async throws -> [HKWorkout] {
-        lock.withLock { _stubbedWorkouts }
+        try lock.withLock {
+            _workoutFetchCount += 1
+            if _workoutFetchFails {
+                throw NSError(domain: "FakeHealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Workout fetch failed"])
+            }
+            return _stubbedWorkouts
+        }
     }
 }
 

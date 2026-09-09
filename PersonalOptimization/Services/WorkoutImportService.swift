@@ -11,6 +11,16 @@ struct ImportedWorkout: Sendable, Equatable {
     let source: WorkoutEventSource
     let start: Date
     let end: Date
+    let sourceBundleIdentifier: String?
+
+    init(hkUUID: UUID, source: WorkoutEventSource, start: Date, end: Date,
+         sourceBundleIdentifier: String? = nil) {
+        self.hkUUID = hkUUID
+        self.source = source
+        self.start = start
+        self.end = end
+        self.sourceBundleIdentifier = sourceBundleIdentifier
+    }
 }
 
 /// Imports workouts recorded outside the app (the Apple Watch Workout app,
@@ -51,11 +61,20 @@ final class WorkoutImportService {
         // inserted-but-not-yet-saved earlier in this same loop.
         var seen = Set<UUID>()
         for workout in workouts {
+            guard workout.end > workout.start else { continue }
+            // The phone ledger is saved before its Health export. Watch data
+            // can arrive through Health before CloudKit, so never discard a
+            // watch sample unless its matching local completion is present.
+            if let bundle = workout.sourceBundleIdentifier {
+                if bundle == BuildConfig.bundlePrefix { continue }
+                if bundle == "\(BuildConfig.bundlePrefix).watchkitapp",
+                   try hasLocalCompletion(matching: workout) { continue }
+            }
             let uuid = workout.hkUUID
             if seen.contains(uuid) { continue }
-            let existing = modelContext.fetchFirstOrNil(
+            let existing = try modelContext.fetch(
                 FetchDescriptor<WorkoutEvent>(predicate: #Predicate<WorkoutEvent> { $0.hkWorkoutUUID == uuid })
-            )
+            ).first
             if existing != nil { continue }
 
             seen.insert(uuid)
@@ -67,7 +86,7 @@ final class WorkoutImportService {
                 hkWorkoutUUID: workout.hkUUID
             )
             modelContext.insert(event)
-            CompletionHistoryWriter.record(domain: .workout, at: workout.end, modelContext: modelContext)
+            modelContext.insert(CompletionHistory(domain: .workout, timestamp: workout.end))
             imported += 1
         }
         if imported > 0 {
@@ -75,6 +94,39 @@ final class WorkoutImportService {
             logger.info("Imported \(imported, privacy: .public) HealthKit workout(s) into the ledger.")
         }
         return imported
+    }
+
+    private func hasLocalCompletion(matching workout: ImportedWorkout) throws -> Bool {
+        let lower = workout.start.addingTimeInterval(-5)
+        let upper = workout.start.addingTimeInterval(5)
+        let source = workout.source.rawValue
+        let day = calendar.startOfDay(for: workout.start)
+        let events = try modelContext.fetch(FetchDescriptor<WorkoutEvent>(predicate: #Predicate {
+            $0.date == day && $0.source == source && $0.completed && $0.hkWorkoutUUID == nil
+        }))
+        guard !events.isEmpty else { return false }
+        let durations: [TimeInterval]
+        switch workout.source {
+        case .lift:
+            durations = try modelContext.fetch(FetchDescriptor<LiftSession>(predicate: #Predicate {
+                $0.date >= lower && $0.date <= upper && $0.durationMinutes > 0
+            })).map { TimeInterval($0.durationMinutes) * 60 }
+        case .swim:
+            durations = try modelContext.fetch(FetchDescriptor<SwimSession>(predicate: #Predicate {
+                $0.date >= lower && $0.date <= upper && $0.durationMinutes > 0
+            })).map { TimeInterval($0.durationMinutes) * 60 }
+        case .basketball:
+            durations = try modelContext.fetch(FetchDescriptor<BasketballSession>(predicate: #Predicate {
+                $0.startTime >= lower && $0.startTime <= upper
+            })).filter { $0.endTime > $0.startTime }.map { $0.endTime.timeIntervalSince($0.startTime) }
+        case .custom:
+            durations = try modelContext.fetch(FetchDescriptor<CustomActivitySession>(predicate: #Predicate {
+                $0.date >= lower && $0.date <= upper && $0.durationMinutes > 0
+            })).map { TimeInterval($0.durationMinutes) * 60 }
+        default:
+            return false
+        }
+        return durations.contains { abs($0 - workout.end.timeIntervalSince(workout.start)) < 60 }
     }
 }
 
@@ -88,7 +140,8 @@ extension ImportedWorkout {
             hkUUID: hkWorkout.uuid,
             source: WorkoutEventSource.from(hkWorkout.workoutActivityType),
             start: hkWorkout.startDate,
-            end: hkWorkout.endDate
+            end: hkWorkout.endDate,
+            sourceBundleIdentifier: hkWorkout.sourceRevision.source.bundleIdentifier
         )
     }
 }
