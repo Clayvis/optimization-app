@@ -38,9 +38,9 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Tracks sleep, heart rate, and HRV to power character emotional state and weekly review insights.</string>
+	<string>Reads sleep, heart rate, HRV, activity, weight, and nutrition from Apple Health to power daily targets, character state, and weekly review insights.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Logs workouts and water intake to Apple Health for cross-app integration.</string>
+	<string>Writes workouts, water intake, and logged meals (calories and macros) to Apple Health so other apps can see them.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSUserActivityTypes</key>

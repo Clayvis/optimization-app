@@ -9,6 +9,12 @@ struct TodayView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query private var profiles: [UserProfile]
     @Query private var dailyLogs: [DailyLog]
+    /// Setting nutrition targets is the opt-in signal for meal tracking. Once
+    /// they exist, protein and calories remaining lead Today so they are
+    /// visible without scrolling (nutrition spec success criterion); until
+    /// then the daily workout card keeps the top.
+    @Query(sort: [SortDescriptor(\NutritionTargets.effectiveFrom, order: .reverse)])
+    private var nutritionTargets: [NutritionTargets]
     @Query(sort: [SortDescriptor(\HealthKitWriteFailure.timestamp, order: .reverse)])
     private var healthKitWriteFailures: [HealthKitWriteFailure]
     @State private var now: Date = Date()
@@ -62,12 +68,16 @@ struct TodayView: View {
     var body: some View {
         NavigationStack {
             List {
+                if nutritionLeads { nutritionSection }
+
                 Section {
                     DailyWorkoutCard(now: now)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        .listRowInsets(EdgeInsets(top: nutritionLeads ? 0 : 8, leading: 16, bottom: 8, trailing: 16))
                 }
+
+                if !nutritionLeads { nutritionSection }
 
                 Section {
                     DisclosureGroup(isExpanded: $healthExpanded) {
@@ -208,6 +218,18 @@ struct TodayView: View {
             .sheet(isPresented: $showingBodyInfoSheet) {
                 BodyInfoSheet()
             }
+        }
+    }
+
+    private var nutritionLeads: Bool { !nutritionTargets.isEmpty }
+
+    /// Nutrition module: protein and calories remaining, one glance.
+    private var nutritionSection: some View {
+        Section {
+            NutritionTodayCard(now: now)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         }
     }
 

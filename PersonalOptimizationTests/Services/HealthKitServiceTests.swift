@@ -100,6 +100,53 @@ final class FakeHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
             return _stubbedWorkouts
         }
     }
+
+    // MARK: - Nutrition surface (records every call; ids are fresh per save)
+
+    private var _nutritionStatus: HKAuthorizationStatus = .notDetermined
+    private var _nutritionRequestCount = 0
+    private var _savedNutrition: [NutritionSample] = []
+    private var _deletedNutrition: [(entryID: UUID, sampleIDs: [UUID])] = []
+    private var _nutritionSaveFails = false
+    private var _nutritionDeleteFails = false
+
+    var nutritionRequestCount: Int { lock.withLock { _nutritionRequestCount } }
+    var savedNutrition: [NutritionSample] { lock.withLock { _savedNutrition } }
+    var deletedNutrition: [(entryID: UUID, sampleIDs: [UUID])] { lock.withLock { _deletedNutrition } }
+    func setNutritionStatus(_ value: HKAuthorizationStatus) { lock.withLock { _nutritionStatus = value } }
+    func setNutritionSaveFails(_ value: Bool) { lock.withLock { _nutritionSaveFails = value } }
+    func setNutritionDeleteFails(_ value: Bool) { lock.withLock { _nutritionDeleteFails = value } }
+
+    func nutritionAuthorizationStatus() -> HKAuthorizationStatus {
+        lock.withLock { _nutritionStatus }
+    }
+
+    func requestNutritionAuthorization() async throws -> Bool {
+        lock.withLock {
+            _nutritionRequestCount += 1
+            _nutritionStatus = _grantAuthorization ? .sharingAuthorized : .sharingDenied
+            return _grantAuthorization
+        }
+    }
+
+    func saveNutrition(_ sample: NutritionSample) async throws -> [UUID] {
+        try lock.withLock {
+            _savedNutrition.append(sample)
+            if _nutritionSaveFails {
+                throw NSError(domain: "FakeHealthKit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Nutrition save failed"])
+            }
+            return (0..<5).map { _ in UUID() }
+        }
+    }
+
+    func deleteNutrition(entryID: UUID, sampleIDs: [UUID]) async throws {
+        try lock.withLock {
+            _deletedNutrition.append((entryID: entryID, sampleIDs: sampleIDs))
+            if _nutritionDeleteFails {
+                throw NSError(domain: "FakeHealthKit", code: 3, userInfo: [NSLocalizedDescriptionKey: "Nutrition delete failed"])
+            }
+        }
+    }
 }
 
 final class FakeHealthKitServiceTests: XCTestCase {

@@ -613,6 +613,22 @@ Migration test: load a SchemaV1 store, open with SchemaV2 model container, verif
 
 ---
 
+## SchemaV11 (Nutrition module, Phase 1)
+
+Additive only. Spec: `docs/planning/NUTRITION_MODULE_HANDOFF.md`. Rationale for the
+deviations from the spec's draft model: `.work/decisions/020-nutrition-module-data-model.md`.
+
+New @Model entities:
+- FoodItem: a loggable food (user-created, cached database hit, photo estimate). Per-serving macros; `useCount` / `lastUsed` maintained at log time.
+- FoodEntry: one logged food on one day. Day-keyed (`date` = user-calendar start of day, like WorkoutEvent), macro snapshot at log time, `foodID` soft link, HealthKit sample UUIDs as CSV.
+- SavedMeal / SavedMealItem: named groups of foods (cascade relationship, LiftSession pattern).
+- NutritionTargets: daily targets in grams with `effectiveFrom` history.
+
+Shared value types (`Models/NutritionMath.swift`, no SwiftData): MacroTotals, NutritionTargetValues,
+NutritionDaySummary, NutritionFormat. They compile into the phone, watch, and complications targets.
+
+No changes to existing entities. Lightweight migration from SchemaV10.
+
 ## Schema Versioning
 
 From M1, all schemas use `VersionedSchema`:

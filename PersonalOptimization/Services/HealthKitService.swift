@@ -32,6 +32,19 @@ protocol HealthKitServiceProtocol: AnyObject, Sendable {
     func fetchLatestQuantity(_ identifier: HKQuantityTypeIdentifier,
                              unit: HKUnit,
                              in interval: DateInterval) async throws -> Double?
+
+    // Nutrition surface (Nutrition module, Phase 1). Meals are written as one
+    // HKCorrelation(.food) of dietary samples tagged with the FoodEntry id so
+    // an edit or delete can remove them before rewriting. Defaulted in the
+    // protocol extension so existing conformers and fakes stay
+    // source-compatible.
+    func nutritionAuthorizationStatus() -> HKAuthorizationStatus
+    func requestNutritionAuthorization() async throws -> Bool
+    /// Returns the UUIDs of every object written (samples plus the correlation).
+    func saveNutrition(_ sample: NutritionSample) async throws -> [UUID]
+    /// Removes everything this app wrote for `entryID`, by tag and by the
+    /// stored `sampleIDs`. Nothing to remove is not an error.
+    func deleteNutrition(entryID: UUID, sampleIDs: [UUID]) async throws
 }
 
 extension HealthKitServiceProtocol {
@@ -41,6 +54,37 @@ extension HealthKitServiceProtocol {
     func fetchLatestQuantity(_ identifier: HKQuantityTypeIdentifier,
                              unit: HKUnit,
                              in interval: DateInterval) async throws -> Double? { nil }
+    func nutritionAuthorizationStatus() -> HKAuthorizationStatus { .notDetermined }
+    func requestNutritionAuthorization() async throws -> Bool { false }
+    func saveNutrition(_ sample: NutritionSample) async throws -> [UUID] { [] }
+    func deleteNutrition(entryID: UUID, sampleIDs: [UUID]) async throws {}
+}
+
+/// A logged meal's nutrition as HealthKit will see it. A value so the write
+/// can leave the main actor and so fakes can record exactly what was sent.
+struct NutritionSample: Sendable, Equatable {
+    let entryID: UUID
+    let name: String
+    let date: Date
+    let calories: Double
+    let protein: Double
+    let carbs: Double
+    let fat: Double
+    let fiber: Double?
+    let sugar: Double?
+
+    init(entryID: UUID, name: String, date: Date, calories: Double, protein: Double,
+         carbs: Double, fat: Double, fiber: Double? = nil, sugar: Double? = nil) {
+        self.entryID = entryID
+        self.name = name
+        self.date = date
+        self.calories = calories
+        self.protein = protein
+        self.carbs = carbs
+        self.fat = fat
+        self.fiber = fiber
+        self.sugar = sugar
+    }
 }
 
 enum HealthKitError: LocalizedError {
@@ -184,6 +228,95 @@ final class LiveHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
         try await builder.endCollection(at: end)
         _ = try await builder.finishWorkout()
         logger.info("Saved \(activityType.rawValue, privacy: .public) workout to HealthKit")
+    }
+
+    // MARK: - Nutrition (Nutrition module, Phase 1)
+
+    private static let nutritionShareTypes: [HKQuantityType] = [
+        HKQuantityType(.dietaryEnergyConsumed),
+        HKQuantityType(.dietaryProtein),
+        HKQuantityType(.dietaryCarbohydrates),
+        HKQuantityType(.dietaryFatTotal),
+        HKQuantityType(.dietaryFiber),
+        HKQuantityType(.dietarySugar)
+    ]
+
+    func nutritionAuthorizationStatus() -> HKAuthorizationStatus {
+        guard HKHealthStore.isHealthDataAvailable() else { return .sharingDenied }
+        return store.authorizationStatus(for: HKQuantityType(.dietaryEnergyConsumed))
+    }
+
+    /// Asks for the dietary types (share + read) plus the two reads the
+    /// nutrition day needs: active energy for the exercise adjustment and
+    /// body mass for the weight trend. Separate from `requestAuthorization`
+    /// on purpose: the spec asks for this on first open of the nutrition
+    /// surface, not at launch. Returns true when energy write is authorized.
+    func requestNutritionAuthorization() async throws -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else { throw HealthKitError.dataNotAvailable }
+        let share = Set<HKSampleType>(Self.nutritionShareTypes.map { $0 as HKSampleType })
+        var read = Set<HKObjectType>(Self.nutritionShareTypes.map { $0 as HKObjectType })
+        read.insert(HKQuantityType(.activeEnergyBurned))
+        read.insert(HKQuantityType(.bodyMass))
+        try await store.requestAuthorization(toShare: share, read: read)
+        let status = store.authorizationStatus(for: HKQuantityType(.dietaryEnergyConsumed))
+        logger.info("Nutrition authorization status=\(status.rawValue, privacy: .public)")
+        return status == .sharingAuthorized
+    }
+
+    func saveNutrition(_ sample: NutritionSample) async throws -> [UUID] {
+        guard HKHealthStore.isHealthDataAvailable() else { throw HealthKitError.dataNotAvailable }
+        let metadata: [String: Any] = [
+            HKMetadataKeyFoodType: sample.name,
+            HKMetadataKeyExternalUUID: sample.entryID.uuidString
+        ]
+        var objects = Set<HKSample>()
+        func add(_ identifier: HKQuantityTypeIdentifier, _ value: Double?, _ unit: HKUnit) {
+            guard let value, value > 0 else { return }
+            objects.insert(HKQuantitySample(type: HKQuantityType(identifier),
+                                            quantity: HKQuantity(unit: unit, doubleValue: value),
+                                            start: sample.date,
+                                            end: sample.date,
+                                            metadata: metadata))
+        }
+        add(.dietaryEnergyConsumed, sample.calories, .kilocalorie())
+        add(.dietaryProtein, sample.protein, .gram())
+        add(.dietaryCarbohydrates, sample.carbs, .gram())
+        add(.dietaryFatTotal, sample.fat, .gram())
+        add(.dietaryFiber, sample.fiber, .gram())
+        add(.dietarySugar, sample.sugar, .gram())
+        // An all-zero entry (say, water logged as a food) has nothing Health
+        // can store; HKCorrelation refuses an empty object set.
+        guard !objects.isEmpty else { return [] }
+        let correlation = HKCorrelation(type: HKCorrelationType(.food),
+                                        start: sample.date,
+                                        end: sample.date,
+                                        objects: objects,
+                                        metadata: metadata)
+        try await store.save(correlation)
+        logger.info("Saved food correlation with \(objects.count, privacy: .public) samples to HealthKit")
+        return objects.map(\.uuid) + [correlation.uuid]
+    }
+
+    func deleteNutrition(entryID: UUID, sampleIDs: [UUID]) async throws {
+        guard HKHealthStore.isHealthDataAvailable() else { throw HealthKitError.dataNotAvailable }
+        var types: [HKObjectType] = Self.nutritionShareTypes
+        types.append(HKCorrelationType(.food))
+        var predicates = [HKQuery.predicateForObjects(withMetadataKey: HKMetadataKeyExternalUUID,
+                                                      allowedValues: [entryID.uuidString])]
+        if !sampleIDs.isEmpty {
+            predicates.append(HKQuery.predicateForObjects(with: Set(sampleIDs)))
+        }
+        for type in types {
+            for predicate in predicates {
+                do {
+                    _ = try await store.deleteObjects(of: type, predicate: predicate)
+                } catch let error as HKError where error.code == .errorNoData {
+                    // Nothing of this type was written for the entry (a food
+                    // with no fiber figure, an entry never synced). Not a failure.
+                    continue
+                }
+            }
+        }
     }
 
     // MARK: - Fetch surface (M4.2)

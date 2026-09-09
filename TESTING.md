@@ -58,10 +58,13 @@ Known local flake (Xcode 26.6, iOS 26.5 simulator): xcodebuild sometimes
 launches the unit-test host with no arguments and no XCTest environment,
 so the test bundle never loads. An unsigned host then dies with `Early
 unexpected exit ... signal trap before establishing connection`; a signed
-host sits idle until xcodebuild gives up. Confirm with
+host sits idle until xcodebuild gives up with `The test runner hung before
+establishing connection`. Confirm with
 `xcrun simctl spawn <udid> launchctl procinfo <host pid>`, which reports
 `argument count = 1` in that state. Shut the simulator down
-(`xcrun simctl shutdown <udid>`) and rerun; a fresh boot has cleared it.
+(`xcrun simctl shutdown <udid>`) and rerun. When a fresh boot of the same
+device does not clear it, running on another device (`-destination
+'platform=iOS Simulator,name=iPhone 17'`) has.
 `CODE_SIGNING_ALLOWED=NO` is not the cause; the suite passes with and
 without it once the host launches correctly.
 
@@ -81,6 +84,8 @@ PersonalOptimizationTests/
 │   ├── ScheduleServiceTests.swift
 │   ├── FastingServiceTests.swift
 │   ├── HydrationServiceTests.swift
+│   ├── NutritionMathTests.swift          # pure macro/target/summary math
+│   ├── NutritionServiceTests.swift       # JST day boundary, targets history, HealthKit delete-then-rewrite
 │   ├── BiomarkerParserTests.swift
 │   ├── PhenoAgeTests.swift
 │   ├── PatternDetectionTests.swift

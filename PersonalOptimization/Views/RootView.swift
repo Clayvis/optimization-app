@@ -182,6 +182,13 @@ private struct DojoHubView: View {
                                 destination: LearningHubView(embedded: true)
                             )
                             dojoTile(
+                                title: "Nutrition",
+                                subtitle: "Meals, macros, targets",
+                                systemImage: "fork.knife",
+                                tint: Theme.matcha,
+                                destination: NutritionDayView(initialDate: Date())
+                            )
+                            dojoTile(
                                 title: "Journey",
                                 subtitle: "Trends, streaks, progress",
                                 systemImage: "chart.line.uptrend.xyaxis",

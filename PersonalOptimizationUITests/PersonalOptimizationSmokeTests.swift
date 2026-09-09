@@ -52,6 +52,66 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertFalse(app.buttons["today.resumePlan"].exists, "Starting a workout must not also select rest")
     }
 
+    /// Nutrition Phase 1: a first-time user logs a food from Today with no
+    /// targets, no database, and no Health authorization (skipped under
+    /// --ui-testing). The day view lists it and the Today card totals it.
+    func testNutritionFirstFoodLogsFromTodayWithoutSetup() {
+        continueAfterFailure = false
+        let app = launchApp()
+        // A plain-styled NavigationLink row is exposed as a cell, not a button,
+        // and a lazy List only instantiates it once it is near the viewport.
+        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 15))
+        let card = app.descendants(matching: .any).matching(identifier: "today.nutritionCard").firstMatch
+        for _ in 0..<4 where !card.waitForExistence(timeout: 3) { app.swipeUp() }
+        XCTAssertTrue(card.exists, "Today shows the nutrition card")
+        for _ in 0..<4 where !card.isHittable { app.swipeUp() }
+        card.tap()
+
+        let addBreakfast = app.buttons["nutrition.add.breakfast"]
+        XCTAssertTrue(addBreakfast.waitForExistence(timeout: 10))
+        addBreakfast.tap()
+
+        let name = app.textFields["nutrition.newFood.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 10), "An empty food list opens straight on New food")
+        name.tap()
+        name.typeText("Test oats")
+        let calories = app.textFields["nutrition.newFood.calories"]
+        calories.tap()
+        calories.typeText("200")
+        let protein = app.textFields["nutrition.newFood.protein"]
+        protein.tap()
+        protein.typeText("20")
+
+        let log = app.buttons["nutrition.newFood.log"]
+        for _ in 0..<4 where !log.isHittable { app.swipeUp() }
+        XCTAssertTrue(log.waitForExistence(timeout: 5))
+        log.tap()
+
+        XCTAssertTrue(app.staticTexts["Test oats"].waitForExistence(timeout: 10))
+        let breakfastTotal = app.staticTexts["nutrition.total.breakfast"]
+        XCTAssertTrue(breakfastTotal.waitForExistence(timeout: 5), "The breakfast header totals the slot")
+        XCTAssertEqual(breakfastTotal.label, "200 kcal")
+
+        // Setting targets is the opt-in: from then on protein and calories
+        // remaining lead Today, visible without scrolling (spec criterion).
+        let setTargets = app.buttons["nutrition.targets"]
+        XCTAssertTrue(setTargets.waitForExistence(timeout: 5))
+        setTargets.tap()
+        let saveTargets = app.buttons["nutrition.targets.save"]
+        XCTAssertTrue(saveTargets.waitForExistence(timeout: 10))
+        saveTargets.tap()
+        XCTAssertTrue(app.buttons["nutrition.targets"].waitForExistence(timeout: 10), "Back on the day view after saving")
+
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10))
+        // Today keeps the scroll offset from the earlier swipes; the criterion
+        // is about the top of the list, so return there first.
+        for _ in 0..<3 { app.swipeDown() }
+        let proteinLeft = app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'g protein left'")).firstMatch
+        XCTAssertTrue(proteinLeft.waitForExistence(timeout: 10), "The Today card shows protein remaining once targets exist")
+        XCTAssertTrue(proteinLeft.isHittable, "Protein remaining is visible without scrolling")
+    }
+
     func testTodayRestDayDoesNotStartWorkout() {
         continueAfterFailure = false
         let app = launchApp()

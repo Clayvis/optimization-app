@@ -18,7 +18,9 @@ enum AppSchema {
     /// did not introduce new entities, so it rides SchemaV10 — SwiftData's
     /// lightweight migration applies the new properties in place when the
     /// stored UserProfile rows are first read.
-    static let current: any VersionedSchema.Type = SchemaV10.self
+    /// SchemaV11 adds the Nutrition entities (FoodItem, FoodEntry, SavedMeal,
+    /// SavedMealItem, NutritionTargets); see SchemaV11.swift.
+    static let current: any VersionedSchema.Type = SchemaV11.self
 
     /// Builds the Schema object for ModelContainer initialisation.
     static func schema() -> Schema {

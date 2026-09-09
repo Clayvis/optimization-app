@@ -94,8 +94,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        NSHealthShareUsageDescription: Tracks sleep, heart rate, and HRV to power character emotional state and weekly review insights.
-        NSHealthUpdateUsageDescription: Logs workouts and water intake to Apple Health for cross-app integration.
+        NSHealthShareUsageDescription: Reads sleep, heart rate, HRV, activity, weight, and nutrition from Apple Health to power daily targets, character state, and weekly review insights.
+        NSHealthUpdateUsageDescription: Writes workouts, water intake, and logged meals (calories and macros) to Apple Health so other apps can see them.
         NSUserNotificationUsageDescription: Sends reminders for hydration, fast transitions, and scheduled blocks.
         NSSupportsLiveActivities: true
         BGTaskSchedulerPermittedIdentifiers:
@@ -175,6 +175,10 @@ targets:
         excludes:
           - "Views/**"
           - "LearningReminderInstaller.swift"
+      - path: PersonalOptimization/Modules/Nutrition
+        name: SharedNutrition
+        excludes:
+          - "Views/**"
       - path: PersonalOptimization/Modules/Character/CharacterStateService.swift
         name: SharedCharacter
       - path: PersonalOptimization/Modules/Engagement/AdaptiveNotificationTiming.swift
@@ -226,8 +230,8 @@ targets:
         # below) and shares HealthKitService.swift, so both purpose strings
         # must ship in the watch bundle Info.plist independently of the iOS
         # parent app's strings.
-        NSHealthShareUsageDescription: Tracks sleep, heart rate, and HRV to power character emotional state and weekly review insights.
-        NSHealthUpdateUsageDescription: Logs workouts and water intake to Apple Health for cross-app integration.
+        NSHealthShareUsageDescription: Reads sleep, heart rate, HRV, activity, weight, and nutrition from Apple Health to power daily targets, character state, and weekly review insights.
+        NSHealthUpdateUsageDescription: Writes workouts, water intake, and logged meals (calories and macros) to Apple Health so other apps can see them.
     entitlements:
       path: PersonalOptimizationWatch/PersonalOptimizationWatch.entitlements
       properties:

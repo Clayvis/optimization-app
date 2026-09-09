@@ -13,6 +13,7 @@ enum IdentityCopy {
     static let fastBrokeEarly = "You logged the truth. That counts."
     static let hydrationLogged = "Streak alive."
     static let learningLogged = "Practice in the bank."
+    static let mealLogged = "Fueled on purpose."
 
     // MARK: - Daily aggregate
 

@@ -138,6 +138,7 @@ optimization-app/
 │   │   ├── Schedule/
 │   │   ├── Fasting/
 │   │   ├── Hydration/
+│   │   ├── Nutrition/                          # calories + macros; spec docs/planning/NUTRITION_MODULE_HANDOFF.md
 │   │   ├── Training/
 │   │   ├── Learning/
 │   │   ├── Coursework/
