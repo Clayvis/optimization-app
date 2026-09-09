@@ -216,6 +216,109 @@ final class NutritionServiceTests: XCTestCase {
 
     // MARK: - HealthKit mirror
 
+    func test_nonFiniteNumbersAreRejectedWithoutChangingSavedNutrition() throws {
+        let local = NutritionService(modelContext: context, calendar: calendar)
+        let food = try makeFood()
+        let entry = try local.logEntry(food: food, servings: 1, meal: .lunch)
+        for invalid in [Double.infinity, -Double.infinity, Double.nan] {
+            XCTAssertThrowsError(try local.createFood(name: "Invalid", servingSize: 1, servingUnit: "serving",
+                                                      macros: MacroTotals(calories: invalid)))
+            XCTAssertThrowsError(try local.updateFood(food, name: "Changed", brand: nil, servingSize: 100,
+                                                     servingUnit: "g", macros: MacroTotals(protein: invalid)))
+            XCTAssertThrowsError(try local.setTargets(NutritionTargetValues(calories: invalid, proteinGrams: 100,
+                                                                            carbsGrams: 100, fatGrams: 50)))
+            XCTAssertThrowsError(try local.logEntry(food: food, servings: invalid, meal: .dinner))
+            XCTAssertThrowsError(try local.updateEntry(entry, servings: invalid, meal: .dinner))
+        }
+        XCTAssertEqual(food.name, "Chicken breast")
+        XCTAssertEqual(entry.servings, 1)
+        XCTAssertEqual(entry.mealSlot, .lunch)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<FoodItem>()), 1)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<FoodEntry>()), 1)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<NutritionTargets>()), 0)
+    }
+
+    func test_servingsThatOverflowTotalsAreRejectedBeforeSaving() throws {
+        let local = NutritionService(modelContext: context, calendar: calendar)
+        let food = try makeFood()
+        let entry = try local.logEntry(food: food, servings: 1, meal: .lunch)
+        XCTAssertThrowsError(try local.logEntry(food: food, servings: .greatestFiniteMagnitude, meal: .dinner))
+        XCTAssertThrowsError(try local.updateEntry(entry, servings: .greatestFiniteMagnitude, meal: .dinner))
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<FoodEntry>()), 1)
+        XCTAssertEqual(entry.servings, 1)
+        XCTAssertEqual(entry.mealSlot, .lunch)
+    }
+
+    func test_editWhileHealthWriteIsPendingKeepsLatestServingsAcrossServices() async throws {
+        let gate = NutritionWriteGate()
+        let firstStarted = expectation(description: "Original write started")
+        let editOvertookWrite = expectation(description: "Edit must wait for the original write")
+        editOvertookWrite.isInverted = true
+        fake.beforeNutritionSave { sample in
+            if sample.calories == 165 {
+                firstStarted.fulfill()
+                await gate.wait()
+            } else {
+                editOvertookWrite.fulfill()
+            }
+        }
+        let entry = try service.logEntry(food: makeFood(), servings: 1, meal: .lunch)
+        let originalTask = service.lastHealthKitTask
+        await fulfillment(of: [firstStarted], timeout: 3)
+
+        let editor = NutritionService(modelContext: context, calendar: calendar, healthKit: fake)
+        try editor.updateEntry(entry, servings: 2, meal: .lunch)
+        await fulfillment(of: [editOvertookWrite], timeout: 0.2)
+        fake.beforeNutritionSave { _ in }
+        await gate.open()
+        await originalTask?.value
+        await editor.lastHealthKitTask?.value
+
+        XCTAssertEqual(fake.storedNutrition[entry.id]?.calories, 330)
+        XCTAssertEqual(entry.servings, 2)
+        XCTAssertNotNil(entry.healthKitSyncedAt)
+    }
+
+    func test_deleteWhileHealthWriteIsPendingDoesNotLeaveFoodInHealth() async throws {
+        let gate = NutritionWriteGate()
+        let firstStarted = expectation(description: "Original write started")
+        fake.beforeNutritionSave { _ in
+            firstStarted.fulfill()
+            await gate.wait()
+        }
+        let entry = try service.logEntry(food: makeFood(), servings: 1, meal: .lunch)
+        let originalTask = service.lastHealthKitTask
+        await fulfillment(of: [firstStarted], timeout: 3)
+
+        let deleteOvertookWrite = expectation(description: "Delete must wait for the original write")
+        deleteOvertookWrite.isInverted = true
+        fake.beforeNutritionDelete { deleteOvertookWrite.fulfill() }
+        let editor = NutritionService(modelContext: context, calendar: calendar, healthKit: fake)
+        let entryID = entry.id
+        try editor.deleteEntry(entry)
+        await fulfillment(of: [deleteOvertookWrite], timeout: 0.2)
+        fake.beforeNutritionDelete { }
+        await gate.open()
+        await originalTask?.value
+        await editor.lastHealthKitTask?.value
+
+        XCTAssertNil(fake.storedNutrition[entryID])
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<FoodEntry>()), 0)
+    }
+
+    func test_loggingDoesNotReadHealthAuthorizationOnMainThread() async throws {
+        try service.logEntry(food: makeFood(), servings: 1, meal: .lunch)
+        await awaitHealthKit()
+        XCTAssertFalse(fake.nutritionAuthorizationReadOnMainThread)
+    }
+
+    func test_requestingAuthorizationReadsStatusOffMainThread() async {
+        fake.setNutritionStatus(.notDetermined)
+        let status = await service.requestNutritionAuthorizationIfNeeded()
+        XCTAssertEqual(status, .sharingAuthorized)
+        XCTAssertFalse(fake.nutritionAuthorizationReadOnMainThread)
+    }
+
     func test_logWritesOneFoodCorrelationAndStoresItsSampleIDs() async throws {
         let entry = try service.logEntry(food: try makeFood(), servings: 2, meal: .dinner, at: jstDate(2026, 9, 9, 19, 0))
         await awaitHealthKit()
@@ -283,14 +386,15 @@ final class NutritionServiceTests: XCTestCase {
         XCTAssertEqual(failures.first?.totalEnergyKcal ?? 0, 165, accuracy: 0.001)
     }
 
-    func test_withoutAHealthStoreLoggingStillWorksLocally() throws {
+    func test_withoutAHealthStoreLoggingStillWorksLocally() async throws {
         let local = NutritionService(modelContext: context, calendar: calendar, healthKit: nil)
         let food = try local.createFood(name: "Rice", servingSize: 1, servingUnit: "cup",
                                         macros: MacroTotals(calories: 200, protein: 4, carbs: 45, fat: 0))
         try local.logEntry(food: food, servings: 1, meal: .dinner, at: jstDate(2026, 9, 9, 19, 0))
         XCTAssertEqual(local.entries(for: jstDate(2026, 9, 9, 19, 0)).count, 1)
         XCTAssertNil(local.lastHealthKitTask)
-        XCTAssertEqual(local.nutritionAuthorizationStatus, .notDetermined)
+        let status = await local.nutritionAuthorizationStatus
+        XCTAssertEqual(status, .notDetermined)
     }
 
     func test_deniedOrUnansweredAuthorizationKeepsEntriesLocalWithoutNagging() async throws {
@@ -316,5 +420,21 @@ final class NutritionServiceTests: XCTestCase {
         let second = await service.requestNutritionAuthorizationIfNeeded()
         XCTAssertEqual(second, .sharingAuthorized)
         XCTAssertEqual(fake.nutritionRequestCount, 1, "Only the first open asks")
+    }
+}
+
+private actor NutritionWriteGate {
+    private var isOpen = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func wait() async {
+        guard !isOpen else { return }
+        await withCheckedContinuation { continuation = $0 }
+    }
+
+    func open() {
+        isOpen = true
+        continuation?.resume()
+        continuation = nil
     }
 }

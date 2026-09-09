@@ -50,7 +50,7 @@ struct NutritionTodayCard: View {
                             .monospacedDigit()
                             .foregroundStyle(Theme.textSecondary)
                     } else if summary.entryCount > 0 {
-                        Text("\(NutritionFormat.kcal(summary.consumed.calories)) · \(Int(summary.consumed.protein.rounded())) g protein")
+                        Text("\(NutritionFormat.kcal(summary.consumed.calories)) · \(NutritionFormat.wholeNumber(summary.consumed.protein)) g protein")
                             .font(.headline)
                             .monospacedDigit()
                             .foregroundStyle(Theme.textPrimary)

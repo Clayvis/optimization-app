@@ -35,7 +35,7 @@ struct FoodEntryEditSheet: View {
                         if let brand = entry.brand {
                             Text(brand).font(.subheadline).foregroundStyle(.secondary)
                         }
-                        Text("Per \(servingLabel): \(NutritionFormat.kcal(entry.calories)) · P \(Int(entry.protein.rounded())) · C \(Int(entry.carbs.rounded())) · F \(Int(entry.fat.rounded()))")
+                        Text("Per \(servingLabel): \(NutritionFormat.kcal(entry.calories)) · P \(NutritionFormat.wholeNumber(entry.protein)) · C \(NutritionFormat.wholeNumber(entry.carbs)) · F \(NutritionFormat.wholeNumber(entry.fat))")
                             .font(.caption)
                             .monospacedDigit()
                             .foregroundStyle(.secondary)

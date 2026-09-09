@@ -110,7 +110,7 @@ struct NutritionTargetsSheet: View {
     }
 
     private func percent(_ fraction: Double) -> String {
-        "\(Int((fraction * 100).rounded()))%"
+        "\(NutritionFormat.wholeNumber(fraction * 100))%"
     }
 
     private func save() {

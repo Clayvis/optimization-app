@@ -85,7 +85,7 @@ struct AddFoodSheet: View {
                         Text(food.name)
                             .font(.body.weight(.medium))
                         Text([food.brand, food.servingLabel, NutritionFormat.kcal(food.calories),
-                              "P \(Int(food.protein.rounded()))"].compactMap { $0 }.joined(separator: " · "))
+                              "P \(NutritionFormat.wholeNumber(food.protein))"].compactMap { $0 }.joined(separator: " · "))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

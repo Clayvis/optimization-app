@@ -109,16 +109,31 @@ final class FakeHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
     private var _deletedNutrition: [(entryID: UUID, sampleIDs: [UUID])] = []
     private var _nutritionSaveFails = false
     private var _nutritionDeleteFails = false
+    private var _beforeNutritionSave: (@Sendable (NutritionSample) async -> Void)?
+    private var _beforeNutritionDelete: (@Sendable () async -> Void)?
+    private var _storedNutrition: [UUID: NutritionSample] = [:]
+    private var _nutritionAuthorizationReadOnMainThread = false
 
     var nutritionRequestCount: Int { lock.withLock { _nutritionRequestCount } }
     var savedNutrition: [NutritionSample] { lock.withLock { _savedNutrition } }
     var deletedNutrition: [(entryID: UUID, sampleIDs: [UUID])] { lock.withLock { _deletedNutrition } }
+    var storedNutrition: [UUID: NutritionSample] { lock.withLock { _storedNutrition } }
+    var nutritionAuthorizationReadOnMainThread: Bool { lock.withLock { _nutritionAuthorizationReadOnMainThread } }
+    func beforeNutritionSave(_ action: @escaping @Sendable (NutritionSample) async -> Void) {
+        lock.withLock { _beforeNutritionSave = action }
+    }
+    func beforeNutritionDelete(_ action: @escaping @Sendable () async -> Void) {
+        lock.withLock { _beforeNutritionDelete = action }
+    }
     func setNutritionStatus(_ value: HKAuthorizationStatus) { lock.withLock { _nutritionStatus = value } }
     func setNutritionSaveFails(_ value: Bool) { lock.withLock { _nutritionSaveFails = value } }
     func setNutritionDeleteFails(_ value: Bool) { lock.withLock { _nutritionDeleteFails = value } }
 
     func nutritionAuthorizationStatus() -> HKAuthorizationStatus {
-        lock.withLock { _nutritionStatus }
+        lock.withLock {
+            _nutritionAuthorizationReadOnMainThread = _nutritionAuthorizationReadOnMainThread || Thread.isMainThread
+            return _nutritionStatus
+        }
     }
 
     func requestNutritionAuthorization() async throws -> Bool {
@@ -130,21 +145,27 @@ final class FakeHealthKitService: HealthKitServiceProtocol, @unchecked Sendable 
     }
 
     func saveNutrition(_ sample: NutritionSample) async throws -> [UUID] {
-        try lock.withLock {
+        let beforeSave = try lock.withLock {
             _savedNutrition.append(sample)
             if _nutritionSaveFails {
                 throw NSError(domain: "FakeHealthKit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Nutrition save failed"])
             }
-            return (0..<5).map { _ in UUID() }
+            return _beforeNutritionSave
         }
+        await beforeSave?(sample)
+        lock.withLock { _storedNutrition[sample.entryID] = sample }
+        return (0..<5).map { _ in UUID() }
     }
 
     func deleteNutrition(entryID: UUID, sampleIDs: [UUID]) async throws {
+        let beforeDelete = lock.withLock { _beforeNutritionDelete }
+        await beforeDelete?()
         try lock.withLock {
             _deletedNutrition.append((entryID: entryID, sampleIDs: sampleIDs))
             if _nutritionDeleteFails {
                 throw NSError(domain: "FakeHealthKit", code: 3, userInfo: [NSLocalizedDescriptionKey: "Nutrition delete failed"])
             }
+            _storedNutrition.removeValue(forKey: entryID)
         }
     }
 }

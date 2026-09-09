@@ -17,6 +17,13 @@ struct MacroTotals: Equatable, Sendable {
 
     static let zero = MacroTotals()
 
+    /// Reject non-numeric input and arithmetic overflow before persistence or
+    /// HealthKit writes. Optional facts may be absent, but never NaN/infinity.
+    var isFinite: Bool {
+        [calories, protein, carbs, fat, caloriesFromMacros].allSatisfy(\.isFinite)
+            && fiber?.isFinite != false && sugar?.isFinite != false
+    }
+
     init(calories: Double = 0,
          protein: Double = 0,
          carbs: Double = 0,
@@ -86,6 +93,11 @@ struct NutritionTargetValues: Equatable, Sendable {
     var eatBackExerciseCalories: Bool = false
     var exerciseEatBackPercent: Double = 0.5
 
+    var isFinite: Bool {
+        [calories, proteinGrams, carbsGrams, fatGrams, exerciseEatBackPercent, caloriesFromMacros]
+            .allSatisfy(\.isFinite)
+    }
+
     init(calories: Double,
          proteinGrams: Double,
          carbsGrams: Double,
@@ -121,7 +133,8 @@ struct NutritionTargetValues: Equatable, Sendable {
     /// at 25 percent of calories, carbs fill the remainder. The user edits
     /// from here; nothing is saved until they do.
     static func prefill(weightLbs: Double?, calories: Double = 2000) -> NutritionTargetValues {
-        let protein = weightLbs.map { max(50, ($0 * 0.8).rounded()) } ?? 140
+        let validWeight = weightLbs.flatMap { $0.isFinite && $0 > 0 ? $0 : nil }
+        let protein = validWeight.map { max(50, ($0 * 0.8).rounded()) } ?? 140
         let fat = (calories * 0.25 / kcalPerGramFat).rounded()
         let carbs = max(0, ((calories - protein * kcalPerGramProtein - fat * kcalPerGramFat) / kcalPerGramCarbs).rounded())
         return NutritionTargetValues(calories: calories, proteinGrams: protein, carbsGrams: carbs, fatGrams: fat)
@@ -138,7 +151,7 @@ struct NutritionTargetValues: Equatable, Sendable {
     }
 
     var isUsable: Bool {
-        calories > 0 || proteinGrams > 0 || carbsGrams > 0 || fatGrams > 0
+        isFinite && (calories > 0 || proteinGrams > 0 || carbsGrams > 0 || fatGrams > 0)
     }
 }
 
@@ -172,7 +185,7 @@ struct NutritionDaySummary: Equatable, Sendable {
     /// is why the default percent is 50.
     var exerciseAdjustmentKcal: Double {
         guard let targets, targets.eatBackExerciseCalories,
-              let burned = activeEnergyKcal, burned > 0 else { return 0 }
+              let burned = activeEnergyKcal, burned.isFinite, burned > 0 else { return 0 }
         return burned * min(1, max(0, targets.exerciseEatBackPercent))
     }
 
@@ -190,7 +203,7 @@ struct NutritionDaySummary: Equatable, Sendable {
     var fatProgress: Double { progress(consumed.fat, of: targets?.fatGrams) }
 
     private func progress(_ value: Double, of target: Double?) -> Double {
-        guard let target, target > 0 else { return 0 }
+        guard let target, target.isFinite, target > 0, value.isFinite else { return 0 }
         return min(1, max(0, value / target))
     }
 }
@@ -199,15 +212,24 @@ struct NutritionDaySummary: Equatable, Sendable {
 enum NutritionFormat {
     /// "1", "1.5", "0.25". Never more than two decimals.
     static func number(_ value: Double) -> String {
-        value.formatted(.number.precision(.fractionLength(0...2)))
+        guard value.isFinite else { return String(localized: "Unavailable") }
+        return value.formatted(.number.precision(.fractionLength(0...2)))
+    }
+
+    /// Format directly as Double: Int conversion traps on non-finite values
+    /// and large finite values arriving from pasted input or synced history.
+    static func wholeNumber(_ value: Double) -> String {
+        guard value.isFinite else { return String(localized: "Unavailable") }
+        let rounded = value.rounded()
+        return (rounded == 0 ? 0 : rounded).formatted(.number.grouping(.never).precision(.fractionLength(0)))
     }
 
     static func grams(_ value: Double) -> String {
-        "\(Int(value.rounded())) g"
+        "\(wholeNumber(value)) g"
     }
 
     static func kcal(_ value: Double) -> String {
-        "\(Int(value.rounded())) kcal"
+        "\(wholeNumber(value)) kcal"
     }
 
     /// "100 g", "1 cup", "1 serving".
@@ -218,7 +240,8 @@ enum NutritionFormat {
     /// "42 g protein left" / "12 g protein over". Whole numbers only; nobody
     /// plans a day around 0.4 g.
     static func remaining(_ value: Double, unit: String) -> String {
-        let magnitude = Int(abs(value).rounded())
+        guard value.isFinite else { return String(localized: "Amount unavailable") }
+        let magnitude = wholeNumber(abs(value))
         return "\(magnitude) \(unit) \(value >= -0.5 ? "left" : "over")"
     }
 }

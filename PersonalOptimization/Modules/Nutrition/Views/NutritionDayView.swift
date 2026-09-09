@@ -280,13 +280,13 @@ struct NutritionSummaryCard: View {
                 }
                 if summary.exerciseAdjustmentKcal > 0, let burned = summary.activeEnergyKcal,
                    let percent = summary.targets?.exerciseEatBackPercent {
-                    Label("+\(Int(summary.exerciseAdjustmentKcal.rounded())) kcal from exercise (\(Int((percent * 100).rounded()))% of \(Int(burned.rounded())) burned)",
+                    Label("+\(NutritionFormat.wholeNumber(summary.exerciseAdjustmentKcal)) kcal from exercise (\(NutritionFormat.wholeNumber(percent * 100))% of \(NutritionFormat.wholeNumber(burned)) burned)",
                           systemImage: "figure.run")
                         .font(.caption)
                         .foregroundStyle(Theme.textSecondary)
                 }
             } else {
-                Text("\(NutritionFormat.kcal(summary.consumed.calories)) · P \(Int(summary.consumed.protein.rounded())) · C \(Int(summary.consumed.carbs.rounded())) · F \(Int(summary.consumed.fat.rounded()))")
+                Text("\(NutritionFormat.kcal(summary.consumed.calories)) · P \(NutritionFormat.wholeNumber(summary.consumed.protein)) · C \(NutritionFormat.wholeNumber(summary.consumed.carbs)) · F \(NutritionFormat.wholeNumber(summary.consumed.fat))")
                     .font(.headline)
                     .monospacedDigit()
                     .foregroundStyle(Theme.textPrimary)
@@ -320,7 +320,7 @@ struct NutritionSummaryCard: View {
                 .minimumScaleFactor(0.7)
             ProgressView(value: progress)
                 .tint(tint)
-            Text("\(Int(consumed.rounded())) of \(Int((target ?? 0).rounded())) \(unit)")
+            Text("\(NutritionFormat.wholeNumber(consumed)) of \(NutritionFormat.wholeNumber(target ?? 0)) \(unit)")
                 .font(.caption2)
                 .monospacedDigit()
                 .foregroundStyle(Theme.textTertiary)
@@ -349,7 +349,7 @@ struct FoodEntryRow: View {
                 Text(NutritionFormat.kcal(entry.totals.calories))
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
-                Text("P \(Int(entry.totals.protein.rounded())) · C \(Int(entry.totals.carbs.rounded())) · F \(Int(entry.totals.fat.rounded()))")
+                Text("P \(NutritionFormat.wholeNumber(entry.totals.protein)) · C \(NutritionFormat.wholeNumber(entry.totals.carbs)) · F \(NutritionFormat.wholeNumber(entry.totals.fat))")
                     .font(.caption2)
                     .monospacedDigit()
                     .foregroundStyle(Theme.textSecondary)

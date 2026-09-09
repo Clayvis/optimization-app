@@ -7,12 +7,14 @@ enum NutritionError: LocalizedError {
     case emptyName
     case invalidServings
     case invalidTargets
+    case invalidNumber
 
     var errorDescription: String? {
         switch self {
         case .emptyName: return "Give the food a name."
         case .invalidServings: return "Servings must be more than zero."
         case .invalidTargets: return "Set at least one target above zero."
+        case .invalidNumber: return String(localized: "Enter valid numbers for the serving size, calories, and macros.")
         }
     }
 }
@@ -29,6 +31,11 @@ enum NutritionError: LocalizedError {
 @MainActor
 final class NutritionService {
     nonisolated static let maxHealthKitAttempts = 3
+
+    // Different sheets create different service instances. Serialize Health
+    // operations for the same entry across all of them, while letting unrelated
+    // foods sync independently. The latest task removes its completed queue.
+    private static var healthKitOperations: [UUID: (token: UUID, task: Task<Void, Never>)] = [:]
 
     private let modelContext: ModelContext
     private let calendar: Calendar
@@ -76,6 +83,7 @@ final class NutritionService {
     /// earlier days keep the targets that applied to them.
     @discardableResult
     func setTargets(_ values: NutritionTargetValues, from date: Date = Date()) throws -> NutritionTargets {
+        guard values.isFinite else { throw NutritionError.invalidNumber }
         let clean = values.sanitized()
         guard clean.isUsable else { throw NutritionError.invalidTargets }
         let day = calendar.startOfDay(for: date)
@@ -105,6 +113,9 @@ final class NutritionService {
                     servingsPerContainer: Double? = nil) throws -> FoodItem {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { throw NutritionError.emptyName }
+        guard macros.isFinite, servingSize.isFinite, servingsPerContainer?.isFinite != false else {
+            throw NutritionError.invalidNumber
+        }
         let food = FoodItem(
             name: trimmedName,
             brand: Self.blankToNil(brand),
@@ -136,6 +147,7 @@ final class NutritionService {
                     macros: MacroTotals) throws {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { throw NutritionError.emptyName }
+        guard macros.isFinite, servingSize.isFinite else { throw NutritionError.invalidNumber }
         food.name = trimmedName
         food.brand = Self.blankToNil(brand)
         food.servingSize = servingSize > 0 ? servingSize : food.servingSize
@@ -174,7 +186,8 @@ final class NutritionService {
     /// calendar) and mirrors it to HealthKit off the main path.
     @discardableResult
     func logEntry(food: FoodItem, servings: Double, meal: MealSlot, at loggedAt: Date = Date()) throws -> FoodEntry {
-        guard servings > 0 else { throw NutritionError.invalidServings }
+        guard servings.isFinite, servings > 0 else { throw NutritionError.invalidServings }
+        guard food.macros.scaled(by: servings).isFinite else { throw NutritionError.invalidNumber }
         let entry = FoodEntry(date: calendar.startOfDay(for: loggedAt),
                               loggedAt: loggedAt,
                               meal: meal,
@@ -192,7 +205,8 @@ final class NutritionService {
     /// Changes servings or meal. HealthKit gets the old samples removed and
     /// the entry rewritten, so Apple Health never shows both versions.
     func updateEntry(_ entry: FoodEntry, servings: Double, meal: MealSlot) throws {
-        guard servings > 0 else { throw NutritionError.invalidServings }
+        guard servings.isFinite, servings > 0 else { throw NutritionError.invalidServings }
+        guard entry.perServing.scaled(by: servings).isFinite else { throw NutritionError.invalidNumber }
         entry.servings = servings
         entry.mealSlot = meal
         let previous = entry.healthKitSampleIDs
@@ -253,7 +267,12 @@ final class NutritionService {
     // MARK: - HealthKit
 
     var nutritionAuthorizationStatus: HKAuthorizationStatus {
-        healthKit?.nutritionAuthorizationStatus() ?? .notDetermined
+        get async {
+            guard let healthKit else { return .notDetermined }
+            return await Task.detached(priority: .utility) {
+                healthKit.nutritionAuthorizationStatus()
+            }.value
+        }
     }
 
     /// First open of the nutrition surface asks once. Denied is a legitimate
@@ -261,42 +280,24 @@ final class NutritionService {
     @discardableResult
     func requestNutritionAuthorizationIfNeeded() async -> HKAuthorizationStatus {
         guard let healthKit else { return .notDetermined }
-        guard healthKit.nutritionAuthorizationStatus() == .notDetermined else {
-            return healthKit.nutritionAuthorizationStatus()
-        }
+        let status = await nutritionAuthorizationStatus
+        guard status == .notDetermined else { return status }
         do {
             _ = try await healthKit.requestNutritionAuthorization()
         } catch {
             logger.warning("Nutrition authorization request failed: \(error.localizedDescription, privacy: .public)")
         }
-        return healthKit.nutritionAuthorizationStatus()
-    }
-
-    /// Health is mirrored only while sharing is authorized. Before the user
-    /// has answered the prompt, or after a refusal, entries simply stay
-    /// local (healthKitSyncedAt nil) instead of producing a failure row and a
-    /// "sync needs attention" nag on every meal.
-    private var canWriteToHealth: Bool {
-        healthKit?.nutritionAuthorizationStatus() == .sharingAuthorized
+        return await nutritionAuthorizationStatus
     }
 
     private func dispatchHealthKitWrite(for entry: FoodEntry, replacing previous: [UUID]) {
-        guard let healthKit, canWriteToHealth else {
-            logger.info("Nutrition Health mirror skipped: sharing not authorized")
-            return
-        }
-        let totals = entry.totals
-        let sample = NutritionSample(entryID: entry.id,
-                                     name: entry.name,
-                                     date: entry.loggedAt,
-                                     calories: totals.calories,
-                                     protein: totals.protein,
-                                     carbs: totals.carbs,
-                                     fat: totals.fat,
-                                     fiber: totals.fiber,
-                                     sugar: totals.sugar)
+        guard let healthKit else { return }
+        let sample = Self.nutritionSample(for: entry)
         let container = modelContext.container
-        lastHealthKitTask = Task.detached(priority: .utility) {
+        lastHealthKitTask = Self.enqueueHealthKitOperation(entryID: entry.id) {
+            // Authorization is synchronous IPC too. Read it on this background
+            // task, after earlier writes finish, so logging never waits on Health.
+            guard healthKit.nutritionAuthorizationStatus() == .sharingAuthorized else { return }
             let outcome = await Self.withRetry {
                 // Delete first so an edit never leaves both versions in Health.
                 try await healthKit.deleteNutrition(entryID: sample.entryID, sampleIDs: previous)
@@ -304,7 +305,7 @@ final class NutritionService {
             }
             switch outcome {
             case .success(let ids):
-                await Self.markSynced(entryID: sample.entryID, sampleIDs: ids, container: container)
+                await Self.markSynced(sample: sample, sampleIDs: ids, container: container)
             case .failure(let error, let attempts):
                 await Self.persistFailure(description: "Nutrition write (\(sample.name)): \(error.localizedDescription)",
                                           date: sample.date,
@@ -316,9 +317,10 @@ final class NutritionService {
     }
 
     private func dispatchHealthKitDelete(entryID: UUID, sampleIDs: [UUID], name: String) {
-        guard let healthKit, canWriteToHealth else { return }
+        guard let healthKit else { return }
         let container = modelContext.container
-        lastHealthKitTask = Task.detached(priority: .utility) {
+        lastHealthKitTask = Self.enqueueHealthKitOperation(entryID: entryID) {
+            guard healthKit.nutritionAuthorizationStatus() == .sharingAuthorized else { return }
             let outcome = await Self.withRetry {
                 try await healthKit.deleteNutrition(entryID: entryID, sampleIDs: sampleIDs)
                 return []
@@ -331,6 +333,33 @@ final class NutritionService {
                                           container: container)
             }
         }
+    }
+
+    private static func enqueueHealthKitOperation(
+        entryID: UUID,
+        operation: @escaping @Sendable () async -> Void
+    ) -> Task<Void, Never> {
+        let previous = healthKitOperations[entryID]?.task
+        let token = UUID()
+        let task = Task.detached(priority: .utility) {
+            await previous?.value
+            await operation()
+            await removeFinishedHealthKitOperation(entryID: entryID, token: token)
+        }
+        healthKitOperations[entryID] = (token, task)
+        return task
+    }
+
+    private static func removeFinishedHealthKitOperation(entryID: UUID, token: UUID) {
+        guard healthKitOperations[entryID]?.token == token else { return }
+        healthKitOperations.removeValue(forKey: entryID)
+    }
+
+    private static func nutritionSample(for entry: FoodEntry) -> NutritionSample {
+        let totals = entry.totals
+        return NutritionSample(entryID: entry.id, name: entry.name, date: entry.loggedAt,
+                               calories: totals.calories, protein: totals.protein,
+                               carbs: totals.carbs, fat: totals.fat, fiber: totals.fiber, sugar: totals.sugar)
     }
 
     private enum RetryOutcome {
@@ -364,12 +393,14 @@ final class NutritionService {
         return .failure(lastError ?? HealthKitError.dataNotAvailable, attempt)
     }
 
-    private static func markSynced(entryID: UUID, sampleIDs: [UUID], container: ModelContainer) {
+    private static func markSynced(sample: NutritionSample, sampleIDs: [UUID], container: ModelContainer) {
         let context = container.mainContext
-        // The entry may have been deleted while the write was in flight.
+        let entryID = sample.entryID
+        // The entry may have been edited or deleted while the write was in
+        // flight. Only the matching revision may mark the local row synced.
         guard let entry = context.fetchFirstOrNil(
             FetchDescriptor<FoodEntry>(predicate: #Predicate<FoodEntry> { $0.id == entryID })
-        ) else { return }
+        ), nutritionSample(for: entry) == sample else { return }
         entry.healthKitSampleIDs = sampleIDs
         entry.healthKitSyncedAt = Date()
         do {
@@ -399,7 +430,7 @@ final class NutritionService {
         } catch {
             Logger.healthkit.error("Could not persist nutrition HK failure: \(error.localizedDescription, privacy: .public)")
         }
-        Logger.healthkit.error("Nutrition HK write exhausted retries: \(description, privacy: .public)")
+        Logger.healthkit.error("Nutrition HK write exhausted retries: \(description, privacy: .private)")
     }
 
     private static func blankToNil(_ value: String?) -> String? {

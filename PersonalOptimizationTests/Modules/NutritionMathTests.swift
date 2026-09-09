@@ -131,6 +131,27 @@ final class NutritionMathTests: XCTestCase {
         XCTAssertEqual(NutritionFormat.serving(size: 100, unit: "g"), "100 g")
     }
 
+    func test_formattingInvalidOrOversizedSyncedValuesDoesNotTrap() {
+        for invalid in [Double.infinity, -Double.infinity, Double.nan] {
+            XCTAssertEqual(NutritionFormat.wholeNumber(invalid), "Unavailable")
+            XCTAssertEqual(NutritionFormat.number(invalid), "Unavailable")
+            XCTAssertEqual(NutritionFormat.remaining(invalid, unit: "kcal"), "Amount unavailable")
+        }
+        XCTAssertEqual(NutritionFormat.wholeNumber(-0.1), "0")
+        XCTAssertEqual(NutritionFormat.wholeNumber(1e20), "100000000000000000000")
+        XCTAssertEqual(NutritionFormat.grams(42.6), "43 g")
+    }
+
+    func test_invalidHealthTotalsDoNotCloseProgressBars() {
+        let targets = NutritionTargetValues(calories: 2000, proteinGrams: 100, carbsGrams: 100,
+                                            fatGrams: 50, eatBackExerciseCalories: true)
+        let day = summary(consumedKcal: .infinity, protein: .nan, targets: targets, burned: .infinity)
+        XCTAssertEqual(day.exerciseAdjustmentKcal, 0)
+        XCTAssertEqual(day.caloriesProgress, 0)
+        XCTAssertEqual(day.proteinProgress, 0)
+        XCTAssertEqual(NutritionTargetValues.prefill(weightLbs: .nan).proteinGrams, 140)
+    }
+
     func test_mealSlotSuggestionFollowsTheClock() {
         XCTAssertEqual(MealSlot.suggested(forHour: 7), .breakfast)
         XCTAssertEqual(MealSlot.suggested(forHour: 12), .lunch)
