@@ -2,11 +2,20 @@ import XCTest
 
 @MainActor
 final class PersonalOptimizationSmokeTests: XCTestCase {
-    private func launchApp() -> XCUIApplication {
+    private func launchApp(mascot: Bool = false, onboarding: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
+        if mascot { app.launchArguments.append("--ui-testing-mascot") }
+        if onboarding { app.launchArguments.append("--ui-testing-onboarding") }
         app.launch()
         return app
+    }
+
+    private func capture(_ name: String, app: XCUIApplication) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     /// Timeouts are sized for shared CI runners, where app launch alone can
@@ -39,17 +48,25 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
 
     func testTodayCoachCanStartAndSaveWorkoutWithoutSetup() {
         continueAfterFailure = false
-        let app = launchApp()
+        let app = launchApp(mascot: true)
         let start = app.buttons["today.startWorkout"]
         XCTAssertTrue(start.waitForExistence(timeout: 15))
         for _ in 0..<4 where !start.isHittable { app.swipeUp() }
         start.tap()
         let finish = app.buttons["customActivity.finish"]
         XCTAssertTrue(finish.waitForExistence(timeout: 10), "The Today action starts the timer directly")
+        app.tabBars.buttons["Dojo"].tap()
+        let companion = app.buttons["mascot.companion"]
+        XCTAssertTrue(companion.waitForExistence(timeout: 10))
+        XCTAssertEqual(companion.label, "Training", "The mascot stays live after leaving Today")
+        app.tabBars.buttons["Today"].tap()
         for _ in 0..<4 where !finish.isHittable { app.swipeUp() }
         finish.tap()
         XCTAssertTrue(app.staticTexts["Daily win earned · +50 XP"].waitForExistence(timeout: 30))
         XCTAssertFalse(app.buttons["today.resumePlan"].exists, "Starting a workout must not also select rest")
+        app.tabBars.buttons["Dojo"].tap()
+        XCTAssertTrue(companion.waitForExistence(timeout: 10))
+        XCTAssertEqual(companion.label, "Daily win")
     }
 
     /// Nutrition Phase 1: a first-time user logs a food from Today with no
@@ -114,7 +131,7 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
 
     func testTodayRestDayDoesNotStartWorkout() {
         continueAfterFailure = false
-        let app = launchApp()
+        let app = launchApp(mascot: true)
         let rest = app.buttons["today.restDay"]
         XCTAssertTrue(rest.waitForExistence(timeout: 15))
         for _ in 0..<4 where !rest.isHittable { app.swipeUp() }
@@ -122,5 +139,79 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["today.resumePlan"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["customActivity.finish"].exists)
         XCTAssertFalse(app.staticTexts["Daily win earned · +50 XP"].exists)
+        app.tabBars.buttons["Dojo"].tap()
+        let companion = app.buttons["mascot.companion"]
+        XCTAssertTrue(companion.waitForExistence(timeout: 10))
+        XCTAssertEqual(companion.label, "Recovery day")
+    }
+
+    func testMascotPreviewsDoNotChangeLiveStateOrEarnWorkoutCredit() {
+        continueAfterFailure = false
+        let app = launchApp(mascot: true)
+        app.tabBars.buttons["Dojo"].tap()
+        let companion = app.buttons["mascot.companion"]
+        XCTAssertTrue(companion.waitForExistence(timeout: 10))
+        let originalState = companion.label
+        let gallery = app.buttons["mascot.reactionsGallery"]
+        XCTAssertTrue(gallery.waitForExistence(timeout: 10))
+        gallery.tap()
+        for state in ["training", "recovering", "comeback", "celebrating"] {
+            let preview = app.buttons["mascot.preview.\(state)"]
+            for _ in 0..<3 where !preview.isHittable { app.swipeUp() }
+            XCTAssertTrue(preview.waitForExistence(timeout: 5))
+            preview.tap()
+            capture("Mascot \(state)", app: app)
+        }
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(companion.waitForExistence(timeout: 10))
+        XCTAssertEqual(companion.label, originalState)
+        app.tabBars.buttons["Today"].tap()
+        XCTAssertTrue(app.buttons["today.startWorkout"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["Daily win earned · +50 XP"].exists)
+    }
+
+    func testFirstLaunchQuickProfileSetsTodaysWorkoutGoal() {
+        continueAfterFailure = false
+        let app = launchApp(onboarding: true)
+        let next = app.buttons["onboarding.continue"]
+        XCTAssertTrue(next.waitForExistence(timeout: 15))
+        capture("Quick profile, empty measurements", app: app)
+        next.tap()
+        XCTAssertTrue(app.staticTexts["Error: Enter your height using the selected units."].waitForExistence(timeout: 5))
+        app.buttons["Dismiss error"].tap()
+        let name = app.textFields["onboarding.name"]
+        name.tap()
+        name.typeText("Alex")
+        app.toolbars.buttons["Done"].tap()
+        let height = app.textFields["onboarding.height"]
+        for _ in 0..<3 where !height.isHittable { app.swipeUp() }
+        height.tap()
+        height.typeText("5")
+        app.toolbars.buttons["Done"].tap()
+        let inches = app.textFields["onboarding.inches"]
+        for _ in 0..<3 where !inches.isHittable { app.swipeUp() }
+        inches.tap()
+        inches.typeText(XCUIKeyboardKey.delete.rawValue + "4")
+        app.toolbars.buttons["Done"].tap()
+        let weight = app.textFields["onboarding.weight"]
+        for _ in 0..<3 where !weight.isHittable { app.swipeUp() }
+        weight.tap()
+        weight.typeText("145")
+        app.toolbars.buttons["Done"].tap()
+        next.tap()
+        let minutes = app.segmentedControls["onboarding.minutes"]
+        XCTAssertTrue(minutes.waitForExistence(timeout: 10))
+        minutes.buttons["20 min"].tap()
+        capture("Quick profile, goals", app: app)
+        let female = app.buttons["onboarding.ninja_female"]
+        for _ in 0..<3 where !female.isHittable { app.swipeUp() }
+        female.tap()
+        next.tap()
+        let start = app.buttons["today.startWorkout"]
+        XCTAssertTrue(start.waitForExistence(timeout: 15))
+        XCTAssertEqual(start.label, "Start 20-min walking")
+        XCTAssertFalse(app.buttons["onboarding.continue"].exists)
+        app.tabBars.buttons["Dojo"].tap()
+        XCTAssertTrue(app.buttons["mascot.companion"].waitForExistence(timeout: 10))
     }
 }

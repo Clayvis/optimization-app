@@ -44,7 +44,13 @@ struct DailyWorkoutCard: View {
             || (profiles.first?.sickDayActiveUntil ?? .distantPast) >= now
     }
     private var recommendedRest: Bool { resting || recovery == .rest }
-    private var targetMinutes: Int { recovery == .downgrade ? min(5, goalMinutes) : goalMinutes }
+    private var selectedGoalMinutes: Int {
+        max(1, profiles.first?.metadata("dailyWorkout.goalMinutes", as: Int.self) ?? goalMinutes)
+    }
+    private var selectedWeeklyGoal: Int {
+        min(7, max(1, profiles.first?.metadata("dailyWorkout.weeklyGoal", as: Int.self) ?? weeklyGoal))
+    }
+    private var targetMinutes: Int { recovery == .downgrade ? min(5, selectedGoalMinutes) : selectedGoalMinutes }
     private var selectedTemplate: CustomActivityTemplate? {
         templates.first { $0.name == activityName } ?? templates.first { $0.name == "Walking" } ?? templates.first
     }
@@ -61,7 +67,7 @@ struct DailyWorkoutCard: View {
             workoutDates: events.filter { DailyWorkoutProgress.earnsWorkoutCredit(source: $0.source) }.map(\.date),
             exerciseMinutes: todayLog?.appleExerciseMinutes ?? 0,
             sessionMinutes: DailyWorkoutProgress.sessionMinutes(intervals: intervals, asOf: now, calendar: calendar),
-            goalMinutes: targetMinutes, weeklyGoal: weeklyGoal, asOf: now, calendar: calendar
+            goalMinutes: targetMinutes, weeklyGoal: selectedWeeklyGoal, asOf: now, calendar: calendar
         )
     }
 
@@ -80,9 +86,8 @@ struct DailyWorkoutCard: View {
                 }
                 Spacer(minLength: 0)
                 if profiles.first?.mascotEnabled == true && !dynamicTypeSize.isAccessibilitySize {
-                    MascotView(state: snapshot.trainedToday ? .proud : .neutral,
-                               variant: profiles.first?.mascotVariant ?? "ninja_male")
-                        .frame(width: 64, height: 64)
+                    AnimatedMascotView(state: recommendedRest ? .recovering : CharacterStateService.shared.currentState,
+                                       variant: profiles.first?.mascotVariant ?? "ninja_male", size: 64)
                         .accessibilityHidden(true)
                 }
             }
@@ -131,7 +136,9 @@ struct DailyWorkoutCard: View {
                 VStack(alignment: .leading, spacing: Theme.Space.m) {
                     Text("Move uses Apple Health exercise minutes or your saved session time, whichever is higher. Workout closes after a recorded session. Week counts distinct workout days, Monday to Sunday.")
                     Text("Earn 50 XP per workout day and a new level every 250 XP. Rest and missed days never remove XP. Health workouts receive credit when they sync; you don't need to log them again.")
-                    Picker("Weekly workout days", selection: $weeklyGoal) {
+                    Picker("Weekly workout days", selection: Binding(
+                        get: { selectedWeeklyGoal }, set: { saveGoalPreference("dailyWorkout.weeklyGoal", value: $0) }
+                    )) {
                         ForEach(1...7, id: \.self) { Text("\($0) days").tag($0) }
                     }
                 }
@@ -165,7 +172,9 @@ struct DailyWorkoutCard: View {
     private var sessionActions: some View {
         VStack(alignment: .leading, spacing: Theme.Space.m) {
             Text("How much time feels doable?").font(.subheadline.weight(.semibold))
-            Picker("Daily movement goal", selection: $goalMinutes) {
+            Picker("Daily movement goal", selection: Binding(
+                get: { selectedGoalMinutes }, set: { saveGoalPreference("dailyWorkout.goalMinutes", value: $0) }
+            )) {
                 ForEach([5, 10, 20], id: \.self) { Text("\($0) min").tag($0) }
             }
             .pickerStyle(.segmented)
@@ -288,10 +297,28 @@ struct DailyWorkoutCard: View {
         do {
             try modelContext.save()
             errorMessage = nil
+            NotificationCenter.default.post(name: .userStateChanged, object: nil)
         } catch {
             log.metadataBlob = previous
             errorMessage = "Couldn't save your plan. Please try again."
         }
+    }
+
+    /// Profile metadata follows iCloud to the user's other devices. Preserve
+    /// existing local targets for older profiles until they choose a new one.
+    private func saveGoalPreference(_ key: String, value: Int) {
+        if let profile = profiles.first {
+            let previous = profile.metadataBlob
+            profile.setMetadata(key, value: value)
+            do { try modelContext.save() }
+            catch {
+                profile.metadataBlob = previous
+                errorMessage = "Couldn't save your goal. Please try again."
+                return
+            }
+        }
+        if key == "dailyWorkout.goalMinutes" { goalMinutes = value }
+        else { weeklyGoal = value }
     }
 }
 

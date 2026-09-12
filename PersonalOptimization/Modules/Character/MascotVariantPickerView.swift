@@ -27,7 +27,7 @@ enum MascotVariant: String, CaseIterable, Identifiable, Sendable {
 
     /// Returns the list of state-suffix asset names that must exist for this variant.
     var requiredAssetNames: [String] {
-        CharacterState.allCases.map { "\(assetPrefix)_\($0.suffix)" }
+        Array(Set(CharacterState.allCases.map { "\(assetPrefix)_\($0.suffix)" })).sorted()
     }
 }
 
@@ -45,6 +45,15 @@ struct MascotVariantPickerView: View {
                 Section {
                     variantRow(variant)
                 }
+            }
+            Section {
+                NavigationLink("Meet your companion") {
+                    MascotReactionsGallery(variant: profiles.first?.mascotVariant ?? "ninja_male")
+                }
+                .accessibilityIdentifier("mascot.reactionsGallery")
+                Text("Your companion reacts to training, recovery, returning, and earned wins. Motion follows your device's Reduce Motion setting.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             if let preflightError {
                 Section {
@@ -68,8 +77,8 @@ struct MascotVariantPickerView: View {
                 Text(variant.displayName)
                     .font(.body.weight(.semibold))
                 Text(MascotVariantPreflight.missingAssets(for: variant) == nil
-                     ? "Custom art · 8 states"
-                     : "Built-in art · 8 states")
+                     ? "Custom art · 12 reactions"
+                     : "Built-in art · 12 reactions")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -99,6 +108,65 @@ struct MascotVariantPickerView: View {
             preflightError = "\(variant.displayName) is using the built-in drawn mascot. Drop PNG art into MascotAssets.xcassets to override (see References/gemini_workflow.md)."
         } else {
             preflightError = nil
+        }
+    }
+}
+
+/// A preview of the new reactions, available without fabricating any workout
+/// or changing the live state, streaks, achievements, or history.
+struct MascotReactionsGallery: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    let variant: String
+    @State private var selected: CharacterState = .training
+    @State private var interactionCount = 0
+
+    private let reactions: [CharacterState] = [.training, .recovering, .comeback, .celebrating]
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Button { interactionCount += 1 } label: {
+                    AnimatedMascotView(state: selected, variant: variant, size: 180,
+                                       interactionCount: interactionCount)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Greet your companion")
+                Text(selected.displayName).font(.title2.bold())
+                Text(explanation).multilineTextAlignment(.center).foregroundStyle(.secondary)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()),
+                                         count: dynamicTypeSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
+                    ForEach(reactions, id: \.self) { state in
+                        Button { selected = state } label: {
+                            HStack {
+                                Label(state.displayName, systemImage: state.reactionSymbol ?? "sparkles")
+                                Spacer()
+                                if selected == state { Image(systemName: "checkmark") }
+                            }
+                            .font(.subheadline.weight(.semibold))
+                            .frame(minHeight: 44)
+                            .padding(12)
+                            .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("mascot.preview.\(state.rawValue)")
+                        .accessibilityAddTraits(selected == state ? .isSelected : [])
+                    }
+                }
+            }
+            .padding(24)
+        }
+        .navigationTitle("Your companion")
+        .navigationBarTitleDisplayMode(.inline)
+        .background(DojoBackground())
+    }
+
+    private var explanation: String {
+        switch selected {
+        case .training: return "A steady rhythm while your phone or Watch workout is in progress."
+        case .recovering: return "A calm companion for rest and sick days. Your earned progress stays yours."
+        case .comeback: return "A warm welcome after a break. A small session is enough to begin again."
+        case .celebrating: return "A little celebration for a recorded workout. One daily win is enough."
+        default: return "One small win at a time."
         }
     }
 }

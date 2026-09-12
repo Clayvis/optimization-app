@@ -1,665 +1,203 @@
 import SwiftUI
 import SwiftData
-import HealthKit
-import UserNotifications
 
-/// First-launch onboarding wizard. Six screens, identity-framed, locked
-/// progression so the user can't skip critical permission asks. Sets
-/// `UserProfile.onboardingCompleted = true` on finish so RootView routes past
-/// it on subsequent launches.
+/// Two short steps. Only explicit profile choices are saved; permissions,
+/// nutrition targets, and detailed schedules stay available in their surfaces.
 @MainActor
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var profiles: [UserProfile]
-
-    @State private var step: Int = 0
-    @State private var primaryGoal: String = ""
-    @State private var equipmentAccess: String = "gym"
-    @State private var pickedVariant: MascotVariant = .ninjaMale
-    // Body step draft. Written to the profile on finish; prefilled from
-    // Apple Health right after the permissions step when access was granted.
-    @State private var bodyDob: Date = Calendar.current.date(from: DateComponents(year: 1995, month: 1, day: 1)) ?? Date()
-    @State private var bodySex: String = "male"
-    @State private var bodyHeightInches: Double = 70
-    @State private var bodyWeightLbs: Double = 180
-    @State private var bodyPrefillAttempted = false
-    @State private var scheduleTemplate: ScheduleTemplate = .balanced
-    @State private var hkRequested = false
-    @State private var notifRequested = false
-    @State private var seedingDone = false
-    @State private var showingAIGeneration = false
-    @State private var anchorDraft: ScheduleAnchorDraft = .init()
-    // M4.2 T0c: track explicit schedule choice during this onboarding session.
-    // Set when the user taps a template tile OR returns from the AI flow with
-    // an applied proposal. Gates the Continue button on the schedule step.
-    @State private var scheduleChosenInSession = false
-
-    private var profile: UserProfile? { profiles.first }
+    @State private var draft = QuickProfileDraft()
+    @State private var step = 0
+    @State private var errorMessage: String?
+    @State private var isSaving = false
+    @State private var prepared = false
+    @FocusState private var editingField: String?
 
     var body: some View {
-        VStack(spacing: 0) {
-            ProgressView(value: Double(step + 1), total: 6)
-                .tint(.accentColor)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-
-            TabView(selection: $step) {
-                welcomeScreen.tag(0)
-                permissionsScreen.tag(1)
-                bodyScreen.tag(2)
-                goalsScreen.tag(3)
-                mascotScreen.tag(4)
-                wrapUpScreen.tag(5)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .animation(.easeInOut, value: step)
-
-            controls
-        }
-        .task { await ensureProfileExists() }
-    }
-
-    @ViewBuilder
-    private var welcomeScreen: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "sun.max.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(.tint)
-            Text("Welcome.")
-                .font(.largeTitle.weight(.bold))
-            Text("This app is yours. Single user. No accounts. Nothing leaves your devices except the AI calls you opt into.")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-                .foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 12) {
-                bullet("No servers, no analytics, no ads.")
-                bullet("All data lives in your iCloud private database.")
-                bullet("Streaks bend for sick days and travel.")
-                bullet("The mascot reflects real signals, never theater.")
-            }
-            .padding(.horizontal, 24)
-            Spacer()
-        }
-        .padding(.top, 32)
-    }
-
-    @ViewBuilder
-    private var permissionsScreen: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "bell.badge")
-                .font(.system(size: 56))
-                .foregroundStyle(.tint)
-            Text("Two permissions, then we're done.")
-                .font(.title2.weight(.bold))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-
-            VStack(spacing: 14) {
-                permissionRow(
-                    icon: "heart.fill",
-                    title: "HealthKit",
-                    detail: "Sleep, heart rate, HRV. Powers your mascot, weekly reflection, and Coach insights.",
-                    granted: hkRequested,
-                    action: requestHealthKit
-                )
-                permissionRow(
-                    icon: "bell.fill",
-                    title: "Notifications",
-                    detail: "One nudge per behavior per day max. Suppressed when you've already logged. Quiet hours honored.",
-                    granted: notifRequested,
-                    action: requestNotifications
-                )
-            }
-            .padding(.horizontal, 16)
-            Spacer()
-        }
-        .padding(.top, 32)
-    }
-
-    /// Body-info step. Sits right after permissions so a granted HealthKit
-    /// read can prefill everything and this becomes a confirm-and-continue
-    /// screen. Feeds calorie estimates, PhenoAge, and Coach context.
-    @ViewBuilder
-    private var bodyScreen: some View {
-        Form {
-            Section {
-                VStack(spacing: 12) {
-                    Image(systemName: "figure.arms.open")
-                        .font(.system(size: 44))
-                        .foregroundStyle(.tint)
-                        .frame(maxWidth: .infinity)
-                    Text("About you")
-                        .font(.title2.weight(.bold))
-                        .frame(maxWidth: .infinity)
-                    Text("Powers calorie estimates for phone-only workouts, biological-age math, and Coach context. Stays on your devices.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+        NavigationStack {
+            VStack(spacing: 0) {
+                ProgressView(value: Double(step + 1), total: 2)
+                    .tint(Theme.matcha)
+                    .padding(.horizontal, 20)
+                    .accessibilityLabel("Setup step \(step + 1) of 2")
+                Form {
+                    if step == 0 { profileFields }
+                    else { goalFields }
                 }
-                .listRowBackground(Color.clear)
+                .scrollContentBackground(.hidden)
+                .scrollDismissesKeyboard(.interactively)
+                if let errorMessage {
+                    ErrorBanner(message: errorMessage) { self.errorMessage = nil }
+                        .padding(.horizontal)
+                }
+                HStack {
+                    if step > 0 {
+                        Button("Back") { step = 0; errorMessage = nil }
+                            .buttonStyle(.bordered)
+                    }
+                    Button { advance() } label: {
+                        Text(step == 0 ? "Continue" : "Start my day")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Theme.matcha)
+                        .disabled(isSaving || !prepared)
+                        .accessibilityIdentifier("onboarding.continue")
+                }
+                .padding(16)
             }
-            Section("Body") {
-                BodyInfoForm(
-                    dob: $bodyDob,
-                    sex: $bodySex,
-                    heightInches: $bodyHeightInches,
-                    weightLbs: $bodyWeightLbs
-                )
+            .background(DojoBackground())
+            .navigationTitle(step == 0 ? "Make it yours" : "Your daily plan")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { editingField = nil }
+                }
             }
+            .task { prepare() }
         }
-        .task { await prefillBodyFromHealthIfNeeded() }
     }
 
-    /// One silent prefill attempt when the step first appears. The form's
-    /// explicit "Fill from Apple Health" button stays available for retries.
-    private func prefillBodyFromHealthIfNeeded() async {
-        guard !bodyPrefillAttempted else { return }
-        bodyPrefillAttempted = true
-        // Existing profile values win over defaults (re-onboarding path).
-        if let profile, profile.dob != .distantPast {
-            bodyDob = profile.dob
-            bodySex = profile.sex
-            bodyHeightInches = profile.heightInches
-            bodyWeightLbs = profile.weightLbs
-            return
-        }
-        let snapshot = await LiveHealthKitService.shared.fetchBodyProfile()
-        if let date = snapshot.dateOfBirth { bodyDob = date }
-        if let sex = snapshot.biologicalSex { bodySex = sex }
-        if let inches = snapshot.heightInches { bodyHeightInches = inches.rounded() }
-        if let lbs = snapshot.weightLbs { bodyWeightLbs = (lbs * 10).rounded() / 10 }
-    }
-
-    @ViewBuilder
-    private var goalsScreen: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                Image(systemName: "target")
-                    .font(.system(size: 56))
-                    .foregroundStyle(.tint)
-                Text("What are you optimizing for?")
-                    .font(.title2.weight(.bold))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-                Text("One sentence. The Coach uses this to tune every prescription.")
+    private var profileFields: some View {
+        Group {
+            Section {
+                Text("Height and weight personalize workout estimates. You can edit your profile in Settings.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-
-                TextField("e.g., build muscle, stay sharp on the court", text: $primaryGoal, axis: .vertical)
-                    .lineLimit(2...4)
-                    .padding(12)
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal, 24)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Equipment you have today")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    equipmentCardList
-                }
-                .padding(.horizontal, 24)
             }
-            .padding(.top, 32)
-        }
-    }
-
-    /// Five equipment options don't fit on iPhone width as a segmented control
-    /// (truncate to "Bodywei...", "Home (..." etc.). Stacked card list with full
-    /// labels + a selected accent reads cleanly and avoids the truncation bug.
-    @ViewBuilder
-    private var equipmentCardList: some View {
-        let options: [(value: String, label: String, glyph: String)] = [
-            ("gym", "Full gym", "dumbbell.fill"),
-            ("home_full", "Home (full kit)", "house.fill"),
-            ("home_minimal", "Home (minimal kit)", "house"),
-            ("bodyweight", "Bodyweight only", "figure.cooldown"),
-            ("outdoor", "Outdoor", "leaf.fill")
-        ]
-        VStack(spacing: 8) {
-            ForEach(options, id: \.value) { option in
-                equipmentRow(option: option)
+            Section("About you") {
+                TextField("Name (optional)", text: $draft.name)
+                    .textContentType(.givenName)
+                    .focused($editingField, equals: "name")
+                    .accessibilityIdentifier("onboarding.name")
+                Picker("Units", selection: Binding(
+                    get: { draft.usesMetric },
+                    set: { draft.changeUnits(toMetric: $0) }
+                )) {
+                    Text("ft / lb").tag(false)
+                    Text("cm / kg").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("onboarding.units")
+                if draft.usesMetric {
+                    numberField("Height (cm)", placeholder: "e.g. 165", text: $draft.heightMajor, id: "height")
+                } else {
+                    numberField("Height (feet)", placeholder: "e.g. 5", text: $draft.heightMajor, id: "height")
+                    numberField("Height (inches)", placeholder: "0", text: $draft.heightMinor, id: "inches")
+                }
+                numberField(draft.usesMetric ? "Weight (kg)" : "Weight (lb)",
+                            placeholder: draft.usesMetric ? "e.g. 65" : "e.g. 145", text: $draft.weight, id: "weight")
             }
         }
     }
 
-    /// One row of the equipment picker. Pulled out of the `ForEach` because
-    /// the inline conditional `foregroundStyle` and `background` expressions
-    /// blew SwiftUI's type-checker complexity budget when stacked together.
-    @ViewBuilder
-    private func equipmentRow(option: (value: String, label: String, glyph: String)) -> some View {
-        let selected = equipmentAccess == option.value
-        Button {
-            equipmentAccess = option.value
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: option.glyph)
-                    .frame(width: 24)
-                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
-                Text(option.label)
-                    .font(.body.weight(selected ? .semibold : .regular))
-                    .foregroundStyle(.primary)
-                Spacer()
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.tint)
+    private var goalFields: some View {
+        Group {
+            Section("What matters to you?") {
+                Picker("Focus", selection: $draft.goal) {
+                    Text("Build consistency").tag("Build a consistent routine")
+                    Text("Get stronger").tag("Get stronger")
+                    Text("Improve endurance").tag("Improve endurance")
+                    Text("Move more").tag("Move more")
+                    Text("Feel more energized").tag("Feel more energized")
+                }
+                .accessibilityIdentifier("onboarding.goal")
+                Picker("Workout days per week", selection: $draft.weeklyWorkouts) {
+                    ForEach(1...7, id: \.self) { Text("\($0) days").tag($0) }
+                }
+                .accessibilityIdentifier("onboarding.weeklyGoal")
+                Picker("Time for a small session", selection: $draft.dailyMinutes) {
+                    ForEach([5, 10, 20], id: \.self) { Text("\($0) min").tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("onboarding.minutes")
+                Text("These become your workout targets on Today. Rest days keep your earned progress.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            Section("Where you train") {
+                Picker("Equipment", selection: $draft.equipment) {
+                    Text("Bodyweight").tag("bodyweight")
+                    Text("Full gym").tag("gym")
+                    Text("Home equipment").tag("home_full")
+                    Text("A few basics").tag("home_minimal")
+                    Text("Outdoors").tag("outdoor")
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(selected
-                        ? Color.accentColor.opacity(0.12)
-                        : Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// Onboarding screen 3 (V11): collect daily anchors BEFORE the template
-    /// picker. Without this the chooser falls through to evening-default
-    /// resolution and lands lifts at 18:00 regardless of what the user
-    /// actually does after work. The DatePickers bind to local Date values
-    /// in `anchorDraft`; `applyScheduleTemplate` flushes them to the
-    /// profile before resolving blocks.
-    @ViewBuilder
-    private var anchorsScreen: some View {
-        Form {
-            Section {
-                Text("Tell me your day's anchors. Templates resolve against these — no defaults are assumed. The app will not place a workout at 18:00 unless you choose it.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            Section("Daily anchors") {
-                DatePicker(
-                    "Wake time",
-                    selection: $anchorDraft.wakeDate,
-                    displayedComponents: .hourAndMinute
-                )
-                DatePicker(
-                    "Bedtime",
-                    selection: $anchorDraft.bedtimeDate,
-                    displayedComponents: .hourAndMinute
-                )
-            }
-            Section("Kids") {
-                DatePicker(
-                    "Drop off",
-                    selection: $anchorDraft.kidDropDate,
-                    displayedComponents: .hourAndMinute
-                )
-                DatePicker(
-                    "Pickup",
-                    selection: $anchorDraft.kidPickupDate,
-                    displayedComponents: .hourAndMinute
-                )
-            }
-            Section("Training") {
-                Picker("Preferred window", selection: $anchorDraft.preferredTrainingTimeOfDay) {
-                    ForEach(TimeOfDayPreference.allCases) { pref in
-                        Text(pref.displayName).tag(pref)
-                    }
-                }
-                .pickerStyle(.inline)
-                .labelsHidden()
-                if anchorDraft.preferredTrainingTimeOfDay == .custom {
-                    DatePicker(
-                        "Training starts",
-                        selection: $anchorDraft.trainingStartDate,
-                        displayedComponents: .hourAndMinute
-                    )
-                }
-            }
-            Section("Learning") {
-                DatePicker(
-                    "Evening learning starts",
-                    selection: $anchorDraft.learningStartDate,
-                    displayedComponents: .hourAndMinute
-                )
-            }
-            if anchorDraft.isValid == false {
-                Section {
-                    Text("Wake must be before bedtime and drop-off must be before pickup.")
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-            }
-        }
-    }
-
-    /// Onboarding screen 4 — schedule template. Lets the wife (or any new
-    /// user) avoid landing on Clay's seeded blocks. The template picker
-    /// applies the chosen template via ScheduleTemplateApplier; user can
-    /// always edit individual blocks later in Settings → Schedule.
-    @ViewBuilder
-    private var scheduleScreen: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "calendar")
-                .font(.system(size: 56))
-                .foregroundStyle(.tint)
-                .padding(.top, 32)
-            Text("Pick a starting schedule.")
-                .font(.title2.weight(.bold))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-            Text("You can edit any block later. Pick the template that fits your shape of week — we'll seed it now.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-
-            ScrollView {
-                VStack(spacing: 8) {
-                    aiGenerateTile
-                    ForEach(ScheduleTemplate.allCases) { template in
-                        scheduleTemplateRow(template)
-                    }
-                }
-                .padding(.horizontal, 24)
-            }
-        }
-    }
-
-    /// AI generation tile, sitting above the static templates. Presents the
-    /// intake form as a sheet (OnboardingView is a paged TabView, not a
-    /// NavigationStack, so a sheet is the right modal pattern here). Applying
-    /// the proposal lands the user back on this screen with the schedule
-    /// already seeded; they advance via the normal Next button.
-    @ViewBuilder
-    private var aiGenerateTile: some View {
-        Button {
-            showingAIGeneration = true
-        } label: {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "sparkles")
-                    .font(.title3)
-                    .foregroundStyle(.tint)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Build me a schedule (AI)")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Tell me your goals; I'll draft a week. You review before it lands.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color.accentColor.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-        .sheet(isPresented: $showingAIGeneration) {
-            NavigationStack {
-                ScheduleGenerationView(onApplied: {
-                    scheduleChosenInSession = true
-                })
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func scheduleTemplateRow(_ template: ScheduleTemplate) -> some View {
-        let selected = scheduleTemplate == template
-        Button {
-            applyScheduleTemplate(template)
-        } label: {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: template.systemImage)
-                    .font(.title3)
-                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(template.displayName)
-                        .font(.subheadline.weight(.semibold))
-                    Text(template.summary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.tint)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(selected
-                        ? Color.accentColor.opacity(0.12)
-                        : Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func applyScheduleTemplate(_ template: ScheduleTemplate) {
-        scheduleTemplate = template
-        // Flush the anchor draft so the template applier resolves blocks
-        // against the user's chosen wake/training/learning windows. Without
-        // this the planner falls back to evening defaults and the
-        // "Balanced" template lands lifts at 18:00 — the exact bug the M5
-        // re-haul is meant to fix.
-        if let profile = profile {
-            anchorDraft.writeTo(profile: profile)
-            // MARK: - try? justified because anchor flush is best-effort;
-            // worst case the applier uses defaultForFallback, which still
-            // produces a working schedule.
-            try? modelContext.save()  // MARK: try? save() is best-effort; failure logged elsewhere and in-memory state already reflects the change.
-        }
-        let anchors: SchedulePlanner.AnchorSet = profile.map(SchedulePlanner.AnchorSet.from(profile:))
-            ?? .defaultForFallback
-        // MARK: - try? justified because template application is best-effort
-        // during onboarding; the user can retry from the chooser or skip
-        // and pick later in Settings.
-        _ = try? ScheduleTemplateApplier.apply(  // MARK: try? justified - best-effort; failure logged inside the called function.
-            template,
-            modelContext: modelContext,
-            anchors: anchors
-        )
-        scheduleChosenInSession = true
-    }
-
-    @ViewBuilder
-    private var mascotScreen: some View {
-        VStack(spacing: 16) {
-            Text("Pick your mascot.")
-                .font(.title2.weight(.bold))
-                .padding(.top, 32)
-
-            HStack(spacing: 24) {
-                ForEach(MascotVariant.allCases) { variant in
-                    Button {
-                        pickedVariant = variant
-                    } label: {
-                        VStack(spacing: 8) {
-                            MascotView(state: .neutral, variant: variant.rawValue)
-                                .frame(width: 100, height: 100)
-                                .padding(8)
-                                .background(pickedVariant == variant ? Color.accentColor.opacity(0.20) : Color.gray.opacity(0.10))
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(pickedVariant == variant ? Color.accentColor : Color.clear, lineWidth: 2)
-                                }
-                            Text(variant.displayName)
-                                .font(.caption.weight(.semibold))
+            Section("Your companion") {
+                HStack {
+                    ForEach(MascotVariant.allCases) { variant in
+                        Button { draft.mascotVariant = variant.rawValue } label: {
+                            VStack(spacing: 6) {
+                                MascotView(state: .neutral, variant: variant.rawValue)
+                                    .frame(width: 90, height: 90)
+                                Text(variant.displayName).font(.caption)
+                                Image(systemName: draft.mascotVariant == variant.rawValue
+                                      ? "checkmark.circle.fill" : "circle")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .foregroundStyle(draft.mascotVariant == variant.rawValue ? Theme.matcha : Theme.textSecondary)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(variant.displayName)
+                        .accessibilityIdentifier("onboarding.\(variant.rawValue)")
+                        .accessibilityAddTraits(draft.mascotVariant == variant.rawValue ? .isSelected : [])
                     }
-                    .buttonStyle(.plain)
                 }
+                Text("A training partner for small wins, rest days, and fresh starts.")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 24)
+        }
+    }
 
-            Text("They're a signal. Sad means a real miss. Proud means an earned win.")
-                .font(.footnote)
+    private func numberField(_ title: String, placeholder: String, text: Binding<String>, id: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Spacer()
+                .accessibilityHidden(true)
+            TextField(placeholder, text: text)
+                .textFieldStyle(.plain)
+                .keyboardType(.decimalPad)
+                .frame(minHeight: 44)
+                .focused($editingField, equals: id)
+                .accessibilityLabel(title)
+                .accessibilityIdentifier("onboarding.\(id)")
         }
+        .contentShape(Rectangle())
+        .onTapGesture { editingField = id }
+        .accessibilityElement(children: .contain)
     }
 
-    @ViewBuilder
-    private var wrapUpScreen: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(.green)
-                .padding(.top, 32)
-            Text("You're set.")
-                .font(.largeTitle.weight(.bold))
-            Text("Your balanced starter protocol is ready. Tune time anchors, templates, or AI scheduling later in Advanced Setup inside the Dojo.")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-                .foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 12) {
-                bullet("Apple Watch: pair the watch in the iOS Watch app to surface complications and live workouts.")
-                bullet("Advanced Setup: tune your schedule and time anchors in the Dojo.")
-                bullet("Sundays: open the Today tab for a weekly reflection.")
+    private func prepare() {
+        guard !prepared else { return }
+        _ = ProfileService.currentOrCreate(modelContext: modelContext)
+        prepared = true
+    }
+
+    private func advance() {
+        editingField = nil
+        errorMessage = nil
+        do {
+            try draft.validateBody()
+            if step == 0 {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { step = 1 }
+                return
             }
-            .padding(.horizontal, 24)
-            Spacer()
+            guard let profile = profiles.first else { return }
+            isSaving = true
+            defer { isSaving = false }
+            try ProfileService.completeQuickSetup(draft, profile: profile, modelContext: modelContext)
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
+}
 
-    // MARK: - Controls
-
-    @ViewBuilder
-    private var controls: some View {
-        HStack {
-            if step > 0 {
-                Button("Back") { step -= 1 }
-                    .buttonStyle(.bordered)
-            }
-            Spacer()
-            if step < 5 {
-                Button("Continue") { step += 1 }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(canAdvance == false)
-            } else {
-                Button("Get started") { complete() }
-                    .buttonStyle(.borderedProminent)
-            }
-        }
-        .padding(16)
-    }
-
-    private var canAdvance: Bool {
-        switch step {
-        case 0: return true
-        case 1: return true // permissions are optional but encouraged
-        case 2: return true // body info has typed defaults; nothing blocks
-        default: return true
-        }
-    }
-
-    /// True when the user has tapped one of the template tiles or applied an
-    /// AI-generated schedule during this onboarding session.
-    private var hasMadeScheduleChoice: Bool {
-        if scheduleChosenInSession { return true }
-        if profile?.lastGeneratedAt != nil { return true }
-        return false
-    }
-
-    @ViewBuilder
-    private func bullet(_ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.tint)
-            Text(text).font(.subheadline)
-            Spacer()
-        }
-    }
-
-    @ViewBuilder
-    private func permissionRow(icon: String,
-                               title: String,
-                               detail: String,
-                               granted: Bool,
-                               action: @escaping () -> Void) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(.tint)
-                .frame(width: 28)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.subheadline.weight(.semibold))
-                Text(detail).font(.caption).foregroundStyle(.secondary)
-                Button(granted ? "Asked" : "Allow") {
-                    action()
-                }
-                .buttonStyle(.bordered)
-                .disabled(granted)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    // MARK: - Actions
-
-    private func requestHealthKit() {
-        Task {
-            _ = try? await LiveHealthKitService.shared.requestAuthorization()  // MARK: try? justified - best-effort; failure logged inside the called function.
-            hkRequested = true
-        }
-    }
-
-    private func requestNotifications() {
-        Task {
-            // Route through NotificationService.register() so category
-            // descriptors (hydration action buttons, etc.) get registered
-            // alongside the authorization request. Going around it via the
-            // raw UNUserNotificationCenter was the original bug — actions
-            // never surfaced on the lock screen because categories never
-            // landed with the system.
-            // MARK: - try? justified because onboarding step is best-effort;
-            // user can still grant later via Settings. NotificationService
-            // logs the failure path.
-            _ = try? await NotificationService.shared.register()  // MARK: try? justified - best-effort; failure logged inside the called function.
-            notifRequested = true
-        }
-    }
-
-    private func ensureProfileExists() async {
-        if profiles.isEmpty {
-            _ = ProfileService.currentOrCreate(modelContext: modelContext)
-        }
-        // Seed default custom activities so first-launch users see Running,
-        // Walking, HIIT, Yoga, Cycling, Hiking on the Train tab without a
-        // separate setup step.
-        if !seedingDone {
-            _ = try? CustomActivityService(modelContext: modelContext).seedDefaultsIfNeeded()  // MARK: try? justified - best-effort; failure logged inside the called function.
-            _ = try? ImplementationIntentionService(modelContext: modelContext).seedStartersIfNeeded()  // MARK: try? justified - best-effort; failure logged inside the called function.
-            seedingDone = true
-        }
-    }
-
-    private func complete() {
-        guard let profile else { return }
-        let trimmedGoal = primaryGoal.trimmingCharacters(in: .whitespaces)
-        if !trimmedGoal.isEmpty {
-            profile.primaryGoal = trimmedGoal
-        }
-        profile.equipmentAccess = equipmentAccess
-        profile.mascotVariant = pickedVariant.rawValue
-        profile.dob = bodyDob
-        profile.sex = bodySex
-        profile.heightInches = bodyHeightInches
-        profile.weightLbs = bodyWeightLbs
-        // Start useful immediately. Fine-grained anchors and alternative
-        // templates are deliberately deferred to Advanced Setup in Dojo.
-        applyScheduleTemplate(.balanced)
-        profile.onboardingCompleted = true
-        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
-    }
+#Preview {
+    OnboardingView().modelContainer(PersistenceBootstrap.inMemory())
 }
 
 /// Local-only draft model for the onboarding anchors screen. Holds the

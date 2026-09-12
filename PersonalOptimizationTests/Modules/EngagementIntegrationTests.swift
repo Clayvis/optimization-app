@@ -21,13 +21,13 @@ final class EngagementIntegrationTests: XCTestCase {
         // We ensure the Asset Catalog doesn't ship oversized variants by capping the
         // sum of file sizes (proxy for resident memory after compression).
         var totalBytes: Int = 0
-        for state in CharacterState.allCases {
-            let url = Bundle.main.url(forResource: state.assetName, withExtension: "png", subdirectory: nil)
+        for assetName in Set(CharacterState.allCases.map(\.assetName)) {
+            let url = Bundle.main.url(forResource: assetName, withExtension: "png", subdirectory: nil)
             // Asset Catalog images aren't on disk as standalone files; fallback path:
             // Read via UIImage(named:) and compute pngData count.
             if let data = url.flatMap({ try? Data(contentsOf: $0) }) {
                 totalBytes += data.count
-            } else if let img = UIImage(named: state.assetName), let data = img.pngData() {
+            } else if let img = UIImage(named: assetName), let data = img.pngData() {
                 totalBytes += data.count
             }
         }
@@ -65,7 +65,7 @@ final class EngagementIntegrationTests: XCTestCase {
         let inputs = CharacterStateService.gatherInputs(modelContext: context, timezone: jst)
         XCTAssertTrue(inputs.sickDayActive)
         let resolved = CharacterStateService.resolve(inputs: inputs)
-        XCTAssertEqual(resolved.state, .tired)
+        XCTAssertEqual(resolved.state, .recovering)
     }
 
     private func jstDate(_ y: Int, _ mo: Int, _ d: Int, _ h: Int, _ mi: Int) -> Date {

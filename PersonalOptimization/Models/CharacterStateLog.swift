@@ -10,15 +10,50 @@ enum CharacterState: String, Codable, CaseIterable {
     case disappointed
     case tired
     case achievement
+    case training
+    case recovering
+    case comeback
+    case celebrating
+
+    /// Reuse the shipped poses while reactions supply distinct motion and
+    /// context. Old state raw values and saved history remain compatible.
+    var artworkState: CharacterState {
+        switch self {
+        case .training, .comeback: return .neutral
+        case .recovering: return .fasting
+        case .celebrating: return .proud
+        default: return self
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .training: return String(localized: "Training")
+        case .recovering: return String(localized: "Recovery day")
+        case .comeback: return String(localized: "Welcome back")
+        case .celebrating: return String(localized: "Daily win")
+        default: return rawValue.capitalized
+        }
+    }
+
+    var reactionSymbol: String? {
+        switch self {
+        case .training: return "figure.strengthtraining.functional"
+        case .recovering: return "leaf.fill"
+        case .comeback: return "hand.wave.fill"
+        case .celebrating: return "checkmark.seal.fill"
+        default: return nil
+        }
+    }
 
     /// Capitalized state suffix used in asset filenames (e.g., "Neutral").
     var suffix: String {
         switch self {
-        case .neutral:      return "Neutral"
+        case .neutral, .training, .comeback: return "Neutral"
         case .thirsty:      return "Thirsty"
-        case .fasting:      return "Fasting"
+        case .fasting, .recovering: return "Fasting"
         case .urgent:       return "Urgent"
-        case .proud:        return "Proud"
+        case .proud, .celebrating: return "Proud"
         case .disappointed: return "Disappointed"
         case .tired:        return "Tired"
         case .achievement:  return "Achievement"
@@ -40,8 +75,8 @@ enum CharacterState: String, Codable, CaseIterable {
     var assetName: String { assetName(for: "ninja_male") }
 
     static let precedenceOrder: [CharacterState] = [
-        .urgent, .achievement, .proud, .disappointed,
-        .tired, .thirsty, .fasting, .neutral
+        .recovering, .training, .achievement, .proud, .celebrating,
+        .tired, .urgent, .comeback, .thirsty, .fasting, .neutral, .disappointed
     ]
 }
 

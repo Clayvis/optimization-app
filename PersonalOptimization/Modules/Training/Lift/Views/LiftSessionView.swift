@@ -414,6 +414,7 @@ struct LiftSessionView: View {
     }
 
     private func beginLiveMetrics(from start: Date) {
+        WorkoutPresenceService.shared.start(type: templateName, at: start)
         let metrics = LiveWorkoutMetrics(
             healthKit: LiveHealthKitService.shared,
             sessionStart: start,
@@ -454,6 +455,7 @@ struct LiftSessionView: View {
         do {
             try service.endSession(session, durationMinutes: durationMinutes, avgHR: avgHR, estimatedCalories: kcal)
             liveMetrics?.end()
+            WorkoutPresenceService.shared.end()
             await WorkoutLiveActivityController.endAll()
             completionCount &+= 1
             LogFeedbackCenter.shared.confirm(IdentityCopy.workoutLogged)

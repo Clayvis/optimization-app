@@ -3,6 +3,7 @@ import SwiftData
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query private var profiles: [UserProfile]
 
     /// Persistence rung the app launched on. Defaults to `.full` so previews
@@ -43,6 +44,7 @@ struct RootView: View {
                     .accessibilityAddTraits(.isStaticText)
             }
         }
+        .environment(\.mascotReducedMotion, profiles.first?.reducedMotion == true)
         // Handoff receiver. When the paired watch starts a workout it
         // publishes an NSUserActivity via HandoffService; tapping the
         // continuation banner on the iPhone lock screen brings the app to
@@ -106,6 +108,17 @@ struct RootView: View {
         // Dojo theme: kurenai (crimson) accent everywhere a control reads the
         // environment tint — tab items, buttons, toggles, links, pickers.
         .tint(Theme.kurenai)
+        // The companion belongs to every tab. Today disappearing must not
+        // stop reactions in the Dojo or during a workout.
+        .onAppear { startCharacterService() }
+        .onDisappear { CharacterStateService.shared.stop() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { startCharacterService() }
+            else if phase == .background { CharacterStateService.shared.stop() }
+        }
+        .onChange(of: selectedTab) { _, _ in
+            CharacterStateService.shared.recompute(force: true)
+        }
         // Widget and future App Intent deep links always land on the relevant
         // daily surface even when the app was last left on another tab.
         .onOpenURL { url in
@@ -118,6 +131,10 @@ struct RootView: View {
             default: selectedTab = .today
             }
         }
+    }
+
+    private func startCharacterService() {
+        CharacterStateService.shared.start(modelContext: modelContext)
     }
 
 }
@@ -235,6 +252,11 @@ private struct DojoHubView: View {
                 if profiles.first?.mascotEnabled ?? true {
                     CharacterView(size: 150)
                         .frame(maxWidth: .infinity)
+                    NavigationLink("Meet your companion") {
+                        MascotReactionsGallery(variant: profiles.first?.mascotVariant ?? "ninja_male")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .accessibilityIdentifier("mascot.reactionsGallery")
                 } else {
                     ZStack {
                         Circle()

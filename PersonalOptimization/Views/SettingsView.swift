@@ -3,6 +3,7 @@ import SwiftData
 import CloudKit
 import CoreTransferable
 import UniformTypeIdentifiers
+import UserNotifications
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -19,6 +20,8 @@ struct SettingsView: View {
     @State private var exportData: Data?
     @State private var exportFeedback: String?
     @State private var bodySyncFeedback: String?
+    @State private var notificationFeedback: String?
+    @State private var requestingNotifications = false
     var embedded: Bool = false
 
     enum APIKeyStatus {
@@ -330,6 +333,26 @@ struct SettingsView: View {
             }
 
             Section("Quiet hours") {
+                Button("Enable coaching reminders") {
+                    Task {
+                        requestingNotifications = true
+                        defer { requestingNotifications = false }
+                        do {
+                            _ = try await NotificationService.shared.register()
+                            let settings = await UNUserNotificationCenter.current().notificationSettings()
+                            let granted = settings.authorizationStatus == .authorized
+                                || settings.authorizationStatus == .provisional
+                            notificationFeedback = granted ? "Reminders enabled."
+                                : "Notifications are off. You can change access in iOS Settings."
+                        } catch {
+                            notificationFeedback = "Couldn't enable reminders. \(error.localizedDescription)"
+                        }
+                    }
+                }
+                .disabled(requestingNotifications)
+                if let notificationFeedback {
+                    Text(notificationFeedback).font(.caption).foregroundStyle(.secondary)
+                }
                 LabeledContent("Sleep starts") {
                     TextField("22:00", text: $profile.sleepWindowStartHHMM)
                         .multilineTextAlignment(.trailing)

@@ -47,4 +47,13 @@ final class WorkoutPresenceServiceTests: XCTestCase {
 
         XCTAssertFalse(WorkoutPresenceService(defaults: defaults).isActive)
     }
+
+    func testLivePresenceExpiresWithoutRelaunchAndRejectsFutureStart() {
+        let service = WorkoutPresenceService(defaults: defaults)
+        let start = Date()
+        service.start(type: "Walking", at: start)
+        XCTAssertTrue(service.isActive(at: start.addingTimeInterval(60)))
+        XCTAssertFalse(service.isActive(at: start.addingTimeInterval(6 * 60 * 60)))
+        XCTAssertFalse(service.isActive(at: start.addingTimeInterval(-1)))
+    }
 }

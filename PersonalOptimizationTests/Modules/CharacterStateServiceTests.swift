@@ -11,6 +11,7 @@ final class CharacterStateServiceTests: XCTestCase {
     private func base() -> CharacterStateInputs {
         var inputs = CharacterStateInputs.empty
         inputs.now = now()
+        inputs.timezone = jst
         return inputs
     }
 
@@ -56,11 +57,11 @@ final class CharacterStateServiceTests: XCTestCase {
         XCTAssertEqual(resolved.state, .proud)
     }
 
-    func test_disappointed_whenAnyStreakBrokenInLast24h() {
+    func test_comeback_whenAStreakBreaksWithoutPunishment() {
         var inputs = base()
         inputs.anyStreakBrokenInLast24h = true
         let resolved = CharacterStateService.resolve(inputs: inputs)
-        XCTAssertEqual(resolved.state, .disappointed)
+        XCTAssertEqual(resolved.state, .comeback)
     }
 
     func test_tired_whenSleepBelowSixHours() {
@@ -100,7 +101,7 @@ final class CharacterStateServiceTests: XCTestCase {
         XCTAssertEqual(resolved.state, .achievement)
     }
 
-    func test_precedence_disappointedWinsOverTiredAndThirsty() {
+    func test_precedence_tiredWinsOverComebackAndThirsty() {
         var inputs = base()
         inputs.anyStreakBrokenInLast24h = true
         let log = DailyLog(date: now())
@@ -109,7 +110,7 @@ final class CharacterStateServiceTests: XCTestCase {
         inputs.todayLog = log
         inputs.hydrationProgressByHour = 30
         let resolved = CharacterStateService.resolve(inputs: inputs)
-        XCTAssertEqual(resolved.state, .disappointed)
+        XCTAssertEqual(resolved.state, .tired)
     }
 
     // MARK: - Travel/Sick suppress nags
@@ -127,13 +128,122 @@ final class CharacterStateServiceTests: XCTestCase {
         XCTAssertEqual(resolved.reason, "travel mode")
     }
 
-    func test_sickDay_suppressesUrgentAndShowsTired() {
+    func test_sickDay_suppressesUrgentAndSupportsRecovery() {
         var inputs = base()
         inputs.sickDayActive = true
         inputs.anyStreakBrokenInLast24h = true
         let resolved = CharacterStateService.resolve(inputs: inputs)
-        XCTAssertEqual(resolved.state, .tired)
-        XCTAssertEqual(resolved.reason, "user marked sick day")
+        XCTAssertEqual(resolved.state, .recovering)
+        XCTAssertTrue(resolved.reason.contains("Your progress stays yours"))
+    }
+
+    func test_activeWorkoutTakesPrecedenceOverRemindersAndEarlierWin() {
+        var inputs = base()
+        inputs.workoutActive = true
+        inputs.workoutCompletedToday = true
+        inputs.inFastWindow = true
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .training)
+    }
+
+    func test_restDayAndPainChooseRecoveryWithoutRemovingRecordedWin() {
+        var inputs = base()
+        inputs.workoutCompletedToday = true
+        inputs.restDayActive = true
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .recovering)
+        inputs.restDayActive = false
+        inputs.basketballAchillesPainHigh = true
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .recovering)
+        inputs.basketballAchillesPainHigh = false
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .celebrating)
+    }
+
+    func test_completedWorkoutCelebratesEvenIfAnotherHabitWasMissed() {
+        var inputs = base()
+        inputs.workoutCompletedToday = true
+        inputs.anyStreakBrokenInLast24h = true
+        inputs.inFastWindow = true
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .celebrating)
+        inputs.liftPRSetToday = true
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .achievement)
+    }
+
+    func test_comebackUsesCalendarDaysAndNeedsActualEarlierWorkout() {
+        var inputs = base()
+        inputs.now = jstDate(2026, 5, 6, 0, 5)
+        inputs.lastWorkoutDate = jstDate(2026, 5, 3, 23, 55)
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .comeback)
+        inputs.lastWorkoutDate = jstDate(2026, 5, 4, 0, 0)
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .neutral)
+        inputs.lastWorkoutDate = nil
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .neutral)
+    }
+
+    func test_unknownSleepDoesNotMakeCompanionTired() {
+        var inputs = base()
+        let log = DailyLog(date: now())
+        inputs.todayLog = log
+        for unknown in [0.0, -1, .nan, .infinity] {
+            log.sleepHours = unknown
+            XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .neutral)
+        }
+    }
+
+    func test_gatherInputsIgnoresSkipsFreezesUnfinishedAndFutureWorkouts() throws {
+        let container = try InMemoryContainer.make()
+        let context = container.mainContext
+        let prior = jstDate(2026, 5, 2, 0, 0)
+        context.insert(WorkoutEvent(date: prior, completed: true, source: .custom))
+        for source in [WorkoutEventSource.freeze, .manualSkip, .sickDay, .travel] {
+            context.insert(WorkoutEvent(date: now(), completed: true, source: source))
+        }
+        context.insert(WorkoutEvent(date: now(), completed: false, source: .lift))
+        context.insert(WorkoutEvent(date: jstDate(2026, 5, 7, 0, 0), completed: true, source: .custom))
+        try context.save()
+        let inputs = CharacterStateService.gatherInputs(modelContext: context, timezone: jst, now: now())
+        XCTAssertEqual(inputs.lastWorkoutDate, prior)
+        XCTAssertFalse(inputs.workoutCompletedToday)
+
+        context.insert(WorkoutEvent(date: now(), completed: true, source: .custom))
+        try context.save()
+        let finished = CharacterStateService.gatherInputs(modelContext: context, timezone: jst, now: now())
+        XCTAssertTrue(finished.workoutCompletedToday)
+    }
+
+    func test_restDayMetadataReachesLiveResolverWithoutWorkoutCredit() throws {
+        let container = try InMemoryContainer.make()
+        let context = container.mainContext
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = jst
+        let log = DailyLogStore(modelContext: context, calendar: calendar).upsert(for: now())
+        log.setMetadata("dailyWorkout.restDay", value: true)
+        try context.save()
+        let inputs = CharacterStateService.gatherInputs(modelContext: context, timezone: jst, now: now())
+        XCTAssertTrue(inputs.restDayActive)
+        XCTAssertFalse(inputs.workoutCompletedToday)
+        XCTAssertEqual(CharacterStateService.resolve(inputs: inputs).state, .recovering)
+    }
+
+    func test_personalBestRequiresFinishedNonFutureSession() throws {
+        let container = try InMemoryContainer.make()
+        let context = container.mainContext
+        let prior = LiftSession(date: jstDate(2026, 5, 5, 0, 0), template: "Lift")
+        prior.totalVolumeLbs = 100
+        prior.durationMinutes = 10
+        let current = LiftSession(date: now(), template: "Lift")
+        current.totalVolumeLbs = 200
+        let future = LiftSession(date: jstDate(2026, 5, 6, 23, 0), template: "Lift")
+        future.totalVolumeLbs = 300
+        future.durationMinutes = 10
+        context.insert(prior)
+        context.insert(current)
+        context.insert(future)
+        try context.save()
+        let unfinished = CharacterStateService.gatherInputs(modelContext: context, timezone: jst, now: now())
+        XCTAssertFalse(unfinished.liftPRSetToday)
+        current.durationMinutes = 10
+        try context.save()
+        let finished = CharacterStateService.gatherInputs(modelContext: context, timezone: jst, now: now())
+        XCTAssertTrue(finished.liftPRSetToday)
     }
 
     // MARK: - Live data path

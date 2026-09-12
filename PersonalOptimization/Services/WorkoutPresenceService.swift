@@ -24,6 +24,7 @@ final class WorkoutPresenceService {
         let savedStart = defaults.object(forKey: startKey) as? Date
         if defaults.bool(forKey: activeKey),
            let savedStart,
+           savedStart <= Date(),
            Date().timeIntervalSince(savedStart) < staleAfter {
             isActive = true
             workoutType = defaults.string(forKey: typeKey)
@@ -59,8 +60,16 @@ final class WorkoutPresenceService {
         NotificationCenter.default.post(name: .workoutPresenceChanged, object: nil)
     }
 
+    /// Long-running foreground sessions can outlive the restoration check.
+    /// Never show a stale or future workout as a live training reaction.
+    func isActive(at date: Date) -> Bool {
+        guard isActive, let startedAt else { return false }
+        let elapsed = date.timeIntervalSince(startedAt)
+        return elapsed >= 0 && elapsed < staleAfter
+    }
+
     var coachSummary: String {
-        guard isActive else { return "No live workout signal." }
+        guard isActive(at: Date()) else { return "No live workout signal." }
         let type = workoutType ?? "workout"
         let elapsed = startedAt.map { max(0, Int(Date().timeIntervalSince($0) / 60)) } ?? 0
         return "Workout in progress: \(type), approximately \(elapsed) minutes elapsed. Do not prescribe a second workout; coach the current session, hydration, pacing, or recovery."

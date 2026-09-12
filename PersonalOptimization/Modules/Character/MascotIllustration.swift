@@ -49,11 +49,22 @@ struct MascotIllustration: View {
 
     var body: some View {
         Canvas { context, size in
-            MascotRenderer(state: stateName, palette: palette)
+            MascotRenderer(state: illustrationState, palette: palette)
                 .draw(in: &context, size: size)
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityHidden(true) // callers attach state-aware labels
+    }
+
+    /// Widgets receive raw strings without the model layer. Keep their
+    /// fallback poses aligned with the app's new contextual reactions.
+    private var illustrationState: String {
+        switch stateName {
+        case "training", "comeback": return "neutral"
+        case "recovering": return "fasting"
+        case "celebrating": return "proud"
+        default: return stateName
+        }
     }
 }
 

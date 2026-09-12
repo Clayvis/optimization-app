@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import os
+import UserNotifications
 
 @main
 struct PersonalOptimizationApp: App {
@@ -32,9 +33,10 @@ struct PersonalOptimizationApp: App {
             container = PersistenceBootstrap.inMemory()
             persistenceMode = .full
             if PersonalOptimizationApp.isUITesting {
+                WorkoutPresenceService.shared.end()
                 let profile = UserProfile(name: "UI Test")
-                profile.onboardingCompleted = true
-                profile.mascotEnabled = false
+                profile.onboardingCompleted = !ProcessInfo.processInfo.arguments.contains("--ui-testing-onboarding")
+                profile.mascotEnabled = ProcessInfo.processInfo.arguments.contains("--ui-testing-mascot")
                 // Body info set so the one-time Today prompt (dob sentinel)
                 // stays out of smoke-test screenshots.
                 profile.dob = Calendar.current.date(from: DateComponents(year: 1995, month: 1, day: 1)) ?? .distantPast
@@ -79,7 +81,7 @@ struct PersonalOptimizationApp: App {
             let context = container.mainContext
             let profile = context.fetchFirstOrNil(FetchDescriptor<UserProfile>())
             let onboardingComplete = profile?.onboardingCompleted ?? false
-            if onboardingComplete {
+            if onboardingComplete && profile?.metadata("quickProfile.completed", as: Bool.self) != true {
                 do {
                     try ScheduleSeed.seedIfNeeded(modelContext: context)
                 } catch {
@@ -142,6 +144,10 @@ struct PersonalOptimizationApp: App {
         NotificationActionHandler.shared.attach(modelContainer: container)
         Task { @MainActor in
             do {
+                // A first launch starts with the user's profile, not a system
+                // prompt. Settings requests access when the user chooses it.
+                let settings = await UNUserNotificationCenter.current().notificationSettings()
+                guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
                 _ = try await NotificationService.shared.register()
                 // W1/W4: actually schedule the learning reminders. The installer
                 // previously had zero call sites, so learning reminders never

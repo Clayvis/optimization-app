@@ -230,6 +230,7 @@ struct CustomActivitySessionView: View {
     }
 
     private func beginLiveMetrics(from start: Date) {
+        WorkoutPresenceService.shared.start(type: template.name, at: start)
         let metrics = LiveWorkoutMetrics(
             healthKit: LiveHealthKitService.shared,
             sessionStart: start,
@@ -269,6 +270,7 @@ struct CustomActivitySessionView: View {
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes
             )
             liveMetrics?.end()
+            WorkoutPresenceService.shared.end()
             completionCount &+= 1
             LogFeedbackCenter.shared.confirm(IdentityCopy.workoutLogged)
             dismiss()

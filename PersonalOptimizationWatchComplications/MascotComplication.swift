@@ -53,7 +53,7 @@ struct MascotTimelineProvider: TimelineProvider {
         // time-of-day state (thirsty, fasting) follows travel.
         let tz = UserCalendar.timezone(modelContext: container.mainContext)
         let inputs = CharacterStateService.gatherInputs(modelContext: container.mainContext,
-                                                        timezone: tz)
+                                                        timezone: tz, now: date)
         let resolved = CharacterStateService.resolve(inputs: inputs)
         // Variant-aware: read the user's chosen mascot variant so the
         // complication renders the female ninja for the wife test profile

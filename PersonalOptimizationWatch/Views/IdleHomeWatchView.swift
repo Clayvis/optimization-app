@@ -30,6 +30,7 @@ struct IdleHomeWatchView: View {
 
     private var profile: UserProfile? { profiles.first }
     private var variant: String { profile?.mascotVariant ?? "ninja_male" }
+    private var motionDisabled: Bool { reduceMotion || profile?.reducedMotion == true }
 
     var body: some View {
         ScrollView {
@@ -71,7 +72,7 @@ struct IdleHomeWatchView: View {
                             style: StrokeStyle(lineWidth: 7, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
-                        .animation(.easeOut(duration: 0.5), value: progress)
+                        .animation(motionDisabled ? nil : .easeOut(duration: 0.5), value: progress)
                     Image(mascotState.assetName(for: variant))
                         .resizable()
                         .interpolation(.high)
@@ -80,9 +81,11 @@ struct IdleHomeWatchView: View {
                         .clipShape(Circle())
                 }
                 .frame(width: 104, height: 104)
-                .scaleEffect(bounceScale)
-                .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.45),
-                           value: pokeCount)
+                .phaseAnimator([false, true], trigger: pokeCount) { content, pressed in
+                    content.scaleEffect(motionDisabled ? 1 : (pressed ? 0.93 : 1))
+                } animation: { _ in
+                    motionDisabled ? nil : .spring(response: 0.3, dampingFraction: 0.6)
+                }
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Mascot \(mascotState.rawValue), \(tally.completed) of \(tally.scheduled) goals done. Tap for status.")
@@ -93,11 +96,12 @@ struct IdleHomeWatchView: View {
                     .font(.caption2.weight(.semibold))
                     .monospacedDigit()
             } else if !isInternalReason(mascotReason) {
-                Text(mascotReason)
+                Text(mascotState.displayName)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+                    .accessibilityLabel(mascotReason)
             } else {
                 Text(tally.completed >= tally.scheduled && tally.scheduled > 0
                      ? "day closed"
@@ -108,26 +112,11 @@ struct IdleHomeWatchView: View {
         }
     }
 
-    /// Subtle squash on even pokes, back to rest on odd, so each tap visibly
-    /// lands without keeping any animation running between interactions.
-    private var bounceScale: CGFloat {
-        pokeCount % 2 == 0 ? 1.0 : 0.93
-    }
-
     private func poke() {
         WKInterfaceDevice.current().play(.click)
         pokeCount += 1
         showingTallyCaption.toggle()
         recomputeMascot()
-        // Bounce back to rest right after the squash lands.
-        if !reduceMotion {
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(140))  // MARK: try? justified - cancellation just skips the rebound frame.
-                pokeCount += 1
-            }
-        } else {
-            pokeCount += 1
-        }
     }
 
     @ViewBuilder
@@ -275,57 +264,19 @@ struct IdleHomeWatchView: View {
         streaks.first { $0.domain == domain.rawValue }?.currentStreak ?? 0
     }
 
-    /// Mascot recompute on appear only; we don't run a 30s ticker on the watch
-    /// like CharacterStateService does on iOS — that would burn battery for no
-    /// real-time benefit. The state on the wrist refreshes when the user
-    /// opens the app or the iOS app pushes via WCSession (M3.8 Block 3).
+    /// Reuse the phone's resolver so recovery and comeback have the same
+    /// meaning on the wrist. Refreshes follow user interaction, not polling.
     private func recomputeMascot() {
-        let cal = deviceCalendar()
-        let day = cal.startOfDay(for: Date())
-        let log = logs.first { $0.supersededAt == nil && cal.isDate($0.date, inSameDayAs: day) }
-
-        let workoutCounter = streaks.first { $0.domain == StreakDomain.workout.rawValue }
-        let workoutMilestone = isMilestone(workoutCounter?.currentStreak)
-            && (workoutCounter?.lastCompletedDate.map { cal.isDate($0, inSameDayAs: day) } ?? false)
-        let anyBroken = streaks.contains { c in
-            guard let last = c.lastCompletedDate else { return false }
-            let yesterday = cal.date(byAdding: .day, value: -1, to: day) ?? day
-            return c.currentStreak == 0 && cal.isDate(last, inSameDayAs: yesterday)
+        let now = Date()
+        var inputs = CharacterStateService.gatherInputs(
+            modelContext: modelContext, timezone: UserCalendar.timezone(modelContext: modelContext), now: now
+        )
+        if let service = fastingService, let profile {
+            inputs.inFastWindow = service.state(at: now, profile: profile) == .fasting
         }
-
-        // Fast window check (manual or scheduled).
-        let inFast: Bool
-        if let svc = fastingService, let p = profile {
-            inFast = svc.state(at: Date(), profile: p) == .fasting
-        } else {
-            inFast = false
-        }
-
-        // Order matches CharacterState.precedenceOrder (urgent/achievement/
-        // proud/disappointed/tired/thirsty/fasting/neutral) — but on the
-        // wrist we skip urgent (no schedule lookup here) and stay on the
-        // most likely visible states.
-        if workoutMilestone {
-            mascotState = .proud
-            mascotReason = "milestone today"
-        } else if anyBroken {
-            mascotState = .disappointed
-            mascotReason = "streak broke"
-        } else if let log, let sleep = log.sleepHours, sleep < 6 {
-            mascotState = .tired
-            mascotReason = "low sleep"
-        } else if inFast {
-            mascotState = .fasting
-            mascotReason = "in fast window"
-        } else {
-            mascotState = .neutral
-            mascotReason = ""
-        }
-    }
-
-    private func isMilestone(_ s: Int?) -> Bool {
-        guard let s else { return false }
-        return s == 7 || s == 30 || s == 100
+        let resolved = CharacterStateService.resolve(inputs: inputs)
+        mascotState = resolved.state
+        mascotReason = resolved.reason
     }
 
     private func isInternalReason(_ s: String) -> Bool {

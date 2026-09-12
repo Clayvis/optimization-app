@@ -27,6 +27,10 @@ struct CharacterStateInputs {
     var inFastWindow: Bool
     var sickDayActive: Bool
     var travelModeActive: Bool
+    var workoutActive: Bool = false
+    var workoutCompletedToday: Bool = false
+    var lastWorkoutDate: Date?
+    var restDayActive: Bool = false
 
     static let empty = CharacterStateInputs(
         now: Date(),
@@ -86,7 +90,7 @@ final class CharacterStateService {
             stop()
         }
         self.modelContext = modelContext
-        if let tz = timezone { self.timezone = tz }
+        self.timezone = timezone ?? UserCalendar.timezone(modelContext: modelContext)
         recompute(force: true)
         // Subscribe to state-change events instead of polling.
         //
@@ -103,6 +107,11 @@ final class CharacterStateService {
         // up-to-cacheWindow staleness on late samples is irrelevant.
         observers.append(NotificationCenter.default.addObserver(
             forName: .userStateChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.recompute(force: true) }
+        })
+        observers.append(NotificationCenter.default.addObserver(
+            forName: .workoutPresenceChanged, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.recompute(force: true) }
         })
@@ -151,9 +160,30 @@ final class CharacterStateService {
         }
     }
 
-    /// Pure resolver. All eight states evaluated; precedence picks the winner.
+    /// Pure resolver. Reactions follow recorded activity and explicit recovery
+    /// choices. A missed day never turns the companion into a punishment.
     static func resolve(inputs: CharacterStateInputs) -> (state: CharacterState, reason: String) {
         var candidates: [CharacterState: String] = [:]
+
+        if inputs.sickDayActive || inputs.restDayActive || inputs.basketballAchillesPainHigh {
+            return (.recovering, "Recovery belongs in your week. Your progress stays yours.")
+        }
+        if inputs.workoutActive {
+            return (.training, "One session, your pace. I'm here with you.")
+        }
+        if inputs.workoutCompletedToday {
+            candidates[.celebrating] = "You showed up today. Enjoy your daily win."
+        }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = inputs.timezone
+        let daysSinceWorkout = inputs.lastWorkoutDate.flatMap {
+            calendar.dateComponents([.day], from: calendar.startOfDay(for: $0),
+                                    to: calendar.startOfDay(for: inputs.now)).day
+        }
+        if !inputs.workoutCompletedToday,
+           inputs.anyStreakBrokenInLast24h || (daysSinceWorkout ?? 0) >= 3 {
+            candidates[.comeback] = "Welcome back. A small session is enough to begin again."
+        }
 
         // urgent: a scheduled module block is starting in <5 min, or current scheduled
         //         module block has ended without a log. Travel/sick suppresses urgency.
@@ -162,70 +192,58 @@ final class CharacterStateService {
                let next = inputs.nextBlock,
                next.module != nil,
                nextMin <= 5 && nextMin >= 0 {
-                candidates[.urgent] = "next block in \(nextMin) min"
+                candidates[.urgent] = "Your next session starts in \(nextMin) minutes."
             }
         }
 
         // achievement: a PR was set today.
         if inputs.liftPRSetToday {
-            candidates[.achievement] = "lift PR set today"
+            candidates[.achievement] = "A new lifting personal best. You earned this."
         } else if inputs.swimPRSetToday {
-            candidates[.achievement] = "swim PR set today"
+            candidates[.achievement] = "A new swimming personal best. You earned this."
         }
 
         // proud: workout streak hit a milestone today (7/30/100).
         if inputs.workoutStreakHitMilestoneToday {
-            candidates[.proud] = "streak milestone today"
+            candidates[.proud] = "A consistency milestone. Look how far you've come."
         }
 
-        // disappointed: a streak broke recently, Achilles pain high, or hydration is
-        // visibly behind in the evening.
-        if inputs.anyStreakBrokenInLast24h {
-            candidates[.disappointed] = "streak broke in last 24h"
-        } else if inputs.basketballAchillesPainHigh {
-            candidates[.disappointed] = "achilles pain reported high"
-        } else if Self.hydrationFarBehindEvening(inputs: inputs) {
-            candidates[.disappointed] = "hydration far behind in evening"
+        if Self.hydrationFarBehindEvening(inputs: inputs) {
+            candidates[.thirsty] = "A water break could fit nicely right now."
         }
 
         // tired: low sleep or HRV down vs 7-day baseline.
-        if let sleep = inputs.todayLog?.sleepHours, sleep < 6 {
-            candidates[.tired] = "sleep < 6h"
+        if let sleep = inputs.todayLog?.sleepHours, sleep.isFinite, sleep > 0, sleep < 6 {
+            candidates[.tired] = "A shorter night. Make room for an easier day."
         } else if inputs.sevenDayHrvDownTwentyPercent {
-            candidates[.tired] = "hrv down 20% vs 7d avg"
+            candidates[.tired] = "Your recovery signals are lower. An easier day is welcome."
         }
 
         // thirsty: hydration short of expected pace.
         if let log = inputs.todayLog, inputs.hydrationProgressByHour > 0 {
             let ratio = log.waterOz / inputs.hydrationProgressByHour
             if ratio < 0.6 {
-                candidates[.thirsty] = "hydration ratio \(Int(ratio * 100))%"
+                candidates[.thirsty] = "A water break could fit nicely right now."
             }
         }
 
         // fasting: in fast window.
         if inputs.inFastWindow {
-            candidates[.fasting] = "in fast window"
+            candidates[.fasting] = "Your fasting window is active. Settle into your rhythm."
         }
 
         // neutral fallback.
         candidates[.neutral] = "default"
 
-        // Travel/sick day prefer neutral over disappointed/urgent so the user is
-        // not nagged while offline. But fasting/proud/achievement still surface.
+        // Travel suppresses reminders while preserving recorded wins.
         if inputs.travelModeActive {
             candidates.removeValue(forKey: .urgent)
             candidates.removeValue(forKey: .disappointed)
             candidates.removeValue(forKey: .thirsty)
-            if candidates[.proud] == nil && candidates[.achievement] == nil && candidates[.fasting] == nil {
+            candidates.removeValue(forKey: .comeback)
+            if candidates[.proud] == nil && candidates[.achievement] == nil
+                && candidates[.fasting] == nil && candidates[.celebrating] == nil {
                 return (.neutral, "travel mode")
-            }
-        }
-        if inputs.sickDayActive {
-            candidates.removeValue(forKey: .urgent)
-            candidates.removeValue(forKey: .disappointed)
-            if candidates[.proud] == nil && candidates[.achievement] == nil {
-                return (.tired, "user marked sick day")
             }
         }
 
@@ -239,8 +257,7 @@ final class CharacterStateService {
 
     // MARK: - Live data gathering
 
-    static func gatherInputs(modelContext: ModelContext, timezone: TimeZone) -> CharacterStateInputs {
-        let now = Date()
+    static func gatherInputs(modelContext: ModelContext, timezone: TimeZone, now: Date = Date()) -> CharacterStateInputs {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = timezone
         let day = cal.startOfDay(for: now)
@@ -282,11 +299,13 @@ final class CharacterStateService {
         // descending fetch of the all-time max volume row (1 fetch each).
         let tomorrow = cal.date(byAdding: .day, value: 1, to: day) ?? day
         let todaysLiftsDescriptor = FetchDescriptor<LiftSession>(
-            predicate: #Predicate<LiftSession> { $0.date >= day && $0.date < tomorrow }
+            predicate: #Predicate<LiftSession> {
+                $0.date >= day && $0.date < tomorrow && $0.date <= now && $0.durationMinutes > 0
+            }
         )
         let todaysLifts = modelContext.fetchOrEmpty(todaysLiftsDescriptor)
         var priorLiftsDescriptor = FetchDescriptor<LiftSession>(
-            predicate: #Predicate<LiftSession> { $0.date < day },
+            predicate: #Predicate<LiftSession> { $0.date < day && $0.durationMinutes > 0 },
             sortBy: [SortDescriptor(\.totalVolumeLbs, order: .reverse)]
         )
         priorLiftsDescriptor.fetchLimit = 1
@@ -294,11 +313,13 @@ final class CharacterStateService {
         let liftPR = !todaysLifts.isEmpty && (todaysLifts.map { $0.totalVolumeLbs }.max() ?? 0) > priorMaxLiftVolume && priorMaxLiftVolume > 0
 
         let todaysSwimsDescriptor = FetchDescriptor<SwimSession>(
-            predicate: #Predicate<SwimSession> { $0.date >= day && $0.date < tomorrow }
+            predicate: #Predicate<SwimSession> {
+                $0.date >= day && $0.date < tomorrow && $0.date <= now && $0.durationMinutes > 0
+            }
         )
         let todaysSwims = modelContext.fetchOrEmpty(todaysSwimsDescriptor)
         var priorSwimsDescriptor = FetchDescriptor<SwimSession>(
-            predicate: #Predicate<SwimSession> { $0.date < day },
+            predicate: #Predicate<SwimSession> { $0.date < day && $0.durationMinutes > 0 },
             sortBy: [SortDescriptor(\.totalMeters, order: .reverse)]
         )
         priorSwimsDescriptor.fetchLimit = 1
@@ -323,6 +344,26 @@ final class CharacterStateService {
         let sickDayActive = (profile?.sickDayActiveUntil ?? .distantPast) >= now
         let travelModeActive = (profile?.travelModeActiveUntil ?? .distantPast) >= now
 
+        // Fetch only the latest actual workout. Skips, freezes, and future
+        // rows cannot trigger celebration or erase the return-after-a-break cue.
+        var workoutDescriptor = FetchDescriptor<WorkoutEvent>(
+            predicate: #Predicate<WorkoutEvent> {
+                $0.completed && $0.date <= now
+                    && ($0.source == "lift" || $0.source == "swim"
+                        || $0.source == "basketball" || $0.source == "custom")
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        workoutDescriptor.fetchLimit = 1
+        let lastWorkoutDate = modelContext.fetchFirstOrNil(workoutDescriptor)?.date
+        #if os(iOS)
+        let workoutActive = WorkoutPresenceService.shared.isActive(at: now)
+        #else
+        // Watch surfaces own their live workout session. A complication does
+        // not import the phone's connectivity/presence service.
+        let workoutActive = false
+        #endif
+
         return CharacterStateInputs(
             now: now,
             timezone: timezone,
@@ -341,7 +382,11 @@ final class CharacterStateService {
             sevenDayHrvDownTwentyPercent: false,
             inFastWindow: inFastWindow,
             sickDayActive: sickDayActive,
-            travelModeActive: travelModeActive
+            travelModeActive: travelModeActive,
+            workoutActive: workoutActive,
+            workoutCompletedToday: lastWorkoutDate.map { cal.isDate($0, inSameDayAs: day) } ?? false,
+            lastWorkoutDate: lastWorkoutDate,
+            restDayActive: todayLog?.metadata("dailyWorkout.restDay", as: Bool.self) ?? false
         )
     }
 

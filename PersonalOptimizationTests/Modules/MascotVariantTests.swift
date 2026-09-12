@@ -27,6 +27,18 @@ final class MascotVariantTests: XCTestCase {
         XCTAssertEqual(MascotVariant.ninjaFemale.requiredAssetNames.count, 8)
     }
 
+    func test_newReactionsReuseInstalledArtForBothVariants() {
+        for variant in MascotVariant.allCases {
+            for state in [CharacterState.training, .recovering, .comeback, .celebrating] {
+                XCTAssertTrue(MascotView.assetExists(named: state.assetName(for: variant.rawValue)))
+                XCTAssertNotNil(state.reactionSymbol)
+            }
+        }
+        XCTAssertEqual(CharacterState.recovering.artworkState, .fasting)
+        XCTAssertEqual(CharacterState.celebrating.artworkState, .proud)
+        XCTAssertEqual(CharacterState(rawValue: "disappointed"), .disappointed, "Retained history still decodes")
+    }
+
     func test_preflight_male_assets_present_in_bundle() {
         // The shipped app catalog has all 8 NinjaMale_* imagesets. Preflight returns nil.
         let missing = MascotVariantPreflight.missingAssets(for: .ninjaMale)

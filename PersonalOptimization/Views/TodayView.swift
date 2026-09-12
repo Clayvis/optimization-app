@@ -116,7 +116,8 @@ struct TodayView: View {
                     DisclosureGroup(isExpanded: $insightsExpanded) {
                         masterMetricCard
                         insightsStack.padding(.top, Theme.Space.m)
-                        if let profile, profile.dob == .distantPast {
+                        if let profile, profile.dob == .distantPast,
+                           profile.metadata("quickProfile.completed", as: Bool.self) != true {
                             Button("Add body info for calorie estimates") { showingBodyInfoSheet = true }
                                 .accessibilityIdentifier("today.bodyInfoPrompt")
                         }
@@ -149,7 +150,6 @@ struct TodayView: View {
             .onAppear {
                 now = Date()
                 bootstrapServices()
-                characterService.start(modelContext: modelContext)
                 refreshMascotWidget()
                 refreshLapseAndMilestones()
                 durabilityHeadline = DurabilityHeadlineService(modelContext: modelContext).headline(asOf: now)
@@ -178,9 +178,6 @@ struct TodayView: View {
             }
             .onChange(of: activeHealthKitError) { _, error in
                 if error != nil { healthExpanded = true }
-            }
-            .onDisappear {
-                characterService.stop()
             }
             // Pull to refresh runs a full HK sync and re-derives downstream
             // state. The spinner above shows for the duration of the sync
