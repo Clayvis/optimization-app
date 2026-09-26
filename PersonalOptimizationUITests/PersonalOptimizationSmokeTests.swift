@@ -247,7 +247,11 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertTrue(repeatMeal.waitForExistence(timeout: 10))
         capture("Recent meals", app: app)
         repeatMeal.tap() // Tap 2: log the complete original portion.
-        XCTAssertTrue(app.staticTexts["Fueled on purpose."].waitForExistence(timeout: 10))
+        // Durable result, not the 1.8-second confirmation banner (too brief to
+        // assert on reliably on shared CI runners): the fixture's 2 × 40 g oats
+        // (10 g protein) brings today's 150 g protein target to 140 g left.
+        XCTAssertTrue(app.staticTexts["140 g protein left"].waitForExistence(timeout: 10),
+                      "The repeated meal counts toward today on the Home card")
         XCTAssertTrue(quickAdd.exists)
     }
 
@@ -264,7 +268,8 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertTrue(log.waitForExistence(timeout: 10))
         capture("Saved meals", app: app)
         log.tap() // Tap 3.
-        XCTAssertTrue(app.staticTexts["Fueled on purpose."].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["140 g protein left"].waitForExistence(timeout: 10),
+                      "The saved meal counts toward today on the Home card")
     }
 
     func test_saveMealAndCopyPreviewCancelThenConfirm() {
@@ -285,7 +290,10 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 10))
         name.tap(); name.typeText("Weekend oats")
         app.buttons["nutrition.mealAction.confirm"].tap()
-        XCTAssertTrue(app.staticTexts["Meal saved for next time."].waitForExistence(timeout: 10))
+        // The sheet closes only when the save succeeds (a failure keeps it open
+        // with an error). The confirmation banner lasts 1.8 seconds, too brief
+        // to assert on reliably on shared CI runners (CI run #37).
+        XCTAssertTrue(name.waitForNonExistence(timeout: 10), "Saving closes the sheet")
         app.navigationBars.buttons["Today"].tap()
         app.buttons["nutrition.copyYesterday"].tap()
         XCTAssertTrue(app.staticTexts["Test oats"].waitForExistence(timeout: 10))
@@ -294,8 +302,15 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Test oats"].exists, "Cancel does not append food")
         app.buttons["nutrition.copyYesterday"].tap()
         app.buttons["nutrition.mealAction.confirm"].tap()
-        XCTAssertTrue(app.staticTexts["Fueled on purpose."].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["Test oats"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Test oats"].waitForExistence(timeout: 10), "Confirm appends the copied food")
+
+        // The saved meal is durable and reachable from Home.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let quickAdd = app.buttons["today.quickAddMeal"]
+        XCTAssertTrue(quickAdd.waitForExistence(timeout: 10))
+        quickAdd.tap()
+        app.buttons["Saved meals"].tap()
+        XCTAssertTrue(app.staticTexts["Weekend oats"].waitForExistence(timeout: 10), "The new saved meal is listed")
     }
 
     /// Brings a form field into view and types into it once it holds focus.

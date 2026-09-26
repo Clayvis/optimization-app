@@ -29,6 +29,8 @@ Verified 2026-09-26 on Xcode 26.6 (iPhone 17 simulator unless noted):
 
 Completion-pass changes (Claude): recent meals list their foods in the order they were logged, and copied items keep that order in the day list (each item steps back one second from the slot time, never before the start of the day; the last item lands on the slot time). Test added: `test_repeatedMealKeepsTheOrderItWasLoggedIn`. Indentation fix in `MascotView.art`.
 
+CI note: GitHub CI run #37 (commit 6fd696f) failed only `test_saveMealAndCopyPreviewCancelThenConfirm`, waiting for the "Meal saved for next time." banner, which lasts 1.8 seconds and can vanish before a slow runner looks. The three Phase 2 UI tests now assert durable results instead: the save sheet closes, the saved meal is listed under Quick add, Saved meals, and Home shows "140 g protein left" after a repeat. Avoid asserting on the confirmation banner in new UI tests.
+
 History: the first build found shared Watch compilation issues (MealSlot.defaultHour moved to FoodEntry.swift; the missing-date constant captured outside the SwiftData #Predicate). A test-fixture container lifetime error was fixed by retaining the in-memory containers. The celebration arm angles were adjusted after visual review.
 
 Important existing limitation: general JSON export still does not export the Phase 1 food catalog, entry and target tables. Saved meals are exported with full snapshots, so they stay loggable after restore without the catalog. Do not claim the whole nutrition backup is complete.
