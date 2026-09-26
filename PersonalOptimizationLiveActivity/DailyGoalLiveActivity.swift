@@ -8,7 +8,7 @@ import SwiftUI
 struct DailyGoalLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DailyGoalActivityAttributes.self) { context in
-            LockScreenDailyGoalView(state: context.state)
+            LockScreenDailyGoalView(state: context.state, isStale: context.isStale)
                 .activityBackgroundTint(Color.black.opacity(0.4))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
@@ -24,9 +24,10 @@ struct DailyGoalLiveActivity: Widget {
                         .monospacedDigit()
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.state.isComplete ? "Today belongs to the disciplined" : "\(context.state.streak)-day streak")
+                    Text(context.isStale ? "Open app to update status" : (context.state.statusMessage ?? "\(context.state.streak)-day streak"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     ProgressView(value: context.state.progress)
@@ -49,6 +50,7 @@ struct DailyGoalLiveActivity: Widget {
 
 struct LockScreenDailyGoalView: View {
     let state: DailyGoalActivityAttributes.State
+    var isStale = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -66,17 +68,19 @@ struct LockScreenDailyGoalView: View {
             .frame(width: 56, height: 56)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Today's protocol")
+                Text("Active status")
                     .font(.headline)
-                Text(state.isComplete
-                     ? "Today belongs to the disciplined."
-                     : "\(state.completedDomains) of \(state.totalDomains) tracks closed.")
+                Text(isStale ? "Open app to update status" : (state.statusMessage
+                     ?? "\(state.completedDomains) of \(state.totalDomains) tracks closed."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
             }
             Spacer()
         }
         .padding()
+        .widgetURL(URL(string: "personaloptimization://dojo"))
     }
 }
 

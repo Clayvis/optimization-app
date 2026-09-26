@@ -56,6 +56,29 @@ final class HealthKitSyncService {
         NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
     }
 
+    /// Small awaited background job: Move updates do not wait for sleep,
+    /// nutrition and historical queries. No callback is discarded by a timer.
+    func refreshActivityToday() async {
+        isSyncing = true
+        lastSyncError = nil
+        defer { isSyncing = false }
+        let date = now()
+        async let energy = tryFetchSum(.activeEnergyBurned, unit: .kilocalorie(), for: date)
+        async let exercise = tryFetchSum(.appleExerciseTime, unit: .minute(), for: date)
+        async let steps = tryFetchSum(.stepCount, unit: .count(), for: date)
+        let values = await (energy, exercise, steps)
+        let log = ensureLog(for: date)
+        if let value = values.0 { log.activeEnergyBurnedKcal = value }
+        if let value = values.1 { log.appleExerciseMinutes = Int(value.rounded()) }
+        if let value = values.2 { log.stepCount = Int(value.rounded()) }
+        if lastSyncError == nil { log.setMetadata("activitySyncedAt", value: date) }
+        do {
+            try modelContext.save()
+            if lastSyncError == nil { lastSyncedAt = date }
+            NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
+        } catch { recordFetchError(error) }
+    }
+
     /// Pulls HealthKit data for a specific day into its DailyLog row.
     /// Powers retroactive recompute when late-arriving samples (Garmin,
     /// Strava, Withings) land for a day in the past.

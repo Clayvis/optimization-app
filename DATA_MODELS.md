@@ -629,6 +629,21 @@ NutritionDaySummary, NutritionFormat. They compile into the phone, watch, and co
 
 No changes to existing entities. Lightweight migration from SchemaV10.
 
+## SchemaV12 (InBody Progress Coach)
+
+Additive only. Spec: `docs/planning/INBODY_PROGRESS_COACH.md`.
+
+New @Model entity:
+- InBodyScan: one body-composition scan (weight, skeletal muscle, lean mass, fat mass and percentage, optional visceral fat, total body water, ECW/TBW, BMR and five segmental lean masses). One scan per calendar day; re-imports by UUID are inert.
+
+New default-valued fields:
+- LiftExercise: progressionSets, progressionLowerReps, progressionUpperReps (double-progression targets).
+- LiftSet: repsInReserve (optional; nil means not recorded, never assumed).
+
+Shared value types (`Models/InBodyValues.swift`, `Models/HypertrophyRules.swift`): InBodyValues, BodyCompositionComparison, HypertrophyFocus (stored in UserProfile metadata under `inbody.focus`), training-set evidence and muscle guidance.
+
+No personal baseline ships in the app; the user imports their own scans. Lightweight migration from SchemaV11.
+
 ## Schema Versioning
 
 From M1, all schemas use `VersionedSchema`:

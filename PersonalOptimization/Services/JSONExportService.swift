@@ -27,6 +27,7 @@ struct ExportPayload: Codable {
     let prescribedWorkouts: [PrescribedWorkoutDTO]?
     let scheduleSuggestions: [ScheduleSuggestionDTO]?
     let weeklyPrograms: [WeeklyProgramDTO]?
+    var inBodyScans: [InBodyValues]? = nil
 }
 
 // MARK: - DTOs
@@ -101,6 +102,9 @@ struct LiftExerciseDTO: Codable {
     let orderIndex: Int
     let sets: [LiftSetDTO]
     let rpe: Int?
+    var progressionSets: Int? = nil
+    var progressionLowerReps: Int? = nil
+    var progressionUpperReps: Int? = nil
 }
 
 struct LiftSetDTO: Codable {
@@ -108,6 +112,7 @@ struct LiftSetDTO: Codable {
     let reps: Int
     let restSeconds: Int?
     let orderIndex: Int
+    var repsInReserve: Int? = nil
 }
 
 struct BasketballSessionDTO: Codable {
@@ -303,7 +308,7 @@ extension DailyLogDTO {
 
 extension LiftSetDTO {
     init(_ m: LiftSet) {
-        self.init(weightLbs: m.weightLbs, reps: m.reps, restSeconds: m.restSeconds, orderIndex: m.orderIndex)
+        self.init(weightLbs: m.weightLbs, reps: m.reps, restSeconds: m.restSeconds, orderIndex: m.orderIndex, repsInReserve: m.repsInReserve)
     }
 }
 
@@ -312,7 +317,8 @@ extension LiftExerciseDTO {
         self.init(
             name: m.name, orderIndex: m.orderIndex,
             sets: (m.sets ?? []).sorted(by: { $0.orderIndex < $1.orderIndex }).map(LiftSetDTO.init),
-            rpe: m.rpe
+            rpe: m.rpe, progressionSets: m.progressionSets,
+            progressionLowerReps: m.progressionLowerReps, progressionUpperReps: m.progressionUpperReps
         )
     }
 }
@@ -538,7 +544,8 @@ enum JSONExportService {
             detectedPatterns: patterns.map(DetectedPatternDTO.init),
             prescribedWorkouts: prescribed.map(PrescribedWorkoutDTO.init),
             scheduleSuggestions: suggestions.map(ScheduleSuggestionDTO.init),
-            weeklyPrograms: weeklyPrograms.map(WeeklyProgramDTO.init)
+            weeklyPrograms: weeklyPrograms.map(WeeklyProgramDTO.init),
+            inBodyScans: try modelContext.fetch(FetchDescriptor<InBodyScan>()).map(\.values)
         )
 
         let encoder = JSONEncoder()

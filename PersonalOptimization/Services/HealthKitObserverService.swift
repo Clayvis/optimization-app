@@ -15,8 +15,15 @@ protocol HKObserverBackend: AnyObject {
     /// the caller can stop a specific observer later. The handler is invoked
     /// every time HealthKit detects new samples of `type`.
     @discardableResult
-    func startObserver(for type: HKSampleType, handler: @escaping @MainActor () -> Void) -> UUID
+    func startObserver(for type: HKSampleType, handler: @escaping @MainActor () async -> Void) -> UUID
     func stopAllObservers()
+}
+
+/// HealthKit supplies a one-shot callback, transferred to the delivery task.
+private final class ObserverDeliveryCompletion: @unchecked Sendable {
+    private let callback: () -> Void
+    init(_ callback: @escaping () -> Void) { self.callback = callback }
+    func finish() { callback() }
 }
 
 /// Live wrapper around `HKHealthStore`. The observer-query callback may be
@@ -39,16 +46,20 @@ final class LiveHKObserverBackend: HKObserverBackend {
     }
 
     @discardableResult
-    func startObserver(for type: HKSampleType, handler: @escaping @MainActor () -> Void) -> UUID {
+    func startObserver(for type: HKSampleType, handler: @escaping @MainActor () async -> Void) -> UUID {
         let token = UUID()
         let logger = self.logger
         let query = HKObserverQuery(sampleType: type, predicate: nil) { _, completionHandler, error in
-            defer { completionHandler() }
             if let error {
                 logger.warning("HKObserverQuery for \(type.identifier, privacy: .public) error: \(error.localizedDescription, privacy: .public)")
+                completionHandler()
                 return
             }
-            Task { @MainActor in handler() }
+            let completion = ObserverDeliveryCompletion(completionHandler)
+            Task { @MainActor in
+                await handler()
+                completion.finish()
+            }
         }
         store.execute(query)
         queries[token] = query
@@ -106,7 +117,7 @@ final class HealthKitObserverService {
     }
 
     /// High-frequency activity types (the Apple Fitness Move/Exercise inputs).
-    /// These fire constantly during movement, so they get a debounced
+    /// These fire constantly during movement, so they get a lightweight
     /// today-only sync instead of the heavy 7-day resync. Without them the
     /// Move number only refreshed at launch and pull-to-refresh.
     static var fastObservedTypes: [HKSampleType] {
@@ -122,10 +133,6 @@ final class HealthKitObserverService {
         defaultObservedTypes + fastObservedTypes
     }
 
-    /// Minimum spacing between fast-path syncs. Active energy can fire every
-    /// few seconds during a workout; one today-sync per interval is plenty.
-    static let fastSyncDebounce: TimeInterval = 60
-    private var lastFastSyncAt: Date?
 
     /// Begin observing the high-signal HK sample types. Safe to call repeatedly;
     /// no-op if already observing.
@@ -142,9 +149,7 @@ final class HealthKitObserverService {
             }
 
             backend.startObserver(for: type) { [weak self] in
-                Task { @MainActor in
-                    await self?.handleUpdate()
-                }
+                await self?.handleUpdate()
             }
             observedTypes.insert(type.identifier)
         }
@@ -157,9 +162,7 @@ final class HealthKitObserverService {
             }
 
             backend.startObserver(for: type) { [weak self] in
-                Task { @MainActor in
-                    await self?.handleFastUpdate()
-                }
+                await self?.handleFastUpdate()
             }
             observedTypes.insert(type.identifier)
         }
@@ -181,17 +184,13 @@ final class HealthKitObserverService {
         isObserving = false
     }
 
-    /// Fast path for Move/Exercise/steps: refresh today's DailyLog only,
-    /// debounced. No 7-day range walk, no workout import; the heavy types
-    /// keep covering those.
+    /// Refresh the three activity totals on every delivery, including the last
+    /// update of a burst. Await persistence before acknowledging the delivery.
     private func handleFastUpdate() async {
         guard let container = modelContainer else { return }
-        if let last = lastFastSyncAt, Date().timeIntervalSince(last) < Self.fastSyncDebounce {
-            return
-        }
-        lastFastSyncAt = Date()
         if !skipsDataSync {
-            await HealthKitSyncService(modelContext: container.mainContext).refreshToday()
+            await HealthKitSyncService(modelContext: container.mainContext).refreshActivityToday()
+            await ActiveStatusService.refresh(context: container.mainContext, startIfNeeded: false)
         }
         NotificationCenter.default.post(name: .healthKitObserverDidFire, object: nil)
     }
@@ -208,6 +207,7 @@ final class HealthKitObserverService {
             // app realizes the user trained without them opening it and starting a
             // manual timer. Deduped by HealthKit UUID, so it is safe on every fire.
             await importRecentWorkouts(modelContext: context)
+            await ActiveStatusService.refresh(context: context, startIfNeeded: false)
         }
         // Test hook: fire a notification so tests can assert the observer
         // path reached the sync layer without depending on SwiftData state.
@@ -252,7 +252,7 @@ final class FakeHKObserverBackend: HKObserverBackend {
     var backgroundDeliveryError: Error?
     var disableAllCalls: Int = 0
     private(set) var observedTypes: [HKSampleType] = []
-    private var handlers: [(typeID: String, token: UUID, handler: @MainActor () -> Void)] = []
+    private var handlers: [(typeID: String, token: UUID, handler: @MainActor () async -> Void)] = []
     var stopAllCalls: Int = 0
 
     func enableBackgroundDelivery(for type: HKSampleType, frequency: HKUpdateFrequency) async throws {
@@ -268,7 +268,7 @@ final class FakeHKObserverBackend: HKObserverBackend {
     }
 
     @discardableResult
-    func startObserver(for type: HKSampleType, handler: @escaping @MainActor () -> Void) -> UUID {
+    func startObserver(for type: HKSampleType, handler: @escaping @MainActor () async -> Void) -> UUID {
         let token = UUID()
         observedTypes.append(type)
         handlers.append((typeID: type.identifier, token: token, handler: handler))
@@ -280,11 +280,15 @@ final class FakeHKObserverBackend: HKObserverBackend {
         handlers.removeAll()
     }
 
+    func fireObserverAndWait(for type: HKSampleType) async {
+        for entry in handlers where entry.typeID == type.identifier { await entry.handler() }
+    }
+
     /// Synthetic observer fire. Triggers every handler registered for the
     /// matching sample-type identifier.
     func fireObserver(for type: HKSampleType) {
         for entry in handlers where entry.typeID == type.identifier {
-            entry.handler()
+            Task { await entry.handler() }
         }
     }
 }

@@ -34,6 +34,8 @@ enum JSONImportService {
             throw JSONImportError.unsupportedVersion(payload.version)
         }
 
+        for value in payload.inBodyScans ?? [] { try value.validate() }
+        if payload.inBodyScans != nil { try modelContext.delete(model: InBodyScan.self) }
         try wipe(modelContext: modelContext)
         try insertAll(from: payload, into: modelContext)
         try modelContext.save()
@@ -73,6 +75,7 @@ enum JSONImportService {
     }
 
     private static func insertAll(from payload: ExportPayload, into ctx: ModelContext) throws {
+        for value in payload.inBodyScans ?? [] { ctx.insert(InBodyScan(values: value)) }
         if let p = payload.userProfile {
             ctx.insert(makeUserProfile(from: p))
         }
@@ -241,10 +244,14 @@ enum JSONImportService {
         for ed in d.exercises {
             let e = LiftExercise(name: ed.name, orderIndex: ed.orderIndex)
             e.rpe = ed.rpe
+            e.progressionSets = ed.progressionSets ?? 3
+            e.progressionLowerReps = ed.progressionLowerReps ?? 10
+            e.progressionUpperReps = ed.progressionUpperReps ?? 15
             var sets: [LiftSet] = []
             for sd in ed.sets {
                 let s = LiftSet(weightLbs: sd.weightLbs, reps: sd.reps, orderIndex: sd.orderIndex)
                 s.restSeconds = sd.restSeconds
+                s.repsInReserve = sd.repsInReserve
                 sets.append(s)
             }
             e.sets = sets

@@ -25,6 +25,9 @@ final class LiftExercise {
     @Relationship(deleteRule: .cascade, inverse: \LiftSet.exercise)
     var sets: [LiftSet]? = []
     var rpe: Int?
+    var progressionSets: Int = 3
+    var progressionLowerReps: Int = 10
+    var progressionUpperReps: Int = 15
     var session: LiftSession?
     var isCustom: Bool = false
 
@@ -39,6 +42,7 @@ final class LiftExercise {
 final class LiftSet {
     var weightLbs: Double = 0
     var reps: Int = 0
+    var repsInReserve: Int?
     var restSeconds: Int?
     var orderIndex: Int = 0
     var exercise: LiftExercise?

@@ -15,8 +15,12 @@ public struct DailyGoalActivityAttributes: ActivityAttributes {
         public let completedDomains: Int
         public let totalDomains: Int
         public let streak: Int
+        public var statusMessage: String?
+        public var updatedAt: Date?
 
-        public init(completedDomains: Int, totalDomains: Int, streak: Int) {
+        public init(completedDomains: Int, totalDomains: Int, streak: Int, statusMessage: String? = nil, updatedAt: Date? = nil) {
+            self.statusMessage = statusMessage
+            self.updatedAt = updatedAt
             self.completedDomains = completedDomains
             self.totalDomains = totalDomains
             self.streak = streak

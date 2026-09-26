@@ -161,4 +161,21 @@ final class HealthKitSyncServiceTests: XCTestCase {
         // with nil).
         XCTAssertEqual(logs.first?.sleepHours, 6.5)
     }
+    func test_activityRefreshUpdatesFinalMoveWithoutFullHealthQueries() async throws {
+        let now = Date()
+        let service = HealthKitSyncService(modelContext: context, healthKit: fake, now: { now })
+        fake.stubSum(.activeEnergyBurned, value: 150)
+        fake.stubSum(.appleExerciseTime, value: 12)
+        fake.stubSum(.stepCount, value: 2500)
+        await service.refreshActivityToday()
+        fake.stubSum(.activeEnergyBurned, value: 180)
+        await service.refreshActivityToday()
+        let log = try XCTUnwrap(context.fetch(FetchDescriptor<DailyLog>()).first)
+        XCTAssertEqual(log.activeEnergyBurnedKcal, 180)
+        XCTAssertEqual(log.appleExerciseMinutes, 12)
+        XCTAssertEqual(log.stepCount, 2500)
+        XCTAssertNotNil(log.metadata("activitySyncedAt", as: Date.self))
+        XCTAssertEqual(fake.workoutFetchCount, 0)
+    }
+
 }

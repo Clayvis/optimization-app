@@ -111,9 +111,22 @@ struct RootView: View {
         // The companion belongs to every tab. Today disappearing must not
         // stop reactions in the Dojo or during a workout.
         .onAppear { startCharacterService() }
+        .task {
+            await NotificationService.shared.cancelHabitReminders()
+            await ActiveStatusService.refresh(context: modelContext, startIfNeeded: true)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .dailyLogsRecomputed)) { _ in
+            Task { await ActiveStatusService.refresh(context: modelContext, startIfNeeded: false) }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .userStateChanged)) { _ in
+            Task { await ActiveStatusService.refresh(context: modelContext, startIfNeeded: scenePhase == .active) }
+        }
         .onDisappear { CharacterStateService.shared.stop() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { startCharacterService() }
+            if phase == .active {
+                startCharacterService()
+                Task { await ActiveStatusService.refresh(context: modelContext, startIfNeeded: true) }
+            }
             else if phase == .background { CharacterStateService.shared.stop() }
         }
         .onChange(of: selectedTab) { _, _ in
@@ -197,6 +210,13 @@ private struct DojoHubView: View {
                                 systemImage: "book.closed.fill",
                                 tint: Theme.murasaki,
                                 destination: LearningHubView(embedded: true)
+                            )
+                            dojoTile(
+                                title: "InBody Coach",
+                                subtitle: "Muscle, hydration, training focus",
+                                systemImage: "figure.strengthtraining.traditional",
+                                tint: Theme.matcha,
+                                destination: InBodyProgressView()
                             )
                             dojoTile(
                                 title: "Nutrition",

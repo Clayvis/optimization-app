@@ -6,16 +6,24 @@ import os
 /// `FastingLiveActivityController`: a closure-injectable class so tests can
 /// assert start/update/end without touching ActivityKit (unavailable in xctest).
 ///
-/// Lifecycle: the activity is STARTED on the first log of the day (a real
-/// action, not merely opening the app), UPDATED on every subsequent log, and
-/// auto-dismisses at the day rollover via its stale date.
+/// Lifecycle: the activity starts when requested by the foreground status
+/// surface, is updated on confirmed logs and Health deliveries, and
+/// marks its contents stale at the next freshness deadline (one hour, the next
+/// schedule transition, or midnight, whichever comes first).
+///
+/// iOS ends every Live Activity after eight hours and a person can dismiss it
+/// at any time. An ended or dismissed activity never updates again, so it no
+/// longer counts as today's activity; the next foreground refresh starts a
+/// replacement. Refreshes are serialized: launch, foreground, confirmed logs
+/// and Health deliveries can all request one at once, and overlapping calls
+/// must not each conclude "no activity" and request two.
 ///
 /// Crucially, in-memory tracking (`activeID` / `activeDayStart`) is reconciled
 /// against the OS activity registry on every refresh: iOS keeps a Live Activity
 /// alive across an app termination, so a fresh process must ADOPT today's
 /// existing activity rather than starting a duplicate, and must END any
 /// prior-day stray it finds. The stale date is re-threaded through every update
-/// so a multi-log day still auto-dismisses at midnight.
+/// so updates never represent old data as fresh.
 @MainActor
 final class DailyGoalLiveActivityController {
 
@@ -36,6 +44,8 @@ final class DailyGoalLiveActivityController {
 
     private var activeID: String?
     private var activeDayStart: Date?
+    /// Tail of the serial refresh queue (see type comment).
+    private var queueTail: Task<Void, Never>?
 
     init(
         start: @escaping StartActivity = DailyGoalLiveActivityController.liveStart,
@@ -54,24 +64,83 @@ final class DailyGoalLiveActivityController {
     // MARK: - Instance API (testable)
 
     /// Reflects the current protocol tally on the lock screen. `startIfNeeded`
-    /// gates whether a missing activity is created (true on a log, false on a
-    /// passive app-open so we never spawn an activity the user didn't earn with
-    /// an action). No-op when there is nothing scheduled today.
+    /// gates whether a missing activity can be created (foreground only).
+    /// Background callbacks only refresh an existing activity. `freshUntil` is
+    /// the moment the status text stops being true (the next schedule
+    /// transition); the content goes stale then at the latest.
     func refreshInstance(
         completedDomains: Int,
         totalDomains: Int,
         streak: Int,
         startIfNeeded: Bool,
+        statusMessage: String? = nil,
+        freshUntil: Date? = nil,
         asOf: Date = Date(),
         calendar: Calendar = DailyGoalLiveActivityController.deviceCalendar()
     ) async {
-        guard totalDomains > 0 else { return }
+        let previous = queueTail
+        let job = Task { @MainActor [weak self] in
+            await previous?.value
+            await self?.performRefresh(completedDomains: completedDomains, totalDomains: totalDomains,
+                                       streak: streak, startIfNeeded: startIfNeeded,
+                                       statusMessage: statusMessage, freshUntil: freshUntil,
+                                       asOf: asOf, calendar: calendar)
+        }
+        queueTail = job
+        await job.value
+    }
+
+    func endAllInstance() async {
+        let previous = queueTail
+        let job = Task { @MainActor [weak self] in
+            await previous?.value
+            await self?.performEndAll()
+        }
+        queueTail = job
+        await job.value
+    }
+
+    var isRunning: Bool { activeID != nil }
+
+    /// Latest moment the status is known to be true: one hour after the
+    /// update, the next schedule transition, or midnight, whichever is first.
+    nonisolated static func freshnessDeadline(asOf: Date, freshUntil: Date?, calendar: Calendar) -> Date {
+        let hourLater = calendar.date(byAdding: .hour, value: 1, to: asOf) ?? asOf
+        let midnight = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: asOf)) ?? hourLater
+        var deadline = min(hourLater, midnight)
+        if let freshUntil, freshUntil > asOf { deadline = min(deadline, freshUntil) }
+        return deadline
+    }
+
+    /// Ended and dismissed activities never update again. Anything else
+    /// (active, stale, pending, or a future state) still holds today's slot,
+    /// which errs toward updating over starting a duplicate.
+    nonisolated static func holdsSlot(_ state: ActivityState) -> Bool {
+        switch state {
+        case .ended, .dismissed: return false
+        default: return true
+        }
+    }
+
+    // MARK: - Serialized work
+
+    private func performRefresh(
+        completedDomains: Int,
+        totalDomains: Int,
+        streak: Int,
+        startIfNeeded: Bool,
+        statusMessage: String?,
+        freshUntil: Date?,
+        asOf: Date,
+        calendar: Calendar
+    ) async {
+        guard totalDomains > 0 else { await performEndAll(); return }
         let day = calendar.startOfDay(for: asOf)
-        let endOfDay = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: day) ?? asOf
+        let endOfDay = Self.freshnessDeadline(asOf: asOf, freshUntil: freshUntil, calendar: calendar)
         let state = DailyGoalActivityAttributes.State(
             completedDomains: completedDomains,
             totalDomains: totalDomains,
-            streak: streak
+            streak: streak, statusMessage: statusMessage, updatedAt: asOf
         )
 
         // In-memory rollover (process survived past midnight).
@@ -81,13 +150,14 @@ final class DailyGoalLiveActivityController {
             self.activeDayStart = nil
         }
 
-        // Reconcile against the OS registry when we hold no in-memory handle (a
-        // fresh process may have an activity iOS kept alive across a restart).
-        // End prior-day strays; adopt today's existing activity instead of
-        // starting a duplicate. Runs even on the passive path so a stranded
-        // prior-day activity is cleaned up on first reopen.
+        // iOS can end/dismiss an activity while this process stays alive.
+        // Clear a missing handle before adopting or starting today's activity.
+        let existing = await _existing()
+        if let activeID, !existing.contains(where: { $0.id == activeID }) {
+            self.activeID = nil
+            activeDayStart = nil
+        }
         if activeID == nil {
-            let existing = await _existing()
             for stray in existing where !calendar.isDate(stray.dayStart, inSameDayAs: asOf) {
                 await _end(stray.id)
             }
@@ -104,17 +174,17 @@ final class DailyGoalLiveActivityController {
 
         guard startIfNeeded else { return }
         let attributes = DailyGoalActivityAttributes(dayStart: day)
+        // MARK: try? justified - a refused request (Live Activities disabled,
+        // system limit) leaves no activity; the next foreground retries.
         activeID = try? await _start(attributes, state, endOfDay)
         activeDayStart = activeID == nil ? nil : day
     }
 
-    func endAllInstance() async {
+    private func performEndAll() async {
         await _endAll()
         activeID = nil
         activeDayStart = nil
     }
-
-    var isRunning: Bool { activeID != nil }
 
     // MARK: - Static facade
 
@@ -144,6 +214,13 @@ final class DailyGoalLiveActivityController {
             Logger.app.info("Live activities disabled by system; skipping daily goal activity")
             return nil
         }
+        // An activity iOS ended at its eight-hour limit stays on the Lock Screen,
+        // frozen, for up to four more hours. Remove it so the replacement is the
+        // only status shown. Best effort: ActivityKit documents `end` for active
+        // activities, and a no-op here only leaves the old card to expire.
+        for activity in Activity<DailyGoalActivityAttributes>.activities where activity.activityState == .ended {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
         let content = ActivityContent(state: state, staleDate: stale)
         let activity = try Activity.request(attributes: attributes, content: content, pushType: nil)
         Logger.app.info("Started daily goal live activity \(activity.id, privacy: .public)")
@@ -153,7 +230,7 @@ final class DailyGoalLiveActivityController {
     private static let liveUpdate: UpdateActivity = { id, state, stale in
         // for-in + await (not first(where:) + await) so the non-Sendable
         // Activity is never sent across the actor hop under Swift 6. The stale
-        // date is re-supplied so the midnight auto-dismiss survives updates.
+        // date is re-supplied so the freshness deadline survives updates.
         let content = ActivityContent(state: state, staleDate: stale)
         for activity in Activity<DailyGoalActivityAttributes>.activities where activity.id == id {
             await activity.update(content)
@@ -173,6 +250,8 @@ final class DailyGoalLiveActivityController {
     }
 
     private static let liveExisting: ExistingActivities = {
-        Activity<DailyGoalActivityAttributes>.activities.map { (id: $0.id, dayStart: $0.attributes.dayStart) }
+        Activity<DailyGoalActivityAttributes>.activities
+            .filter { DailyGoalLiveActivityController.holdsSlot($0.activityState) }
+            .map { (id: $0.id, dayStart: $0.attributes.dayStart) }
     }
 }

@@ -159,7 +159,8 @@ final class CoachService {
             .filter { !$0.isEmpty }
 
         let memoryService = CoachMemoryService(modelContext: modelContext)
-        let userMemoryBlock = memoryService.summaryForCoach()
+        let userMemoryBlock = memoryService.summaryForCoach() + "\n"
+            + InBodyService.coachContext(context: modelContext, profile: profile, asOf: now())
         let recentInsightsBlock = recentInsightsSummary()
         let lapseNote = lapseStateNote()
         let recoveryNote = recoveryStateNote(profile: profile)

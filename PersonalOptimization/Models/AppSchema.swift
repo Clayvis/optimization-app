@@ -14,13 +14,9 @@ import SwiftData
 enum AppSchema {
     /// The current versioned schema. Bump in one place when a new SchemaVN is
     /// added (and add its migration stage in AppMigrationPlan.stages).
-    /// Note: the V11 schedule-re-haul (added anchor fields to UserProfile)
-    /// did not introduce new entities, so it rides SchemaV10 — SwiftData's
-    /// lightweight migration applies the new properties in place when the
-    /// stored UserProfile rows are first read.
-    /// SchemaV11 adds the Nutrition entities (FoodItem, FoodEntry, SavedMeal,
-    /// SavedMealItem, NutritionTargets); see SchemaV11.swift.
-    static let current: any VersionedSchema.Type = SchemaV11.self
+    /// SchemaV12 adds InBodyScan; LiftSet RIR and exercise progression targets
+    /// are additive default-valued fields. All targets share this schema.
+    static let current: any VersionedSchema.Type = SchemaV12.self
 
     /// Builds the Schema object for ModelContainer initialisation.
     static func schema() -> Schema {

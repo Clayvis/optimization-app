@@ -210,4 +210,20 @@ final class NotificationServiceTests: XCTestCase {
         cal.timeZone = jst
         return cal.date(from: c)!
     }
+    func test_liveStatusSuppressesNewHabitReminderRequests() async throws {
+        let live = NotificationService(center: fake, usesLiveStatus: true)
+        _ = try await live.scheduleLearningReminder(at: Date(), moduleName: "Japanese", targetMinutes: 30, timezone: jst)
+        _ = try await live.scheduleFastStart(at: Date(), label: "Fast", timezone: jst)
+        let pending = await fake.pendingNotificationRequests()
+        XCTAssertTrue(pending.isEmpty)
+    }
+
+    func test_liveStatusUpgradeClearsOldHabitReminders() async throws {
+        _ = try await service.scheduleLearningReminder(at: Date(), moduleName: "Japanese", targetMinutes: 30, timezone: jst)
+        let live = NotificationService(center: fake, usesLiveStatus: true)
+        await live.cancelHabitReminders()
+        let pending = await fake.pendingNotificationRequests()
+        XCTAssertTrue(pending.isEmpty)
+    }
+
 }

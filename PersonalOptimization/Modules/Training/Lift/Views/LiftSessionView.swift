@@ -187,6 +187,7 @@ struct LiftSessionView: View {
                         }
                     }
 
+                    ExerciseProgressionView(exercise: exercise)
                     ForEach(sets, id: \.persistentModelID) { set in
                         HStack {
                             Text("Set \(set.orderIndex + 1)")
@@ -195,6 +196,7 @@ struct LiftSessionView: View {
                             Spacer()
                             Text("\(Int(set.weightLbs)) lbs × \(set.reps)")
                                 .font(.body.weight(.medium))
+                            if let rir = set.repsInReserve { Text("\(rir) RIR").font(.caption).foregroundStyle(.secondary) }
                         }
                     }
                     Button {
@@ -239,10 +241,9 @@ struct LiftSessionView: View {
             addSetExercise = nil
         }) {
             if let exercise = addSetExercise {
-                AddSetSheet(exercise: exercise) { weight, reps, rest in
-                    // try? justified: SwiftData write to local container; failures
-                    // surface via Logger and the user simply re-taps.
-                    _ = try? service.logSet(in: session, exerciseName: exercise.name, weightLbs: weight, reps: reps, restSeconds: rest)  // MARK: try? justified - best-effort; failure logged inside the called function.
+                AddSetSheet(exercise: exercise) { weight, reps, rest, rir in
+                    _ = try service.logSet(in: session, exerciseName: exercise.name, weightLbs: weight,
+                                           reps: reps, restSeconds: rest, repsInReserve: rir)
                     if let rest, rest > 0 {
                         restTimerEndsAt = Date().addingTimeInterval(TimeInterval(rest))
                     }
@@ -468,31 +469,46 @@ struct LiftSessionView: View {
 
 private struct AddSetSheet: View {
     let exercise: LiftExercise
-    let onConfirm: (Double, Int, Int?) -> Void
+    let onConfirm: (Double, Int, Int?, Int?) throws -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var weight: Double = 135
     @State private var reps: Int = 5
     @State private var restSeconds: Int = 120
+    @State private var rir = -1
+    @State private var saveError: String?
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Weight") {
-                    Stepper("\(Int(weight)) lbs", value: $weight, in: 45...700, step: 5)
+                    Stepper("\(Int(weight)) lbs", value: $weight, in: 0...700, step: 2.5)
                 }
                 Section("Reps") {
                     Stepper("\(reps) reps", value: $reps, in: 1...30)
+                }
+                Section("Effort") {
+                    Picker("Reps in reserve", selection: $rir) {
+                        Text("Not recorded").tag(-1)
+                        ForEach(0...10, id: \.self) { Text("\($0) RIR").tag($0) }
+                    }
+                    Text("Good repetitions you could still do. Most working sets: 1–3 RIR; 0 means failure.")
+                        .font(.caption)
                 }
                 Section("Rest") {
                     Stepper("\(restSeconds) sec", value: $restSeconds, in: 0...600, step: 15)
                 }
                 Section {
                     Button("Log set") {
-                        onConfirm(weight, reps, restSeconds > 0 ? restSeconds : nil)
-                        dismiss()
+                        do {
+                            try onConfirm(weight, reps, restSeconds > 0 ? restSeconds : nil, rir < 0 ? nil : rir)
+                            dismiss()
+                        } catch { saveError = error.localizedDescription }
                     }
                 }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if let saveError { ErrorBanner(message: saveError) { self.saveError = nil } }
             }
             .navigationTitle(exercise.name)
             .toolbar {
@@ -500,6 +516,33 @@ private struct AddSetSheet: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+        }
+    }
+}
+
+/// Explicit rep-range targets for double progression, including custom lifts.
+private struct ExerciseProgressionView: View {
+    @Bindable var exercise: LiftExercise
+    @Environment(\.modelContext) private var context
+    @State private var error: String?
+    var body: some View {
+        DisclosureGroup("Double progression") {
+            Stepper("\(exercise.progressionSets) working sets", value: $exercise.progressionSets, in: 1...10)
+            Stepper("Minimum \(exercise.progressionLowerReps) reps", value: $exercise.progressionLowerReps, in: 1...30)
+            Stepper("Maximum \(exercise.progressionUpperReps) reps", value: $exercise.progressionUpperReps, in: 1...40)
+            Button("Save progression targets") {
+                exercise.progressionUpperReps = max(exercise.progressionLowerReps, exercise.progressionUpperReps)
+                do { try context.save() } catch { self.error = error.localizedDescription }
+            }
+            if HypertrophyRules.shouldIncreaseWeight(reps: (exercise.sets ?? []).map(\.reps),
+                                                     plannedSets: exercise.progressionSets,
+                                                     upperReps: exercise.progressionUpperReps) {
+                Text("Every working set reached the upper rep target. Consider the smallest available load increase next session if recovery and technique are good.")
+                    .font(.caption).foregroundStyle(.green)
+            } else {
+                Text("Keep the load until every planned working set reaches the top of the rep range with good technique.").font(.caption)
+            }
+            if let error { ErrorBanner(message: error) { self.error = nil } }
         }
     }
 }

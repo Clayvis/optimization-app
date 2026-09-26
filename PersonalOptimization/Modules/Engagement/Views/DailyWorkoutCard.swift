@@ -134,7 +134,7 @@ struct DailyWorkoutCard: View {
 
             DisclosureGroup("How your progress works") {
                 VStack(alignment: .leading, spacing: Theme.Space.m) {
-                    Text("Move uses Apple Health exercise minutes or your saved session time, whichever is higher. Workout closes after a recorded session. Week counts distinct workout days, Monday to Sunday.")
+                    Text("Exercise uses Apple Health exercise minutes or your saved session time, whichever is higher. Workout closes after a recorded session. Week counts distinct workout days, Monday to Sunday.")
                     Text("Earn 50 XP per workout day and a new level every 250 XP. Rest and missed days never remove XP. Health workouts receive credit when they sync; you don't need to log them again.")
                     Picker("Weekly workout days", selection: Binding(
                         get: { selectedWeeklyGoal }, set: { saveGoalPreference("dailyWorkout.weeklyGoal", value: $0) }
@@ -235,7 +235,16 @@ struct DailyWorkoutCard: View {
 
     private func ringLegend(_ snapshot: DailyWorkoutProgress) -> some View {
         VStack(alignment: .leading, spacing: Theme.Space.m) {
-            legend("Move", value: "\(snapshot.movementMinutes)/\(snapshot.goalMinutes) min", tint: Theme.kurenai)
+            legend("Exercise", value: "\(snapshot.movementMinutes)/\(snapshot.goalMinutes) min", tint: Theme.kurenai)
+            if let kcal = todayLog?.activeEnergyBurnedKcal {
+                legend("Move", value: "\(Int(kcal.rounded())) kcal", tint: Theme.kin)
+            } else {
+                Text("Move: awaiting Apple Health").font(.caption).foregroundStyle(.secondary)
+            }
+            if let synced = todayLog?.metadata("activitySyncedAt", as: Date.self) ?? todayLog?.healthKitSyncedAt {
+                Text("Health updated \(synced, style: .relative) ago")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
             legend("Workout", value: snapshot.trainedToday ? "Done today" : "One session", tint: Theme.matcha)
             legend("Week", value: "\(snapshot.daysThisWeek)/\(snapshot.weeklyGoal) days", tint: Theme.ai)
         }

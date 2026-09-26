@@ -214,4 +214,32 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         app.tabBars.buttons["Dojo"].tap()
         XCTAssertTrue(app.buttons["mascot.companion"].waitForExistence(timeout: 10))
     }
+
+    func testInBodyManualScanPersistsAndShowsMuscleEstimate() {
+        continueAfterFailure = false
+        let app = launchApp()
+        app.tabBars.buttons["Train"].tap()
+        let entry = app.buttons["InBody Progress Coach"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 15))
+        entry.tap()
+        app.buttons["Add or import InBody scans"].tap()
+        app.buttons["Add scan"].tap()
+        for (label, value) in [("Height (in)", "70"), ("Weight (lb)", "200"),
+                               ("Skeletal muscle (lb)", "90"), ("Lean body mass (lb)", "160"),
+                               ("Body-fat mass (lb)", "40"), ("Body fat (%)", "20")] {
+            let field = app.textFields[label]
+            // Keep the gesture above the decimal keyboard and move one row at
+            // a time so a full-screen swipe cannot skip a lazily rendered field.
+            for _ in 0..<10 where !field.isHittable {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                    .press(forDuration: 0.05, thenDragTo:
+                        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)))
+            }
+            XCTAssertTrue(field.waitForExistence(timeout: 5))
+            field.tap(); field.typeText(value)
+        }
+        app.buttons["inbody.save"].tap()
+        XCTAssertTrue(app.staticTexts["Estimated skeletal muscle"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit latest scan"].exists)
+    }
 }

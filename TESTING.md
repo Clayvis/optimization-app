@@ -86,6 +86,7 @@ PersonalOptimizationTests/
 │   ├── HydrationServiceTests.swift
 │   ├── NutritionMathTests.swift          # pure macro/target/summary math
 │   ├── NutritionServiceTests.swift       # JST day boundary, targets history, HealthKit delete-then-rewrite
+│   ├── InBodyCoachTests.swift            # scan comparison, coach verdict bands, import, RIR backup, V12 migration
 │   ├── BiomarkerParserTests.swift
 │   ├── PhenoAgeTests.swift
 │   ├── PatternDetectionTests.swift
@@ -93,6 +94,7 @@ PersonalOptimizationTests/
 │   └── ...
 ├── Services/
 │   ├── HealthKitServiceTests.swift
+│   ├── ActiveStatusServiceTests.swift    # Lock Screen status text and freshness deadline
 │   ├── KeychainServiceTests.swift
 │   └── ...
 └── PerformanceTests.swift

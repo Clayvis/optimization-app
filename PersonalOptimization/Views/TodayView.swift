@@ -685,15 +685,7 @@ struct TodayView: View {
     /// as a shape on the lock screen). `startIfNeeded` is true only when a real
     /// log occurred, so opening the app never spawns an activity on its own.
     private func refreshDailyGoalActivity(startIfNeeded: Bool) async {
-        let tally = dailySummary.todayProtocol(asOf: Date())
-        let counters = modelContext.fetchOrEmpty(FetchDescriptor<StreakCounter>())
-        let streak = counters.first { $0.domain == StreakDomain.protocolAdherence.rawValue }?.currentStreak ?? 0
-        await DailyGoalLiveActivityController.refresh(
-            completedDomains: tally.completedCount,
-            totalDomains: tally.scheduledCount,
-            streak: streak,
-            startIfNeeded: startIfNeeded
-        )
+        await ActiveStatusService.refresh(context: modelContext, startIfNeeded: startIfNeeded)
     }
 
     private func streakChip(label: String, days: Int, systemImage: String) -> some View {

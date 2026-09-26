@@ -333,26 +333,18 @@ struct SettingsView: View {
             }
 
             Section("Quiet hours") {
-                Button("Enable coaching reminders") {
+                Button("Show live status on Lock Screen") {
                     Task {
-                        requestingNotifications = true
-                        defer { requestingNotifications = false }
-                        do {
-                            _ = try await NotificationService.shared.register()
-                            let settings = await UNUserNotificationCenter.current().notificationSettings()
-                            let granted = settings.authorizationStatus == .authorized
-                                || settings.authorizationStatus == .provisional
-                            notificationFeedback = granted ? "Reminders enabled."
-                                : "Notifications are off. You can change access in iOS Settings."
-                        } catch {
-                            notificationFeedback = "Couldn't enable reminders. \(error.localizedDescription)"
-                        }
+                        await NotificationService.shared.cancelHabitReminders()
+                        await ActiveStatusService.refresh(context: modelContext, startIfNeeded: true)
+                        notificationFeedback = DailyGoalLiveActivityController.shared.isRunning
+                            ? "Live status is active. Practice and habit reminders are silent."
+                            : "Enable Live Activities for Optimization in iOS Settings, then try again."
                     }
                 }
-                .disabled(requestingNotifications)
-                if let notificationFeedback {
-                    Text(notificationFeedback).font(.caption).foregroundStyle(.secondary)
-                }
+                Text("Status refreshes when you open the app or new data arrives. iOS controls background updates; a stale status asks you to reopen the app.")
+                    .font(.caption).foregroundStyle(.secondary)
+                if let notificationFeedback { Text(notificationFeedback).font(.caption) }
                 LabeledContent("Sleep starts") {
                     TextField("22:00", text: $profile.sleepWindowStartHHMM)
                         .multilineTextAlignment(.trailing)

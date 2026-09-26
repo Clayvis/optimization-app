@@ -56,13 +56,14 @@ final class LiftService {
 
     /// Adds a set to the named exercise inside the session. Returns the new set.
     @discardableResult
-    func logSet(in session: LiftSession, exerciseName: String, weightLbs: Double, reps: Int, restSeconds: Int? = nil) throws -> LiftSet {
+    func logSet(in session: LiftSession, exerciseName: String, weightLbs: Double, reps: Int, restSeconds: Int? = nil, repsInReserve: Int? = nil) throws -> LiftSet {
         guard let exercise = (session.exercises ?? []).first(where: { $0.name == exerciseName }) else {
             throw LiftServiceError.exerciseNotFound(exerciseName)
         }
         let nextIndex = (exercise.sets ?? []).count
         let set = LiftSet(weightLbs: weightLbs, reps: reps, orderIndex: nextIndex)
         set.restSeconds = restSeconds
+        set.repsInReserve = repsInReserve.map { min(10, max(0, $0)) }
         modelContext.insert(set)
         var sets = exercise.sets ?? []
         sets.append(set)

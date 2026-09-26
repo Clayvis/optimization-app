@@ -139,6 +139,7 @@ optimization-app/
 │   │   ├── Fasting/
 │   │   ├── Hydration/
 │   │   ├── Nutrition/                          # calories + macros; spec docs/planning/NUTRITION_MODULE_HANDOFF.md
+│   │   ├── BodyComposition/                    # InBody Progress Coach; spec docs/planning/INBODY_PROGRESS_COACH.md
 │   │   ├── Training/
 │   │   ├── Learning/
 │   │   ├── Coursework/

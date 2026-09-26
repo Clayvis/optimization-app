@@ -115,13 +115,15 @@ final class LiveNotificationCenter: NotificationCenterProtocol, @unchecked Senda
 @MainActor
 final class NotificationService {
 
-    static let shared = NotificationService()
+    static let shared = NotificationService(usesLiveStatus: true)
 
+    private let usesLiveStatus: Bool
     private let center: NotificationCenterProtocol
     private let logger = Logger.app
     private var authorizationRequested = false
 
-    init(center: NotificationCenterProtocol = LiveNotificationCenter()) {
+    init(center: NotificationCenterProtocol = LiveNotificationCenter(), usesLiveStatus: Bool = false) {
+        self.usesLiveStatus = usesLiveStatus
         self.center = center
     }
 
@@ -272,7 +274,7 @@ final class NotificationService {
             fireDate: date,
             timezone: timezone
         )
-        try await center.add(request)
+        if !usesLiveStatus { try await center.add(request) }
         return id
     }
 
@@ -288,7 +290,7 @@ final class NotificationService {
             fireDate: date,
             timezone: timezone
         )
-        try await center.add(request)
+        if !usesLiveStatus { try await center.add(request) }
         return id
     }
 
@@ -327,7 +329,7 @@ final class NotificationService {
             fireDate: date,
             timezone: timezone
         )
-        try await center.add(request)
+        if !usesLiveStatus { try await center.add(request) }
         return id
     }
 
@@ -346,8 +348,18 @@ final class NotificationService {
             fireDate: date,
             timezone: timezone
         )
-        try await center.add(request)
+        if !usesLiveStatus { try await center.add(request) }
         return id
+    }
+
+    /// Remove previously scheduled habit reminders after upgrading to status.
+    func cancelHabitReminders() async {
+        let requests = await center.pendingNotificationRequests()
+        let categories = [NotificationIdentifier.learningCategory, NotificationIdentifier.hydrationCategory,
+                          NotificationIdentifier.fastStartCategory, NotificationIdentifier.fastEndCategory]
+        center.removePendingNotificationRequests(withIdentifiers: requests.filter {
+            categories.contains($0.content.categoryIdentifier)
+        }.map(\.identifier))
     }
 
     func cancel(identifiers: [String]) {

@@ -10,6 +10,10 @@ struct TrainingHubView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Theme.Space.l) {
+                    NavigationLink { InBodyProgressView() } label: {
+                        Label("InBody Progress Coach", systemImage: "figure.strengthtraining.traditional")
+                            .frame(maxWidth: .infinity).padding().dojoCardSurface()
+                    }
                     PrescribedWorkoutCard()
                     InProgressBanner()
                     WeekAtAGlanceCard()

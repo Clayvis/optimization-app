@@ -96,4 +96,16 @@ final class HealthKitObserverServiceTests: XCTestCase {
         XCTAssertTrue(service.isObserving)
         XCTAssertEqual(fake.observedTypes.count, HealthKitObserverService.allObservedTypes.count)
     }
+    func test_successiveActivityDeliveriesAreNotDropped() async throws {
+        let fake = FakeHKObserverBackend()
+        let service = HealthKitObserverService(backend: fake, skipsDataSync: true)
+        let container = try InMemoryContainer.make()
+        await service.startObserving(modelContainer: container)
+        let notification = expectation(forNotification: .healthKitObserverDidFire, object: nil)
+        notification.expectedFulfillmentCount = 2
+        await fake.fireObserverAndWait(for: HKQuantityType(.activeEnergyBurned))
+        await fake.fireObserverAndWait(for: HKQuantityType(.activeEnergyBurned))
+        await fulfillment(of: [notification], timeout: 3)
+    }
+
 }
