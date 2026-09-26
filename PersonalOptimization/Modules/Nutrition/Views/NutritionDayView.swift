@@ -14,6 +14,7 @@ struct NutritionDayView: View {
     @State private var addingSlot: MealSlot?
     @State private var editingEntry: FoodEntry?
     @State private var errorMessage: String?
+    @State private var mealAction: NutritionMealAction?
 
     init(initialDate: Date = Date()) {
         _date = State(initialValue: initialDate)
@@ -31,11 +32,17 @@ struct NutritionDayView: View {
                             onAdd: { addingSlot = $0 },
                             onEdit: { editingEntry = $0 },
                             onEditTargets: { showingTargets = true },
-                            onDelete: delete)
+                            onDelete: delete,
+                            onMealAction: { mealAction = $0 })
             .id(day)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Copy yesterday", systemImage: "doc.on.doc") {
+                        mealAction = NutritionMealAction(kind: .copy, slot: nil)
+                    }.accessibilityIdentifier("nutrition.copyYesterday")
+                }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
                         shift(by: -1)
@@ -62,6 +69,9 @@ struct NutritionDayView: View {
             }
             .sheet(item: $addingSlot) { slot in
                 AddFoodSheet(slot: slot, loggedAt: logTime(for: slot), service: service)
+            }
+            .sheet(item: $mealAction) { action in
+                NutritionMealActionsSheet(action: action, destination: date, service: service)
             }
             .sheet(item: $editingEntry) { entry in
                 FoodEntryEditSheet(entry: entry, service: service)
@@ -109,17 +119,6 @@ struct NutritionDayView: View {
     }
 }
 
-extension MealSlot {
-    /// Hour used when an entry is added to a past day.
-    var defaultHour: Int {
-        switch self {
-        case .breakfast: return 8
-        case .lunch: return 12
-        case .snack: return 15
-        case .dinner: return 19
-        }
-    }
-}
 
 /// Query-driven body for one day. Recreated (via `.id(day)`) when the day
 /// changes so the predicates are always for the visible day.
@@ -136,18 +135,21 @@ private struct NutritionDayContent: View {
     let onEdit: (FoodEntry) -> Void
     let onEditTargets: () -> Void
     let onDelete: (FoodEntry) -> Void
+    let onMealAction: (NutritionMealAction) -> Void
 
     init(day: Date,
          nextDay: Date,
          onAdd: @escaping (MealSlot) -> Void,
          onEdit: @escaping (FoodEntry) -> Void,
          onEditTargets: @escaping () -> Void,
-         onDelete: @escaping (FoodEntry) -> Void) {
+         onDelete: @escaping (FoodEntry) -> Void,
+         onMealAction: @escaping (NutritionMealAction) -> Void) {
         self.day = day
         self.onAdd = onAdd
         self.onEdit = onEdit
         self.onEditTargets = onEditTargets
         self.onDelete = onDelete
+        self.onMealAction = onMealAction
         _entries = Query(filter: #Predicate<FoodEntry> { $0.date >= day && $0.date < nextDay },
                          sort: [SortDescriptor(\FoodEntry.loggedAt, order: .forward)])
         _logs = Query(filter: #Predicate<DailyLog> { $0.date >= day && $0.date < nextDay && $0.supersededAt == nil })
@@ -201,6 +203,13 @@ private struct NutritionDayContent: View {
                                 .monospacedDigit()
                                 .accessibilityIdentifier("nutrition.total.\(slot.rawValue)")
                         }
+                        Menu {
+                            Button("Save meal") { onMealAction(.init(kind: .save, slot: slot)) }
+                                .disabled(rows.isEmpty)
+                            Button("Copy from another day") { onMealAction(.init(kind: .copy, slot: slot)) }
+                        } label: { Image(systemName: "ellipsis.circle") }
+                        .accessibilityLabel("\(slot.displayName) actions")
+                        .accessibilityIdentifier("nutrition.actions.\(slot.rawValue)")
                         Button {
                             onAdd(slot)
                         } label: {

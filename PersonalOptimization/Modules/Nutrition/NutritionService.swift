@@ -8,9 +8,11 @@ enum NutritionError: LocalizedError {
     case invalidServings
     case invalidTargets
     case invalidNumber
+    case emptyMeal
 
     var errorDescription: String? {
         switch self {
+        case .emptyMeal: return "Choose a meal with at least one food."
         case .emptyName: return "Give the food a name."
         case .invalidServings: return "Servings must be more than zero."
         case .invalidTargets: return "Set at least one target above zero."
@@ -180,6 +182,136 @@ final class NutritionService {
         return Array(ordered.prefix(limit))
     }
 
+    // MARK: - Repeat meals
+
+    /// Cached use dates, bounded to fourteen local dates. Throws store fetch errors.
+    func recentFoods(asOf: Date = Date(), limit: Int = 30) throws -> [FoodItem] {
+        let start = calendar.date(byAdding: .day, value: -13, to: calendar.startOfDay(for: asOf)) ?? asOf
+        let missing = Date.distantPast
+        var query = FetchDescriptor<FoodItem>(
+            predicate: #Predicate { ($0.lastUsed ?? missing) >= start && ($0.lastUsed ?? missing) <= asOf },
+            sortBy: [SortDescriptor(\.lastUsed, order: .reverse)])
+        query.fetchLimit = max(1, limit)
+        return try modelContext.fetch(query)
+    }
+
+    /// Stored usage counts, excluding photo guesses. Throws store fetch errors.
+    func frequentFoods(limit: Int = 30) throws -> [FoodItem] {
+        let excluded = FoodSource.photoEstimate.rawValue
+        var query = FetchDescriptor<FoodItem>(
+            predicate: #Predicate { $0.useCount > 0 && $0.source != excluded },
+            sortBy: [SortDescriptor(\.useCount, order: .reverse), SortDescriptor(\.lastUsed, order: .reverse)])
+        query.fetchLimit = max(1, limit)
+        return try modelContext.fetch(query)
+    }
+
+    /// Most recently used saved meals first. Throws store fetch errors.
+    func savedMeals() throws -> [SavedMeal] {
+        try modelContext.fetch(FetchDescriptor<SavedMeal>(sortBy: [
+            SortDescriptor(\.lastUsed, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]))
+    }
+
+    /// Bounded to fourteen local dates. Whole meals retain their exact portions.
+    func recentMeals(asOf: Date = Date()) throws -> [RecentNutritionMeal] {
+        let start = calendar.date(byAdding: .day, value: -13, to: calendar.startOfDay(for: asOf)) ?? asOf
+        let entries = try modelContext.fetch(FetchDescriptor<FoodEntry>(
+            predicate: #Predicate { $0.date >= start && $0.loggedAt <= asOf },
+            sortBy: [SortDescriptor(\.loggedAt, order: .reverse)]))
+        let grouped = Dictionary(grouping: entries) { "\($0.date.timeIntervalSince1970)-\($0.meal)" }
+        // Foods keep the order they were logged in, so a repeated meal reads
+        // and copies the same way; the most recently touched meal leads.
+        return grouped.map { key, rows in
+            let ordered = rows.sorted { $0.loggedAt < $1.loggedAt }
+            return RecentNutritionMeal(id: key, date: ordered[0].date, slot: ordered[0].mealSlot, entries: ordered)
+        }.sorted { ($0.entries.last?.loggedAt ?? $0.date) > ($1.entries.last?.loggedAt ?? $1.date) }
+    }
+
+    /// Saves the selected meal's snapshots. Throws before mutation for invalid input.
+    @discardableResult
+    func saveMeal(name: String, entries: [FoodEntry]) throws -> SavedMeal {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { throw NutritionError.emptyName }
+        let portions = entries.map(NutritionPortion.init)
+        try validate(portions)
+        let meal = SavedMeal(name: name)
+        try modelContext.transaction {
+            modelContext.insert(meal)
+            meal.items = portions.enumerated().map { index, portion in
+                let item = SavedMealItem(food: portion.foodSnapshot(), servings: portion.servings, orderIndex: index)
+                item.foodID = portion.foodID
+                item.meal = meal
+                return item
+            }
+            try modelContext.save()
+        }
+        return meal
+    }
+
+    /// Appends a saved meal atomically; its snapshot remains stable if a food changes.
+    @discardableResult
+    func logSavedMeal(_ meal: SavedMeal, to slot: MealSlot, at date: Date = Date()) throws -> [FoodEntry] {
+        try logPortions(meal.orderedItems.map(NutritionPortion.init), slots: nil,
+                        to: slot, at: date, savedMeal: meal)
+    }
+
+    /// Explicit copy action. Source entries are untouched and Health IDs are fresh.
+    @discardableResult
+    func copyEntries(_ entries: [FoodEntry], to date: Date, meal: MealSlot? = nil) throws -> [FoodEntry] {
+        try logPortions(entries.map(NutritionPortion.init), slots: meal == nil ? entries.map(\.mealSlot) : nil,
+                        to: meal ?? .snack, at: date, savedMeal: nil)
+    }
+
+    private func validate(_ portions: [NutritionPortion]) throws {
+        guard !portions.isEmpty else { throw NutritionError.emptyMeal }
+        for portion in portions {
+            guard portion.servings.isFinite, portion.servings > 0 else { throw NutritionError.invalidServings }
+            guard portion.macros.scaled(by: portion.servings).isFinite,
+                  portion.servingSize.isFinite, portion.servingSize > 0 else { throw NutritionError.invalidNumber }
+        }
+    }
+
+    private func logPortions(_ portions: [NutritionPortion], slots: [MealSlot]?, to slot: MealSlot,
+                             at date: Date, savedMeal: SavedMeal?) throws -> [FoodEntry] {
+        try validate(portions)
+        let foods = try modelContext.fetch(FetchDescriptor<FoodItem>())
+        var result: [FoodEntry] = []
+        let dayStart = calendar.startOfDay(for: date)
+        try modelContext.transaction {
+            for (index, portion) in portions.enumerated() {
+                let targetSlot = slots?[index] ?? slot
+                let slotTime = calendar.isDateInToday(date) ? date
+                    : calendar.date(bySettingHour: targetSlot.defaultHour, minute: 0, second: 0, of: date) ?? date
+                // Items would otherwise share one timestamp and the day list,
+                // sorted by time, could show them in any order. The last item
+                // lands exactly on the slot time; none precede the day.
+                let stepBack = portions.count - 1 - index
+                let timestamp = max(dayStart, calendar.date(byAdding: .second, value: -stepBack, to: slotTime) ?? slotTime)
+                let entry = FoodEntry(date: dayStart, loggedAt: timestamp,
+                                      meal: targetSlot, food: portion.foodSnapshot(), servings: portion.servings)
+                entry.foodID = portion.foodID
+                modelContext.insert(entry)
+                if let food = foods.first(where: { $0.id == portion.foodID }) {
+                    food.useCount += 1
+                    food.lastUsed = max(food.lastUsed ?? .distantPast, timestamp)
+                }
+                result.append(entry)
+            }
+            if let savedMeal {
+                savedMeal.useCount += 1
+                savedMeal.lastUsed = max(savedMeal.lastUsed ?? .distantPast, date)
+            }
+            try modelContext.save()
+        }
+        var writes: [Task<Void, Never>] = []
+        for entry in result {
+            dispatchHealthKitWrite(for: entry, replacing: [])
+            if let task = lastHealthKitTask { writes.append(task) }
+        }
+        lastHealthKitTask = Task { for write in writes { await write.value } }
+        NotificationCenter.default.post(name: .dailyLogsRecomputed, object: nil)
+        return result
+    }
+
     // MARK: - Entries
 
     /// Logs `servings` of `food` to the day containing `loggedAt` (user
@@ -195,7 +327,7 @@ final class NutritionService {
                               servings: servings)
         modelContext.insert(entry)
         food.useCount += 1
-        food.lastUsed = loggedAt
+        food.lastUsed = max(food.lastUsed ?? .distantPast, loggedAt)
         try modelContext.save()
         logger.info("Logged \(food.name, privacy: .private) x\(servings, privacy: .public) as \(meal.rawValue, privacy: .public)")
         dispatchHealthKitWrite(for: entry, replacing: [])

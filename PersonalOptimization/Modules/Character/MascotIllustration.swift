@@ -46,10 +46,61 @@ struct MascotIllustration: View {
     /// render as neutral so a stale widget snapshot can never blank the art.
     let stateName: String
     var palette: Palette = .ninjaMale
+    var motion: Motion = .init()
+
+    /// Rig coordinates are degrees and points in the shared 100-point canvas.
+    /// Pure sampling makes the four sequences testable without running a UI timer.
+    struct Motion: Equatable, Sendable {
+        var head: Double = 0
+        var leftArm: Double = 0
+        var rightArm: Double = 0
+        var leftLeg: Double = 0
+        var rightLeg: Double = 0
+        var lift: Double = 0
+        var eyeOpen: Double = 1
+        var breath: Double = 1
+
+        static func sample(state: String, elapsed: Double) -> Motion {
+            guard elapsed.isFinite, elapsed >= 0 else { return Motion() }
+            let cycle = elapsed.truncatingRemainder(dividingBy: 4)
+            let wave = sin(cycle * .pi / 2)
+            var pose = Motion(head: wave * 1.5, breath: 1 + wave * 0.012)
+            // One brief blink every four seconds, no random timers.
+            pose.eyeOpen = 1 - max(0, 1 - abs(cycle - 2.8) / 0.12) * 0.94
+            switch state {
+            case "training":
+                let squat = (1 - cos(elapsed * .pi)) / 2
+                pose.lift = -2.5 * squat
+                pose.leftArm = 45 * squat
+                pose.rightArm = -45 * squat
+                pose.leftLeg = 15 * squat
+                pose.rightLeg = -15 * squat
+                pose.head = -3 * squat
+            case "recovering", "fasting", "tired":
+                pose.breath = 1 + wave * 0.025
+                pose.head = wave * 2
+                pose.leftArm = wave * 3
+                pose.rightArm = -wave * 3
+            case "celebrating" where elapsed < 2.4, "achievement" where elapsed < 2.4, "proud" where elapsed < 2.4:
+                let jump = max(0, sin(elapsed / 2.4 * .pi))
+                pose.lift = jump * 6
+                pose.leftArm = -jump * 18
+                pose.rightArm = jump * 18
+                pose.leftLeg = jump * 18
+                pose.rightLeg = -jump * 18
+                pose.head = sin(elapsed * .pi * 3) * jump * 4
+            case "comeback" where elapsed < 2.4:
+                pose.leftArm = 65 + sin(elapsed * .pi * 4) * 12
+                pose.head = -5
+            default: break
+            }
+            return pose
+        }
+    }
 
     var body: some View {
         Canvas { context, size in
-            MascotRenderer(state: illustrationState, palette: palette)
+            MascotRenderer(state: illustrationState, palette: palette, motion: motion)
                 .draw(in: &context, size: size)
         }
         .aspectRatio(1, contentMode: .fit)
@@ -73,6 +124,7 @@ struct MascotIllustration: View {
 private struct MascotRenderer {
     let state: String
     let palette: Palette
+    let motion: MascotIllustration.Motion
     typealias Palette = MascotIllustration.Palette
 
     // Ink constants from the prototype.
@@ -110,6 +162,7 @@ private struct MascotRenderer {
             y: (size.height - 100 * scale) / 2
         )
         context.scaleBy(x: scale, y: scale)
+        context.translateBy(x: 0, y: -motion.lift)
 
         if state == "fasting" { drawAura(in: &context) }
         if state == "achievement" { drawSparks(in: &context) }
@@ -125,11 +178,21 @@ private struct MascotRenderer {
         }
     }
 
+    private func rotated(_ context: GraphicsContext, degrees: Double, around pivot: CGPoint) -> GraphicsContext {
+        var copy = context
+        copy.translateBy(x: pivot.x, y: pivot.y)
+        copy.rotate(by: .degrees(degrees))
+        copy.translateBy(x: -pivot.x, y: -pivot.y)
+        return copy
+    }
+
     // MARK: - Body
 
     private func drawBody(in context: inout GraphicsContext) {
         var body = context
-        body.translateBy(x: 0, y: bodyShiftY)
+        body.translateBy(x: 50, y: 86 + bodyShiftY)
+        body.scaleBy(x: 1, y: motion.breath)
+        body.translateBy(x: -50, y: -86)
 
         var torso = Path()
         torso.move(to: CGPoint(x: 34, y: 70))
@@ -152,8 +215,10 @@ private struct MascotRenderer {
         } else {
             let legL = Path(roundedRect: CGRect(x: 40.5, y: 86, width: 8.4, height: 9.5), cornerRadius: 4.2)
             let legR = Path(roundedRect: CGRect(x: 51.1, y: 86, width: 8.4, height: 9.5), cornerRadius: 4.2)
-            body.fill(legL, with: .color(giDark))
-            body.fill(legR, with: .color(giDark))
+            let leftLeg = rotated(body, degrees: motion.leftLeg, around: CGPoint(x: 44.7, y: 86))
+            let rightLeg = rotated(body, degrees: motion.rightLeg, around: CGPoint(x: 55.3, y: 86))
+            leftLeg.fill(legL, with: .color(giDark))
+            rightLeg.fill(legR, with: .color(giDark))
         }
 
         var wrap = Path()
@@ -214,10 +279,12 @@ private struct MascotRenderer {
             handR = CGPoint(x: 66.6, y: 86.2)
         }
 
-        context.stroke(left, with: .color(gi), style: style)
-        context.stroke(right, with: .color(gi), style: style)
-        context.fill(circle(center: handL, radius: 4.2), with: .color(skin))
-        context.fill(circle(center: handR, radius: 4.2), with: .color(skin))
+        let leftArm = rotated(context, degrees: motion.leftArm, around: CGPoint(x: 38, y: 74))
+        let rightArm = rotated(context, degrees: motion.rightArm, around: CGPoint(x: 62, y: 74))
+        leftArm.stroke(left, with: .color(gi), style: style)
+        rightArm.stroke(right, with: .color(gi), style: style)
+        leftArm.fill(circle(center: handL, radius: 4.2), with: .color(skin))
+        rightArm.fill(circle(center: handR, radius: 4.2), with: .color(skin))
     }
 
     // MARK: - Head
@@ -226,7 +293,7 @@ private struct MascotRenderer {
         var head = context
         // Rotate around the head center (50, 40), then apply the slump shift.
         head.translateBy(x: 50, y: 40)
-        head.rotate(by: headTilt)
+        head.rotate(by: headTilt + .degrees(motion.head))
         head.translateBy(x: -50, y: -40 + bodyShiftY * 0.4)
 
         head.fill(circle(center: CGPoint(x: 50, y: 40), radius: 27.5), with: .color(gi))
@@ -308,7 +375,11 @@ private struct MascotRenderer {
         drawMouth(in: &context)
     }
 
-    private func drawEye(at cx: CGFloat, in context: inout GraphicsContext) {
+    private func drawEye(at cx: CGFloat, in source: inout GraphicsContext) {
+        var context = source
+        context.translateBy(x: 0, y: eyeY)
+        context.scaleBy(x: 1, y: motion.eyeOpen)
+        context.translateBy(x: 0, y: -eyeY)
         switch state {
         case "proud":
             var arc = Path()

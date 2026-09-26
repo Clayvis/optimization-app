@@ -5,6 +5,8 @@ import SwiftData
 /// then the macro bars. One glance, no scrolling. Tapping opens the day.
 @MainActor
 struct NutritionTodayCard: View {
+    @Environment(\.modelContext) private var modelContext
+    @State private var quickAdd = false
     @Query private var entries: [FoodEntry]
     @Query(sort: [SortDescriptor(\NutritionTargets.effectiveFrom, order: .reverse),
                   SortDescriptor(\NutritionTargets.createdAt, order: .reverse)])
@@ -33,59 +35,78 @@ struct NutritionTodayCard: View {
     }
 
     var body: some View {
-        NavigationLink {
-            NutritionDayView(initialDate: now)
-        } label: {
-            HStack(spacing: Theme.Space.l) {
-                VStack(alignment: .leading, spacing: Theme.Space.xs) {
-                    SectionEyebrow(title: "Nutrition", tint: Theme.matcha)
-                    if let protein = summary.proteinRemaining, let kcal = summary.caloriesRemaining {
-                        Text(NutritionFormat.remaining(protein, unit: "g protein"))
-                            .font(Theme.numeral(24))
-                            .foregroundStyle(Theme.textPrimary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                        Text(NutritionFormat.remaining(kcal, unit: "kcal"))
-                            .font(.subheadline.weight(.semibold))
-                            .monospacedDigit()
-                            .foregroundStyle(Theme.textSecondary)
-                    } else if summary.entryCount > 0 {
-                        Text("\(NutritionFormat.kcal(summary.consumed.calories)) · \(NutritionFormat.wholeNumber(summary.consumed.protein)) g protein")
-                            .font(.headline)
-                            .monospacedDigit()
-                            .foregroundStyle(Theme.textPrimary)
-                        Text("Set targets to see what's left")
-                            .font(.caption)
-                            .foregroundStyle(Theme.textSecondary)
-                    } else {
-                        Text("Log your first meal")
-                            .font(.headline)
-                            .foregroundStyle(Theme.textPrimary)
-                        Text("Calories and macros, written to Apple Health")
-                            .font(.caption)
-                            .foregroundStyle(Theme.textSecondary)
+        VStack(spacing: 8) {
+            NavigationLink {
+                NutritionDayView(initialDate: now)
+            } label: {
+                HStack(spacing: Theme.Space.l) {
+                    VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                        SectionEyebrow(title: "Nutrition", tint: Theme.matcha)
+                        if let protein = summary.proteinRemaining, let kcal = summary.caloriesRemaining {
+                            Text(NutritionFormat.remaining(protein, unit: "g protein"))
+                                .font(Theme.numeral(24))
+                                .foregroundStyle(Theme.textPrimary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Text(NutritionFormat.remaining(kcal, unit: "kcal"))
+                                .font(.subheadline.weight(.semibold))
+                                .monospacedDigit()
+                                .foregroundStyle(Theme.textSecondary)
+                        } else if summary.entryCount > 0 {
+                            Text("\(NutritionFormat.kcal(summary.consumed.calories)) · \(NutritionFormat.wholeNumber(summary.consumed.protein)) g protein")
+                                .font(.headline)
+                                .monospacedDigit()
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("Set targets to see what's left")
+                                .font(.caption)
+                                .foregroundStyle(Theme.textSecondary)
+                        } else {
+                            Text("Log your first meal")
+                                .font(.headline)
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("Calories and macros, written to Apple Health")
+                                .font(.caption)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
                     }
-                }
-                Spacer(minLength: 0)
-                if summary.hasTargets {
-                    VStack(alignment: .leading, spacing: 6) {
-                        miniBar("P", progress: summary.proteinProgress, tint: Theme.matcha)
-                        miniBar("C", progress: summary.carbsProgress, tint: Theme.ai)
-                        miniBar("F", progress: summary.fatProgress, tint: Theme.kin)
+                    Spacer(minLength: 0)
+                    if summary.hasTargets {
+                        VStack(alignment: .leading, spacing: 6) {
+                            miniBar("P", progress: summary.proteinProgress, tint: Theme.matcha)
+                            miniBar("C", progress: summary.carbsProgress, tint: Theme.ai)
+                            miniBar("F", progress: summary.fatProgress, tint: Theme.kin)
+                        }
+                        .frame(width: 84)
+                        .accessibilityHidden(true)
                     }
-                    .frame(width: 84)
-                    .accessibilityHidden(true)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Theme.textTertiary)
                 }
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Theme.textTertiary)
+                .padding(Theme.Space.l)
+                .dojoCardSurface()
+                .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
             }
-            .padding(Theme.Space.l)
-            .dojoCardSurface()
-            .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("today.nutritionCard")
+            Button { quickAdd = true } label: {
+                Label("Quick add meal", systemImage: "plus.circle.fill")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            .tint(Theme.matcha)
+            .accessibilityIdentifier("today.quickAddMeal")
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("today.nutritionCard")
+        .sheet(isPresented: $quickAdd) {
+            let calendar = UserCalendar.current(modelContext: modelContext)
+            AddFoodSheet(slot: .suggested(forHour: calendar.component(.hour, from: Date())),
+                         loggedAt: Date(), service: NutritionService.forUser(modelContext: modelContext))
+                .task {
+                    if !ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+                        await NutritionService.forUser(modelContext: modelContext).requestNutritionAuthorizationIfNeeded()
+                    }
+                }
+        }
     }
 
     private func miniBar(_ label: String, progress: Double, tint: Color) -> some View {

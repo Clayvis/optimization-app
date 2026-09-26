@@ -7,7 +7,7 @@ import Foundation
 /// Calories and macros as a value: per serving, per entry, or per day.
 /// Fiber and sugar are the only sub-macros in v1 and stay optional so a food
 /// without a fiber figure never reads as "0 g fiber".
-struct MacroTotals: Equatable, Sendable {
+struct MacroTotals: Codable, Equatable, Sendable {
     var calories: Double = 0
     var protein: Double = 0
     var carbs: Double = 0

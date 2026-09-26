@@ -55,6 +55,8 @@ struct AnimatedMascotView: View {
     @Environment(\.mascotReducedMotion) private var appReduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var isVisible = false
+    @State private var sequenceStart = Date()
+    @AppStorage("mascot.articulated") private var articulated = true
 
     let state: CharacterState
     var variant: String = "ninja_male"
@@ -73,28 +75,37 @@ struct AnimatedMascotView: View {
     var body: some View {
         ZStack {
             if isVisible && scenePhase == .active && !reduceMotion && !appReduceMotion {
-                art
-                    .phaseAnimator([false, true]) { content, raised in
-                        content
-                            .scaleEffect(raised ? 1.015 : 1)
-                            .offset(y: raised ? -size * idleLift : 0)
-                            .rotationEffect(.degrees(raised ? idleTilt : -idleTilt))
-                    } animation: { _ in
-                        .easeInOut(duration: idleDuration)
+                if articulated {
+                    TimelineView(.animation(minimumInterval: 1.0 / 30)) { tick in
+                        MascotIllustration(stateName: state.rawValue, palette: .forVariant(variant),
+                            motion: .sample(state: state.rawValue,
+                                            elapsed: max(0, tick.date.timeIntervalSince(sequenceStart))))
+                            .frame(width: size, height: size)
                     }
-                    .keyframeAnimator(initialValue: Pose(),
-                                      trigger: Reaction(state: state, interactionCount: interactionCount)) { content, pose in
-                        content
-                            .scaleEffect(1 + pose.lift * 0.05)
-                            .offset(y: -size * pose.lift * 0.045)
-                            .rotationEffect(.degrees(state == .comeback ? pose.lift * 5 : 0))
-                    } keyframes: { _ in
-                        KeyframeTrack(\.lift) {
-                            CubicKeyframe(-0.2, duration: 0.1)
-                            SpringKeyframe(1, duration: 0.24, spring: .bouncy)
-                            CubicKeyframe(0, duration: 0.3)
+                } else {
+                    art
+                        .phaseAnimator([false, true]) { content, raised in
+                            content
+                                .scaleEffect(raised ? 1.015 : 1)
+                                .offset(y: raised ? -size * idleLift : 0)
+                                .rotationEffect(.degrees(raised ? idleTilt : -idleTilt))
+                        } animation: { _ in
+                            .easeInOut(duration: idleDuration)
                         }
-                    }
+                        .keyframeAnimator(initialValue: Pose(),
+                                          trigger: Reaction(state: state, interactionCount: interactionCount)) { content, pose in
+                            content
+                                .scaleEffect(1 + pose.lift * 0.05)
+                                .offset(y: -size * pose.lift * 0.045)
+                                .rotationEffect(.degrees(state == .comeback ? pose.lift * 5 : 0))
+                        } keyframes: { _ in
+                            KeyframeTrack(\.lift) {
+                                CubicKeyframe(-0.2, duration: 0.1)
+                                SpringKeyframe(1, duration: 0.24, spring: .bouncy)
+                                CubicKeyframe(0, duration: 0.3)
+                            }
+                        }
+                }
             } else {
                 art
             }
@@ -109,16 +120,27 @@ struct AnimatedMascotView: View {
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
-        .onAppear { isVisible = true }
+        .onAppear { isVisible = true; sequenceStart = Date() }
         .onDisappear { isVisible = false }
+        .onChange(of: state) { _, _ in sequenceStart = Date() }
+        .onChange(of: interactionCount) { _, _ in sequenceStart = Date() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { sequenceStart = Date() }
+        }
     }
 
     private var art: some View {
-        MascotView(state: state, variant: variant)
-            .frame(width: size, height: size)
-            // The pose changes immediately. Only the outer transforms animate;
-            // otherwise an idle phase blends two PNGs for several seconds.
-            .transaction { $0.animation = nil }
+        Group {
+            if articulated {
+                MascotIllustration(stateName: state.rawValue, palette: .forVariant(variant))
+            } else {
+                MascotView(state: state, variant: variant)
+            }
+        }
+        .frame(width: size, height: size)
+        // The pose changes immediately. Only the outer transforms animate;
+        // otherwise an idle phase blends two PNGs for several seconds.
+        .transaction { $0.animation = nil }
     }
 
     private var idleDuration: Double {

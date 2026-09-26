@@ -87,6 +87,8 @@ PersonalOptimizationTests/
 │   ├── NutritionMathTests.swift          # pure macro/target/summary math
 │   ├── NutritionServiceTests.swift       # JST day boundary, targets history, HealthKit delete-then-rewrite
 │   ├── InBodyCoachTests.swift            # scan comparison, coach verdict bands, import, RIR backup, V12 migration
+│   ├── NutritionPhase2Tests.swift        # repeat meals: snapshot copies, all-or-nothing batches, food order, saved-meal backup, Health writes
+│   ├── MascotMotionTests.swift           # companion rig: blink timing, training limbs, gentle recovery, celebration settles
 │   ├── BiomarkerParserTests.swift
 │   ├── PhenoAgeTests.swift
 │   ├── PatternDetectionTests.swift

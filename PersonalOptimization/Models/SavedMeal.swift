@@ -33,8 +33,8 @@ final class SavedMeal {
 }
 
 /// One food inside a SavedMeal. Snapshots the food like FoodEntry does and
-/// keeps `foodID` so logging the meal can pick up the food's latest facts
-/// when the FoodItem still exists.
+/// keeps `foodID` for usage counters. Logging preserves the saved snapshot,
+/// even when catalog facts change or the FoodItem is no longer available.
 @Model
 final class SavedMealItem {
     var foodID: UUID?

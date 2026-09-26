@@ -41,6 +41,18 @@ struct PersonalOptimizationApp: App {
                 // stays out of smoke-test screenshots.
                 profile.dob = Calendar.current.date(from: DateComponents(year: 1995, month: 1, day: 1)) ?? .distantPast
                 container.mainContext.insert(profile)
+                if ProcessInfo.processInfo.arguments.contains("--ui-testing-repeat-meals") {
+                    do {
+                        let service = NutritionService(modelContext: container.mainContext, calendar: .current)
+                        let food = try service.createFood(name: "Test oats", servingSize: 40, servingUnit: "g",
+                            macros: MacroTotals(calories: 150, protein: 5, carbs: 27, fat: 3))
+                        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+                        let entry = try service.logEntry(food: food, servings: 2, meal: .breakfast, at: yesterday)
+                        try service.saveMeal(name: "Usual breakfast", entries: [entry])
+                        try service.setTargets(NutritionTargetValues(calories: 2000, proteinGrams: 150,
+                            carbsGrams: 200, fatGrams: 65))
+                    } catch { Logger.app.error("Repeat-meal UI fixture failed: \(error.localizedDescription)") }
+                }
                 try? container.mainContext.save()
             }
             return

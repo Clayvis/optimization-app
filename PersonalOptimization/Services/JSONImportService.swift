@@ -35,10 +35,17 @@ enum JSONImportService {
         }
 
         for value in payload.inBodyScans ?? [] { try value.validate() }
-        if payload.inBodyScans != nil { try modelContext.delete(model: InBodyScan.self) }
-        try wipe(modelContext: modelContext)
-        try insertAll(from: payload, into: modelContext)
-        try modelContext.save()
+        for value in payload.savedNutritionMeals ?? [] { try value.validate() }
+        try modelContext.transaction {
+            if payload.inBodyScans != nil { try modelContext.delete(model: InBodyScan.self) }
+            if payload.savedNutritionMeals != nil {
+                try modelContext.delete(model: SavedMealItem.self)
+                try modelContext.delete(model: SavedMeal.self)
+            }
+            try wipe(modelContext: modelContext)
+            try insertAll(from: payload, into: modelContext)
+            try modelContext.save()
+        }
         // Streak-integrity safeguard: an import file may carry two DailyLog rows
         // that collapse to the same calendar day under the user's calendar.
         // Non-destructive dedupe merges them into one canonical row so the
@@ -76,6 +83,7 @@ enum JSONImportService {
 
     private static func insertAll(from payload: ExportPayload, into ctx: ModelContext) throws {
         for value in payload.inBodyScans ?? [] { ctx.insert(InBodyScan(values: value)) }
+        for meal in payload.savedNutritionMeals ?? [] { ctx.insert(meal.model()) }
         if let p = payload.userProfile {
             ctx.insert(makeUserProfile(from: p))
         }

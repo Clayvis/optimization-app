@@ -234,6 +234,70 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Edit latest scan"].exists)
     }
 
+    func test_recentWholeMealLogsFromHomeInTwoTaps() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-repeat-meals"]
+        app.launch()
+        let quickAdd = app.buttons["today.quickAddMeal"]
+        XCTAssertTrue(quickAdd.waitForExistence(timeout: 15))
+        XCTAssertTrue(quickAdd.isHittable, "Quick add is visible without scrolling when nutrition has targets")
+        quickAdd.tap() // Tap 1: Home -> Recent.
+        let repeatMeal = app.buttons["nutrition.repeatMeal"].firstMatch
+        XCTAssertTrue(repeatMeal.waitForExistence(timeout: 10))
+        capture("Recent meals", app: app)
+        repeatMeal.tap() // Tap 2: log the complete original portion.
+        XCTAssertTrue(app.staticTexts["Fueled on purpose."].waitForExistence(timeout: 10))
+        XCTAssertTrue(quickAdd.exists)
+    }
+
+    func test_savedMealLogsFromHomeInThreeTaps() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-repeat-meals"]
+        app.launch()
+        let quickAdd = app.buttons["today.quickAddMeal"]
+        XCTAssertTrue(quickAdd.waitForExistence(timeout: 15))
+        quickAdd.tap() // Tap 1.
+        app.buttons["Saved meals"].tap() // Tap 2.
+        let log = app.buttons["nutrition.logSavedMeal"].firstMatch
+        XCTAssertTrue(log.waitForExistence(timeout: 10))
+        capture("Saved meals", app: app)
+        log.tap() // Tap 3.
+        XCTAssertTrue(app.staticTexts["Fueled on purpose."].waitForExistence(timeout: 10))
+    }
+
+    func test_saveMealAndCopyPreviewCancelThenConfirm() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-repeat-meals"]
+        app.launch()
+        let card = app.buttons["today.nutritionCard"]
+        XCTAssertTrue(card.waitForExistence(timeout: 15))
+        card.tap()
+        app.buttons["Previous day"].tap()
+        let actions = app.buttons["nutrition.actions.breakfast"]
+        XCTAssertTrue(actions.waitForExistence(timeout: 10))
+        for _ in 0..<3 where !actions.isHittable { app.swipeUp() }
+        actions.tap()
+        app.buttons["Save meal"].tap()
+        let name = app.textFields["nutrition.savedMeal.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 10))
+        name.tap(); name.typeText("Weekend oats")
+        app.buttons["nutrition.mealAction.confirm"].tap()
+        XCTAssertTrue(app.staticTexts["Meal saved for next time."].waitForExistence(timeout: 10))
+        app.navigationBars.buttons["Today"].tap()
+        app.buttons["nutrition.copyYesterday"].tap()
+        XCTAssertTrue(app.staticTexts["Test oats"].waitForExistence(timeout: 10))
+        capture("Copy meal preview", app: app)
+        app.buttons["Cancel"].tap()
+        XCTAssertFalse(app.staticTexts["Test oats"].exists, "Cancel does not append food")
+        app.buttons["nutrition.copyYesterday"].tap()
+        app.buttons["nutrition.mealAction.confirm"].tap()
+        XCTAssertTrue(app.staticTexts["Fueled on purpose."].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Test oats"].waitForExistence(timeout: 10))
+    }
+
     /// Brings a form field into view and types into it once it holds focus.
     /// A quick flick leaves the form decelerating, and a tap during that
     /// glide only stops the scroll: on shared CI runners the field then never

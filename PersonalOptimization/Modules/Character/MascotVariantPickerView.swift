@@ -36,11 +36,18 @@ struct MascotVariantPickerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query private var profiles: [UserProfile]
+    @AppStorage("mascot.articulated") private var articulated = true
     @State private var pendingVariant: MascotVariant?
     @State private var preflightError: String?
 
     var body: some View {
         Form {
+            Section("Animation style") {
+                Toggle("Articulated companion", isOn: $articulated)
+                    .accessibilityIdentifier("mascot.articulated")
+                Text("Animated drawings blink and move their arms and legs. Turn this off to use the original illustrated artwork. Reduce Motion shows a still pose.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             ForEach(MascotVariant.allCases) { variant in
                 Section {
                     variantRow(variant)
@@ -70,15 +77,21 @@ struct MascotVariantPickerView: View {
     private func variantRow(_ variant: MascotVariant) -> some View {
         let isCurrent = profiles.first?.mascotVariant == variant.rawValue
         HStack(spacing: 16) {
-            MascotView(state: .neutral, variant: variant.rawValue)
+            Group {
+                if articulated {
+                    MascotIllustration(stateName: "neutral", palette: .forVariant(variant.rawValue))
+                } else {
+                    MascotView(state: .neutral, variant: variant.rawValue)
+                }
+            }
                 .frame(width: 72, height: 72)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             VStack(alignment: .leading, spacing: 4) {
                 Text(variant.displayName)
                     .font(.body.weight(.semibold))
-                Text(MascotVariantPreflight.missingAssets(for: variant) == nil
-                     ? "Custom art · 12 reactions"
-                     : "Built-in art · 12 reactions")
+                Text(articulated ? "Animated drawing · 12 reactions"
+                     : MascotVariantPreflight.missingAssets(for: variant) == nil
+                        ? "Custom art · 12 reactions" : "Built-in art · 12 reactions")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -120,7 +133,7 @@ struct MascotReactionsGallery: View {
     @State private var selected: CharacterState = .training
     @State private var interactionCount = 0
 
-    private let reactions: [CharacterState] = [.training, .recovering, .comeback, .celebrating]
+    private let reactions: [CharacterState] = [.neutral, .training, .recovering, .comeback, .celebrating]
 
     var body: some View {
         ScrollView {

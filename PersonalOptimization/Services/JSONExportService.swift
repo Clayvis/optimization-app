@@ -28,6 +28,7 @@ struct ExportPayload: Codable {
     let scheduleSuggestions: [ScheduleSuggestionDTO]?
     let weeklyPrograms: [WeeklyProgramDTO]?
     var inBodyScans: [InBodyValues]? = nil
+    var savedNutritionMeals: [SavedNutritionMealDTO]? = nil
 }
 
 // MARK: - DTOs
@@ -545,7 +546,8 @@ enum JSONExportService {
             prescribedWorkouts: prescribed.map(PrescribedWorkoutDTO.init),
             scheduleSuggestions: suggestions.map(ScheduleSuggestionDTO.init),
             weeklyPrograms: weeklyPrograms.map(WeeklyProgramDTO.init),
-            inBodyScans: try modelContext.fetch(FetchDescriptor<InBodyScan>()).map(\.values)
+            inBodyScans: try modelContext.fetch(FetchDescriptor<InBodyScan>()).map(\.values),
+            savedNutritionMeals: try modelContext.fetch(FetchDescriptor<SavedMeal>()).map(SavedNutritionMealDTO.init)
         )
 
         let encoder = JSONEncoder()

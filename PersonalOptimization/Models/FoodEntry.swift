@@ -118,3 +118,15 @@ final class FoodEntry {
         "\(NutritionFormat.number(servings)) × \(NutritionFormat.serving(size: servingSize, unit: servingUnit))"
     }
 }
+
+extension MealSlot {
+    /// Hour used when an entry is added to a past day.
+    var defaultHour: Int {
+        switch self {
+        case .breakfast: return 8
+        case .lunch: return 12
+        case .snack: return 15
+        case .dinner: return 19
+        }
+    }
+}

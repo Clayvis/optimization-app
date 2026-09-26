@@ -1,18 +1,19 @@
 import SwiftUI
 import SwiftData
 
-/// Add sheet for one meal slot. Phase 1 offers the user's own foods (tap Log
-/// for one serving, or pick a food and adjust servings) and a manual entry
-/// form. Phase 2 adds the Recent / Frequent / Saved / Search / Scan / Photo
-/// tabs on top of the same service calls.
+/// Recent is the default. Whole-meal repeat and saved-meal logging keep the
+/// original nutrition and portions; My foods and New food retain manual entry.
 @MainActor
 struct AddFoodSheet: View {
-    let slot: MealSlot
+    @State var slot: MealSlot
     let loggedAt: Date
     let service: NutritionService
 
     @Environment(\.dismiss) private var dismiss
-    @State private var mode: Mode = .myFoods
+    @State private var mode: Mode = .recent
+    @State private var recentMeals: [RecentNutritionMeal] = []
+    @State private var savedMeals: [SavedMeal] = []
+    @State private var didLog = false
     @State private var query = ""
     @State private var foods: [FoodItem] = []
     @State private var selected: FoodItem?
@@ -22,6 +23,9 @@ struct AddFoodSheet: View {
     @State private var errorMessage: String?
 
     enum Mode: String, CaseIterable, Identifiable {
+        case recent = "Recent"
+        case frequent = "Frequent"
+        case saved = "Saved meals"
         case myFoods = "My foods"
         case newFood = "New food"
         var id: String { rawValue }
@@ -30,16 +34,26 @@ struct AddFoodSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Source", selection: $mode) {
-                    ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+                Picker("Meal", selection: $slot) {
+                    ForEach(MealSlot.allCases) { Text($0.displayName).tag($0) }
+                }.padding(.horizontal)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(Mode.allCases) { option in
+                            Button(option.rawValue) { mode = option }
+                                .buttonStyle(.bordered)
+                                .tint(mode == option ? Theme.matcha : .secondary)
+                                .accessibilityAddTraits(mode == option ? .isSelected : [])
+                        }
+                    }
                 }
-                .pickerStyle(.segmented)
                 .padding(.horizontal)
                 .padding(.vertical, Theme.Space.s)
                 .accessibilityIdentifier("nutrition.add.mode")
 
                 switch mode {
-                case .myFoods: myFoodsList
+                case .recent, .frequent, .myFoods: myFoodsList
+                case .saved: savedMealsList
                 case .newFood: newFoodForm
                 }
             }
@@ -59,9 +73,11 @@ struct AddFoodSheet: View {
             .task {
                 reload()
                 // A first-time user has nothing to pick from yet.
-                if foods.isEmpty && query.isEmpty { mode = .newFood }
+                if service.foods().isEmpty && savedMeals.isEmpty { mode = .newFood }
             }
             .onChange(of: query) { _, _ in reload() }
+            .onChange(of: mode) { _, _ in selected = nil; reload() }
+            .disabled(didLog)
         }
     }
 
@@ -69,12 +85,33 @@ struct AddFoodSheet: View {
 
     private var myFoodsList: some View {
         List {
+            if mode == .recent && query.isEmpty && !recentMeals.isEmpty {
+                Section("Repeat a meal · last 14 days") {
+                    ForEach(recentMeals) { meal in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(meal.slot.displayName).font(.headline)
+                                Text(meal.date, style: .date).font(.caption)
+                                Text(meal.entries.map(\.name).joined(separator: ", "))
+                                    .font(.caption).lineLimit(2)
+                                Text(NutritionFormat.kcal(meal.totals.calories)).font(.caption)
+                            }
+                            Spacer()
+                            Button("Log") { logRecent(meal) }
+                                .buttonStyle(.borderedProminent)
+                                .tint(Theme.matcha)
+                                .accessibilityLabel("Repeat \(meal.slot.displayName)")
+                                .accessibilityIdentifier("nutrition.repeatMeal")
+                        }
+                    }
+                }
+            }
             if foods.isEmpty {
                 ContentUnavailableView(
-                    query.isEmpty ? "No foods yet" : "No matches",
+                    query.isEmpty ? "No foods in this list" : "No matches",
                     systemImage: "fork.knife",
                     description: Text(query.isEmpty
-                                      ? "Create one under New food. It stays here for next time."
+                                      ? "Choose My foods or New food. Logged foods appear here next time."
                                       : "Try another word, or create it under New food.")
                 )
                 .listRowBackground(Color.clear)
@@ -236,12 +273,66 @@ struct AddFoodSheet: View {
     // MARK: - Actions
 
     private func reload() {
-        foods = service.foods(matching: query)
+        do {
+            recentMeals = try service.recentMeals()
+            savedMeals = try service.savedMeals()
+            switch mode {
+            case .recent: foods = try service.recentFoods()
+            case .frequent: foods = try service.frequentFoods()
+            default: foods = service.foods(matching: query)
+            }
+            if !query.isEmpty && mode != .myFoods {
+                foods = foods.filter { $0.name.localizedCaseInsensitiveContains(query)
+                    || ($0.brand?.localizedCaseInsensitiveContains(query) ?? false) }
+            }
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    private var savedMealsList: some View {
+        List {
+            if savedMeals.isEmpty {
+                ContentUnavailableView("No saved meals", systemImage: "bookmark",
+                    description: Text("Open a logged day's meal menu and choose Save meal."))
+            }
+            ForEach(savedMeals) { meal in
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(meal.name).font(.headline)
+                        Text("\(meal.orderedItems.count) \(meal.orderedItems.count == 1 ? "food" : "foods") · \(NutritionFormat.kcal(meal.totals.calories))")
+                            .font(.caption)
+                    }
+                    Spacer()
+                    Button("Log") {
+                        complete { _ = try service.logSavedMeal(meal, to: slot, at: loggedAt) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.matcha)
+                    .accessibilityLabel("Log saved meal \(meal.name)")
+                    .accessibilityIdentifier("nutrition.logSavedMeal")
+                }
+            }
+        }
+    }
+
+    private func logRecent(_ meal: RecentNutritionMeal) {
+        complete { _ = try service.copyEntries(meal.entries, to: loggedAt, meal: slot) }
+    }
+
+    private func complete(_ action: () throws -> Void) {
+        guard !didLog else { return }
+        do {
+            try action()
+            didLog = true
+            LogFeedbackCenter.shared.confirm(IdentityCopy.mealLogged)
+            dismiss()
+        } catch { errorMessage = error.localizedDescription }
     }
 
     private func log(_ food: FoodItem, servings: Double) {
+        guard !didLog else { return }
         do {
             try service.logEntry(food: food, servings: servings, meal: slot, at: loggedAt)
+            didLog = true
             LogFeedbackCenter.shared.confirm(IdentityCopy.mealLogged)
             dismiss()
         } catch {
@@ -250,6 +341,7 @@ struct AddFoodSheet: View {
     }
 
     private func createAndLog() {
+        guard !didLog else { return }
         do {
             let food = try service.createFood(name: draft.name,
                                               brand: draft.brand,
@@ -257,6 +349,7 @@ struct AddFoodSheet: View {
                                               servingUnit: draft.servingUnit,
                                               macros: draft.macros)
             try service.logEntry(food: food, servings: draftServings, meal: slot, at: loggedAt)
+            didLog = true
             LogFeedbackCenter.shared.confirm(IdentityCopy.mealLogged)
             dismiss()
         } catch {
