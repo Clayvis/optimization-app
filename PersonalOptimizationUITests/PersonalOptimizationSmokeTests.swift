@@ -227,19 +227,37 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         for (label, value) in [("Height (in)", "70"), ("Weight (lb)", "200"),
                                ("Skeletal muscle (lb)", "90"), ("Lean body mass (lb)", "160"),
                                ("Body-fat mass (lb)", "40"), ("Body fat (%)", "20")] {
-            let field = app.textFields[label]
-            // Keep the gesture above the decimal keyboard and move one row at
-            // a time so a full-screen swipe cannot skip a lazily rendered field.
-            for _ in 0..<10 where !field.isHittable {
-                app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-                    .press(forDuration: 0.05, thenDragTo:
-                        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)))
-            }
-            XCTAssertTrue(field.waitForExistence(timeout: 5))
-            field.tap(); field.typeText(value)
+            type(value, into: app.textFields[label], in: app)
         }
         app.buttons["inbody.save"].tap()
         XCTAssertTrue(app.staticTexts["Estimated skeletal muscle"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Edit latest scan"].exists)
+    }
+
+    /// Brings a form field into view and types into it once it holds focus.
+    /// A quick flick leaves the form decelerating, and a tap during that
+    /// glide only stops the scroll: on shared CI runners the field then never
+    /// gets keyboard focus. Drags therefore start on the row labels (a drag
+    /// that starts inside the right-aligned text fields is text interaction,
+    /// not a scroll), end with a hold so no momentum remains, stay above the
+    /// decimal keyboard, and move about one row at a time so a lazily
+    /// rendered field cannot be skipped. Focus is confirmed, retrying the
+    /// tap, before typing.
+    private func type(_ text: String, into field: XCUIElement, in app: XCUIApplication) {
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "Field exists")
+        for _ in 0..<10 where !field.isHittable {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.45))
+                .press(forDuration: 0.05,
+                       thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.33)),
+                       withVelocity: .slow,
+                       thenHoldForDuration: 0.4)
+        }
+        XCTAssertTrue(field.isHittable, "Field scrolled into view")
+        for _ in 0..<3 {
+            field.tap()
+            if (field.value(forKey: "hasKeyboardFocus") as? Bool) == true { break }
+        }
+        XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true, "Field holds keyboard focus")
+        field.typeText(text)
     }
 }
