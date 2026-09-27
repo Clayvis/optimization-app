@@ -6,6 +6,10 @@ Project context. Claude Code reads this every session before responding. Treat a
 
 Native iOS 18+ and watchOS 11+ app for daily protocol tracking. Single user (Clay, 31, Okinawa JST). Zero servers, zero accounts, ZERO third-party Swift packages.
 
+## Required task handoffs
+
+For every implementation or repair task, create a tracked handoff under `docs/planning/` at the start and keep it current. Include scope, base commit, files changed, verified results, known failures, exact next steps and commands, and device-only checks. Update `.work/state.json` with the handoff path. Never describe unfinished work as verified. This is a standing user instruction from 2026-09-28, so another agent can resume at any point.
+
 ## User Communication Preferences (mandatory, every response)
 
 1. **Absolute Mode**: no emojis, no filler, no hype, no soft asks, no conversational transitions, no call-to-action appendixes.

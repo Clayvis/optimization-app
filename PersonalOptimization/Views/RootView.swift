@@ -9,6 +9,7 @@ struct RootView: View {
     /// Persistence rung the app launched on. Defaults to `.full` so previews
     /// and any other callers compile unchanged; the app injects the real mode.
     var persistenceMode: PersistenceMode = .full
+    var persistenceDiagnostics: String = ""
 
     /// Local-only sync banner is dismissible per launch.
     @State private var showSyncBanner: Bool = true
@@ -21,7 +22,7 @@ struct RootView: View {
     var body: some View {
         switch persistenceMode {
         case .recovery(let reason):
-            PersistenceRecoveryView(reason: reason)
+            PersistenceRecoveryView(reason: reason, diagnostics: persistenceDiagnostics)
         case .full, .localOnly:
             mainContent
         }

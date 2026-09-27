@@ -1,44 +1,51 @@
 import SwiftUI
 
-/// Blocking screen shown when the on-disk store could not be opened and the
-/// app fell back to an in-memory recovery store (`PersistenceMode.recovery`).
-///
-/// Deliberately offers NO destructive action (no reset, no delete, no wipe):
-/// the on-disk store and its iCloud copy are untouched and a clean relaunch is
-/// the recovery path. Surfacing a "reset" button here would invite the user to
-/// destroy recoverable data, violating the permanent-retention rule.
+/// Blocking screen for a failed disk-store open. Never offers a reset/delete:
+/// existing data must remain available for a corrected migration.
 struct PersistenceRecoveryView: View {
     let reason: String
+    var diagnostics: String = ""
 
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.icloud")
-                .font(.system(size: 52))
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: "exclamationmark.icloud")
+                    .font(.system(size: 52))
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
 
-            Text("Couldn't open your data")
-                .font(.title2.bold())
-                .multilineTextAlignment(.center)
+                Text("Couldn't open your data")
+                    .font(.title2.bold())
 
-            Text(reason)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text(reason)
+                    .foregroundStyle(.secondary)
 
-            Text("Force-quit the app (swipe it away in the app switcher) and reopen it. If it keeps happening, restart your device. Your data on this device and in iCloud has not been changed.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("If reopening the app did not help, install the next update without deleting the app. Keep this installation so your saved data can be recovered.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                if !diagnostics.isEmpty {
+                    ShareLink(item: diagnostics) {
+                        Label("Share startup report", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("persistence.shareReport")
+
+                    Text("The report includes app and system versions and error codes. It does not include your health or workout records.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .multilineTextAlignment(.center)
+            .padding(32)
         }
-        .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .combine)
     }
 }
 
 #Preview {
     PersistenceRecoveryView(
-        reason: "The database could not be opened this launch. Your saved data has not been changed. Please close the app fully and reopen it."
+        reason: "The database could not be opened. The app has not erased or reset your saved data.",
+        diagnostics: "Preview startup report"
     )
 }

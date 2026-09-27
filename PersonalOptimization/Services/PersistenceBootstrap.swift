@@ -26,9 +26,8 @@ enum PersistenceMode: Equatable, Sendable {
 
     /// The on-disk store could not be opened at all. The app launches against
     /// a throwaway in-memory store so the user reaches a recovery screen
-    /// instead of a crash. The on-disk store and iCloud copy are LEFT
-    /// UNTOUCHED. Writes in this mode are not persisted, so the UI must steer
-    /// the user to relaunch rather than enter data.
+    /// instead of a crash. Neither the disk store nor its iCloud copy is reset.
+    /// Writes in this mode are not persisted, so the UI must block data entry.
     case recovery(reason: String)
 
     /// True when the backing store is real and durable (writes persist). Used
@@ -50,6 +49,7 @@ enum PersistenceMode: Equatable, Sendable {
 struct PersistenceBootstrap {
     let container: ModelContainer
     let mode: PersistenceMode
+    var diagnostics: String = ""
 
     /// Build the production container.
     ///
@@ -78,26 +78,28 @@ struct PersistenceBootstrap {
         // Disk rungs 1 and 2 are attempted only when the store's parent
         // directory is usable; if both throw (or the directory is impossible)
         // we fall through to the in-memory recovery rung.
-        if ensureStoreDirectory(for: resolvedURL, logger: logger),
+        var failures: [String] = []
+        if ensureStoreDirectory(for: resolvedURL, logger: logger, failures: &failures),
            let disk = openDiskStore(
                schema: schema,
                migrationPlan: migrationPlan,
                url: resolvedURL,
                cloudKitContainerID: cloudKitContainerID,
-               logger: logger
+               logger: logger,
+               failures: &failures
            ) {
             return disk
         }
 
-        // Rung 3: throwaway in-memory store. The on-disk store and its iCloud
-        // copy are NOT touched (no delete, no migration write), so a future
-        // launch can still recover them. Lets the app reach a recovery screen
-        // instead of crashing.
+        // Rung 3: throwaway in-memory store. Do not delete or reset the
+        // on-disk store or its iCloud copy, so a later build can recover them.
+        // Lets the app reach a recovery screen instead of crashing.
         logger.fault("Launching in recovery mode (in-memory). On-disk store preserved, not opened.")
         let container = PersistenceBootstrap.inMemory(schema: schema, logger: logger)
         return PersistenceBootstrap(
             container: container,
-            mode: .recovery(reason: "The database could not be opened this launch. Your saved data has not been changed. Please close the app fully and reopen it.")
+            mode: .recovery(reason: String(localized: "The database could not be opened. The app has not erased or reset your saved data.")),
+            diagnostics: diagnosticReport(failures: failures)
         )
     }
 
@@ -110,7 +112,7 @@ struct PersistenceBootstrap {
     /// degrade to recovery. `withIntermediateDirectories: true` is a no-op when
     /// the directory already exists, so production launches are unaffected.
     @MainActor
-    private static func ensureStoreDirectory(for url: URL, logger: Logger) -> Bool {
+    private static func ensureStoreDirectory(for url: URL, logger: Logger, failures: inout [String]) -> Bool {
         do {
             try FileManager.default.createDirectory(
                 at: url.deletingLastPathComponent(),
@@ -118,6 +120,7 @@ struct PersistenceBootstrap {
             )
             return true
         } catch {
+            failures.append(diagnosticFailure(stage: "Store directory", error: error))
             logger.fault("Store parent directory not creatable: \(error.localizedDescription, privacy: .public). Skipping disk rungs, degrading to recovery.")
             return false
         }
@@ -132,7 +135,8 @@ struct PersistenceBootstrap {
         migrationPlan: (any SchemaMigrationPlan.Type)?,
         url: URL,
         cloudKitContainerID: String,
-        logger: Logger
+        logger: Logger,
+        failures: inout [String]
     ) -> PersistenceBootstrap? {
         // Rung 1: full configuration (App Group + migration + CloudKit).
         do {
@@ -148,6 +152,7 @@ struct PersistenceBootstrap {
             )
             return PersistenceBootstrap(container: container, mode: .full)
         } catch {
+            failures.append(diagnosticFailure(stage: "CloudKit store", error: error))
             logger.fault("Store open failed (full+CloudKit): \(error.localizedDescription, privacy: .public). Retrying CloudKit-disabled.")
         }
 
@@ -172,10 +177,37 @@ struct PersistenceBootstrap {
                 mode: .localOnly(reason: "iCloud sync is paused. Your data is saved on this device and will sync the next time you reopen the app.")
             )
         } catch {
+            failures.append(diagnosticFailure(stage: "Local store", error: error))
             logger.fault("Store open failed (local-only): \(error.localizedDescription, privacy: .public). Falling back to in-memory recovery.")
         }
 
         return nil
+    }
+
+    /// Only error types/codes and build information, never database rows, paths,
+    /// or NSError userInfo values. SwiftData sometimes hides the underlying
+    /// Core Data error; the device console may still be needed in that case.
+    static func diagnosticFailure(stage: String, error: Error) -> String {
+        var codes = [String(reflecting: type(of: error))]
+        var current: NSError? = error as NSError
+        for _ in 0..<5 {
+            guard let value = current else { break }
+            codes.append("\(value.domain) (\(value.code))")
+            current = value.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+        return "\(stage): " + codes.joined(separator: " → ")
+    }
+
+    private static func diagnosticReport(failures: [String]) -> String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+        return ([
+            "PersonalOptimization database startup report",
+            "App: \(version) (\(build))",
+            "OS: \(ProcessInfo.processInfo.operatingSystemVersionString)",
+            "Schema: \(AppSchema.current.versionIdentifier)",
+            "Recovery mode. No database reset requested."
+        ] + failures).joined(separator: "\n")
     }
 
     /// Build an in-memory container over the app schema (no disk, no CloudKit,

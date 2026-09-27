@@ -21,6 +21,7 @@ struct PersonalOptimizationApp: App {
     /// Which rung the persistent store opened on. Drives both the launch
     /// side-effect gating below and the RootView banner / recovery screen.
     let persistenceMode: PersistenceMode
+    let persistenceDiagnostics: String
 
     init() {
         // Dojo theme chrome (rounded heavy nav titles). Pure appearance, safe
@@ -32,6 +33,7 @@ struct PersonalOptimizationApp: App {
         if PersonalOptimizationApp.isRunningTests || PersonalOptimizationApp.isUITesting {
             container = PersistenceBootstrap.inMemory()
             persistenceMode = .full
+            persistenceDiagnostics = ""
             if PersonalOptimizationApp.isUITesting {
                 WorkoutPresenceService.shared.end()
                 let profile = UserProfile(name: "UI Test")
@@ -65,6 +67,7 @@ struct PersonalOptimizationApp: App {
         let bootstrap = PersistenceBootstrap.makeAppContainer()
         container = bootstrap.container
         persistenceMode = bootstrap.mode
+        persistenceDiagnostics = bootstrap.diagnostics
 
         // Run the full launch sequence only against a durable store. In recovery
         // mode the store is a throwaway in-memory one; seeding, HealthKit sync,
@@ -235,7 +238,7 @@ struct PersonalOptimizationApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(persistenceMode: persistenceMode)
+            RootView(persistenceMode: persistenceMode, persistenceDiagnostics: persistenceDiagnostics)
         }
         .modelContainer(container)
         .onChange(of: scenePhase) { _, newPhase in

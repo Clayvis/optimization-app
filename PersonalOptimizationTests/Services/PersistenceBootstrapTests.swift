@@ -20,6 +20,18 @@ final class PersistenceBootstrapTests: XCTestCase {
                        "Recovery is in-memory; writes must not be treated as durable.")
     }
 
+    func testDiagnosticReportIncludesUnderlyingCodesWithoutRecordDetails() {
+        let underlying = NSError(domain: NSCocoaErrorDomain, code: 134504,
+                                 userInfo: [NSLocalizedDescriptionKey: "Private workout record"])
+        let error = NSError(domain: "Store", code: 1,
+                            userInfo: [NSUnderlyingErrorKey: underlying, "path": "/private/store"])
+        let report = PersistenceBootstrap.diagnosticFailure(stage: "Local store", error: error)
+        XCTAssertTrue(report.contains("134504"))
+        XCTAssertTrue(report.contains("Local store"))
+        XCTAssertFalse(report.contains("Private workout"))
+        XCTAssertFalse(report.contains("/private"))
+    }
+
     // MARK: - In-memory rung
 
     func testInMemoryContainerRoundTrips() throws {
@@ -44,6 +56,9 @@ final class PersistenceBootstrapTests: XCTestCase {
 
         let bootstrap = PersistenceBootstrap.makeAppContainer(storeURL: unwritable)
 
+        XCTAssertTrue(bootstrap.diagnostics.contains("Store directory:"))
+        XCTAssertTrue(bootstrap.diagnostics.contains("App:"))
+        XCTAssertFalse(bootstrap.diagnostics.contains("/dev/null"))
         XCTAssertFalse(bootstrap.mode.isDurable)
         guard case .recovery = bootstrap.mode else {
             return XCTFail("Expected .recovery, got \(bootstrap.mode)")

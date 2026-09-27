@@ -18,6 +18,7 @@
 		0469B58510C4B5DAECA88EDB /* WeeklyReflectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28A27D744ACD4EEB946572B /* WeeklyReflectionService.swift */; };
 		04711B71F53D38C5B330FC4D /* BasketballSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B79B0DE348C5B10A3C13DA /* BasketballSession.swift */; };
 		04FA050ACF8E7C295DB5981A /* WeeklyProgramCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39D17EF8A1B9A58C15B86F49 /* WeeklyProgramCard.swift */; };
+		052789FB923B4465AE7B7752 /* ReleasedNutritionSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96919B25574D3B7A3F2BD627 /* ReleasedNutritionSchema.swift */; };
 		054B9D6D8DEB8414CB106A8F /* TokenBudgetServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EC1E5AEAA192F1D347DE0AB /* TokenBudgetServiceTests.swift */; };
 		062DB34423ECE695083981A5 /* DailyLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59DFC3D084F8FF47CEF4B344 /* DailyLogStore.swift */; };
 		06401FCAFFA56D32EAA083F9 /* SchemaV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758596BD9C49AD3F4EEAFB95 /* SchemaV2.swift */; };
@@ -463,6 +464,7 @@
 		CF8583CC8DA65F63A121A8C0 /* RecoveryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F46F97BF5092E281D22D8A6 /* RecoveryCard.swift */; };
 		CFDDEEF27639B156B6D693B1 /* LabDrawStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9C0C3AD075F54D73331068E /* LabDrawStore.swift */; };
 		D029431C4F2B4048CAC2FD28 /* ProtocolEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F30C85E85590C6112D02188 /* ProtocolEntry.swift */; };
+		D0BFB70F66E00D5BD6D08361 /* ReleasedStoreMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2300E6BD033FF85D01DE104F /* ReleasedStoreMigrationTests.swift */; };
 		D171463EDA71D78D6D14CA0C /* ImplementationIntentionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 348BB6D06A9E4C8998F24708 /* ImplementationIntentionServiceTests.swift */; };
 		D233FCEE7344F8763F0E3F2D /* WearableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3674B6175E5E9C0A0FE15C5 /* WearableEntry.swift */; };
 		D23893F6426A665E3E4278EB /* FoodEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283D41A6D7312756AAC781E1 /* FoodEntry.swift */; };
@@ -704,6 +706,7 @@
 		21AC7B22738762F1B5F076D9 /* LabDrawEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabDrawEditorView.swift; sourceTree = "<group>"; };
 		221F2407D16CE965DF59E55D /* MascotIllustration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotIllustration.swift; sourceTree = "<group>"; };
 		22D97F0615C1D2C8E629C624 /* LogFeedbackCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogFeedbackCenter.swift; sourceTree = "<group>"; };
+		2300E6BD033FF85D01DE104F /* ReleasedStoreMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedStoreMigrationTests.swift; sourceTree = "<group>"; };
 		23798FA0B131D274D6260D79 /* ImplementationIntentionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImplementationIntentionService.swift; sourceTree = "<group>"; };
 		242FCE6D86BAB838E4FD1826 /* InMemoryContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryContainer.swift; sourceTree = "<group>"; };
 		256B1B8FB28C96B3F972B502 /* ArchiveBackgroundScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveBackgroundScheduler.swift; sourceTree = "<group>"; };
@@ -872,6 +875,7 @@
 		92EA6E4D5AA02DC732D3CD0B /* FirstLaunchTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchTracker.swift; sourceTree = "<group>"; };
 		9362B1483E3ECAB8A31BCA9C /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		942D33F675D78E8C35B0749A /* BodyInfoSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyInfoSheet.swift; sourceTree = "<group>"; };
+		96919B25574D3B7A3F2BD627 /* ReleasedNutritionSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedNutritionSchema.swift; sourceTree = "<group>"; };
 		97A4006DD6BF17DAE6915811 /* FastingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingView.swift; sourceTree = "<group>"; };
 		982F36D565A3047BD1C17677 /* MilestoneCelebrationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilestoneCelebrationSheet.swift; sourceTree = "<group>"; };
 		989E480F10D6817804A0C890 /* PersonaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaService.swift; sourceTree = "<group>"; };
@@ -1014,6 +1018,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		0E61DFB7DCE7011B5EFA15D4 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				96919B25574D3B7A3F2BD627 /* ReleasedNutritionSchema.swift */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
 		103CC491C33BD756A5C2CDAB /* SharedAppIntents */ = {
 			isa = PBXGroup;
 			children = (
@@ -1539,6 +1551,7 @@
 				68873B564651E1136F5D17B9 /* PersistenceBootstrapTests.swift */,
 				D886CDA3D6F4F983C7587DA2 /* ProfileServiceTests.swift */,
 				459BF3FDCA7872DD2C26CC5C /* ReactiveRecomputeServiceTests.swift */,
+				2300E6BD033FF85D01DE104F /* ReleasedStoreMigrationTests.swift */,
 				092D7A87C61B4666A776549E /* SwiftDataHelpersTests.swift */,
 				0EC1E5AEAA192F1D347DE0AB /* TokenBudgetServiceTests.swift */,
 				7B853C53D5B3357F8FEA0BFB /* WatchConnectivityServiceTests.swift */,
@@ -1735,6 +1748,7 @@
 		E7EB987FEDBF768594B0919B /* PersonalOptimizationTests */ = {
 			isa = PBXGroup;
 			children = (
+				0E61DFB7DCE7011B5EFA15D4 /* Fixtures */,
 				DBE21104D9EED0341A8114AA /* Helpers */,
 				869E8F27A49AC0C94C596E20 /* Models */,
 				39C71D7C41D61ADBE6EDC076 /* Modules */,
@@ -2131,6 +2145,8 @@
 				9D8871B6618F3B445DBA9143 /* ProtocolRulesTests.swift in Sources */,
 				179ABA5B9DFB19C505B9A078 /* ReactiveRecomputeServiceTests.swift in Sources */,
 				AF02DB40855E1C6D5719104A /* RecoveryGateTests.swift in Sources */,
+				052789FB923B4465AE7B7752 /* ReleasedNutritionSchema.swift in Sources */,
+				D0BFB70F66E00D5BD6D08361 /* ReleasedStoreMigrationTests.swift in Sources */,
 				C563367AB44E0A78A2FDE417 /* ScheduleAIServiceTests.swift in Sources */,
 				3787E7B96B377424A0C78F0C /* SchedulePlannerTests.swift in Sources */,
 				13472C39166401253FC4630C /* ScheduleSeedTests.swift in Sources */,
