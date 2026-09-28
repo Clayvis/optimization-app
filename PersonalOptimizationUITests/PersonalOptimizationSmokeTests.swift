@@ -370,10 +370,7 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-repeat-meals", "--ui-testing-barcode-food"]
         app.launch()
-        let quickAdd = app.buttons["today.quickAddMeal"]
-        XCTAssertTrue(quickAdd.waitForExistence(timeout: 15))
-        quickAdd.tap()
-        app.buttons["nutrition.scan"].tap()
+        openBarcodeScan(in: app)
         lookUpBarcode("4901234567894", in: app)
         XCTAssertTrue(app.staticTexts["nutrition.barcode.foundName"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.staticTexts["nutrition.barcode.foundName"].label, "Test granola")
@@ -401,10 +398,7 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-repeat-meals"]
         app.launch()
-        let quickAdd = app.buttons["today.quickAddMeal"]
-        XCTAssertTrue(quickAdd.waitForExistence(timeout: 15))
-        quickAdd.tap()
-        app.buttons["nutrition.scan"].tap()
+        openBarcodeScan(in: app)
         lookUpBarcode("0012345678905", in: app)
         let barcode = app.staticTexts["nutrition.newFood.barcode"]
         XCTAssertTrue(barcode.waitForExistence(timeout: 10), "New food carries the scanned barcode")
@@ -413,9 +407,8 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         type("180", into: app.textFields["nutrition.newFood.calories"], in: app)
         type("5", into: app.textFields["nutrition.newFood.protein"], in: app)
         tapClearOfKeyboard(app.buttons["nutrition.newFood.log"], in: app)
-        XCTAssertTrue(quickAdd.waitForExistence(timeout: 10))
-        quickAdd.tap()
-        app.buttons["nutrition.scan"].tap()
+        // Waits for the sheet to finish dismissing before Quick add is tapped again.
+        openBarcodeScan(in: app)
         lookUpBarcode("0012345678905", in: app)
         XCTAssertTrue(app.staticTexts["nutrition.barcode.foundName"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.staticTexts["nutrition.barcode.foundName"].label, "Corner bakery roll")
@@ -425,7 +418,28 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         let field = app.textFields["nutrition.barcode.field"]
         XCTAssertTrue(field.waitForExistence(timeout: 10), "The typed-barcode path is available")
         type(digits, into: field, in: app)
-        app.buttons["nutrition.barcode.lookup"].tap()
+        let lookUp = app.buttons["nutrition.barcode.lookup"]
+        XCTAssertTrue(waitUntilHittable(lookUp), "Look up is tappable")
+        lookUp.tap()
+    }
+
+    /// Quick add from Today, then the sheet's Scan barcode button. Each tap
+    /// waits until its target can take it: on the slower CI runner a tap sent
+    /// right after Quick add found no Scan button yet (CI run for 9893f16).
+    private func openBarcodeScan(in app: XCUIApplication) {
+        let quickAdd = app.buttons["today.quickAddMeal"]
+        XCTAssertTrue(waitUntilHittable(quickAdd, timeout: 15), "Today shows Quick add")
+        quickAdd.tap()
+        let scan = app.buttons["nutrition.scan"]
+        XCTAssertTrue(waitUntilHittable(scan), "The add sheet shows Scan barcode")
+        scan.tap()
+    }
+
+    /// Existence first, so hittability is never queried on a missing element.
+    private func waitUntilHittable(_ element: XCUIElement, timeout: TimeInterval = 10) -> Bool {
+        guard element.waitForExistence(timeout: timeout) else { return false }
+        let hittable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: element)
+        return XCTWaiter.wait(for: [hittable], timeout: timeout) == .completed
     }
 
     /// Brings a form field into view and types into it once it holds focus.
