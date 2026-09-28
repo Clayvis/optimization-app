@@ -11,7 +11,15 @@ struct PrescribedWorkoutCard: View {
     @Query(sort: [SortDescriptor(\PrescribedWorkout.generatedAt, order: .reverse)])
     private var prescriptions: [PrescribedWorkout]
 
+    /// Set by parents that show this card inside a List (Today). SwiftUI does
+    /// not support a navigation destination inside a lazy container, so such a
+    /// parent hosts `SuggestedWorkoutDestination` on the List itself and the
+    /// card only reports which suggestion to open. Nil: the card navigates.
+    var onOpenWorkout: ((PrescribedWorkout) -> Void)? = nil
+
     @State private var loading = false
+    @State private var showingWorkout = false
+    @State private var selectedPrescription: PrescribedWorkout?
     @State private var errorMessage: String?
     @State private var apiKeyMissing = false
     @State private var showingDetail = false
@@ -32,7 +40,7 @@ struct PrescribedWorkoutCard: View {
 
     var body: some View {
         Button {
-            if apiKeyMissing { return }
+            if apiKeyMissing && todays == nil { return }
             if todays != nil { showingDetail = true }
         } label: {
             cardBody
@@ -40,6 +48,9 @@ struct PrescribedWorkoutCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
         .task { await ensureLoaded() }
+        .modifier(SuggestedWorkoutNavigation(enabled: onOpenWorkout == nil,
+                                             isPresented: $showingWorkout,
+                                             prescription: selectedPrescription))
         .onAppear {
             // Re-check API key whenever the card surfaces so a Settings-side
             // change is reflected immediately. Without this, removing or
@@ -83,7 +94,7 @@ struct PrescribedWorkoutCard: View {
                 }
             }
 
-            if apiKeyMissing {
+            if apiKeyMissing && todays == nil {
                 Text("Set your Anthropic API key in Settings to enable Coach prescriptions.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -103,6 +114,7 @@ struct PrescribedWorkoutCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 actionRow(prescription: p)
+                if let errorMessage { ErrorBanner(message: errorMessage) { self.errorMessage = nil } }
             } else if let errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
@@ -129,7 +141,7 @@ struct PrescribedWorkoutCard: View {
     private func actionRow(prescription: PrescribedWorkout) -> some View {
         HStack(spacing: 8) {
             if prescription.status == .suggested || prescription.status == .modified {
-                actionButton(label: "Accept",
+                actionButton(label: prescription.workoutType == .rest || prescription.workoutType == .custom ? "View" : "Review",
                              systemImage: "checkmark",
                              role: nil,
                              prominent: true) {
@@ -156,6 +168,11 @@ struct PrescribedWorkoutCard: View {
                     .background(badgeColor(for: prescription.status).opacity(0.18))
                     .clipShape(Capsule())
                 Spacer()
+                if prescription.status == .accepted, prescription.sessionUUID != nil {
+                    Button("Resume") { accept(prescription: prescription) }
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("training.resumeSuggestion")
+                } else {
                 Button {
                     Task { await generate(force: true) }
                 } label: {
@@ -163,6 +180,7 @@ struct PrescribedWorkoutCard: View {
                         .font(.caption.weight(.semibold))
                 }
                 .buttonStyle(.bordered)
+                }
             }
         }
     }
@@ -279,8 +297,14 @@ struct PrescribedWorkoutCard: View {
     }
 
     private func accept(prescription: PrescribedWorkout) {
-        prescription.status = .accepted
-        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
+        if prescription.workoutType == .rest || prescription.workoutType == .custom {
+            showingDetail = true
+        } else if let onOpenWorkout {
+            onOpenWorkout(prescription)
+        } else {
+            selectedPrescription = prescription
+            showingWorkout = true
+        }
     }
 
     private func skip(prescription: PrescribedWorkout) {
@@ -356,23 +380,28 @@ private struct PrescribedWorkoutDetailSheet: View {
                     Text(prescription.rationale)
                         .font(.body)
                 }
-                Section("Template (raw)") {
-                    Text(prescription.template)
-                        .font(.caption.monospaced())
-                }
-                Section("Status") {
-                    Picker("Status", selection: Binding(
-                        get: { prescription.status },
-                        set: { prescription.status = $0 }
-                    )) {
-                        ForEach(PrescribedWorkoutStatus.allCases, id: \.rawValue) { s in
-                            Text(s.rawValue.capitalized).tag(s)
+                if prescription.workoutType == .liftA || prescription.workoutType == .liftB {
+                    if let plan = try? SuggestedLiftPlan.read(prescription) {
+                        // MARK: try? justified: malformed plans show the explicit fallback below.
+                        ForEach(Array(plan.exercises.enumerated()), id: \.offset) { _, exercise in
+                            Section(exercise.name) {
+                                Text("\(exercise.sets) sets × \(exercise.reps) reps")
+                                if let weight = exercise.weightLbs {
+                                    Text("Suggested load: \(weight.formatted()) lb. Adjust to your ability today.")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                if let rest = exercise.restSec { Text("Rest: \(rest) seconds") }
+                                if let rir = exercise.rir { Text("Effort: \(rir) reps in reserve") }
+                            }
                         }
+                    } else {
+                        Section { Text("This suggestion has no valid exercise plan. Generate a new suggestion before starting.") }
                     }
                 }
-                Section("Token usage") {
-                    LabeledContent("Tokens", value: "\(prescription.tokenUsage)")
-                    LabeledContent("Model", value: prescription.modelUsed)
+                Section("Status") {
+                    Text(prescription.status.rawValue.capitalized)
+                    Text("Reviewing a plan does not log a workout. Completion comes from finishing the session.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Prescription")
@@ -381,6 +410,41 @@ private struct PrescribedWorkoutDetailSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
+        }
+    }
+}
+
+/// The workout a suggestion opens. Shared by the card's own navigation and by
+/// parents that host the destination outside a List.
+struct SuggestedWorkoutDestination: View {
+    let prescription: PrescribedWorkout
+
+    var body: some View {
+        switch prescription.workoutType {
+        case .liftA, .liftB:
+            LiftSessionView(templateName: prescription.creativeTitle.isEmpty
+                                ? prescription.workoutType.displayName : prescription.creativeTitle,
+                            prescription: prescription)
+        case .basketball: BasketballSessionView()
+        case .swim: SwimSessionView()
+        case .rest, .custom: EmptyView()
+        }
+    }
+}
+
+/// Attaches the card's own destination only when no parent hosts it.
+private struct SuggestedWorkoutNavigation: ViewModifier {
+    let enabled: Bool
+    @Binding var isPresented: Bool
+    let prescription: PrescribedWorkout?
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.navigationDestination(isPresented: $isPresented) {
+                if let prescription { SuggestedWorkoutDestination(prescription: prescription) }
+            }
+        } else {
+            content
         }
     }
 }

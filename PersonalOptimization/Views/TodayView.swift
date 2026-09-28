@@ -31,6 +31,8 @@ struct TodayView: View {
     @State private var healthExpanded = false
     @State private var healthKitAuthorization: HKAuthorizationStatus?
     @State private var showingBodyInfoSheet = false
+    /// Suggestion opened from the card inside the List; see PrescribedWorkoutCard.onOpenWorkout.
+    @State private var openedSuggestion: PrescribedWorkout?
 
     // V11 launch-polish (Item 6): services held in @State so they survive
     // body evaluations. Pre-refactor these were computed every render
@@ -97,7 +99,7 @@ struct TodayView: View {
                 Section {
                     DisclosureGroup(isExpanded: $planExpanded) {
                         NextBlockCard()
-                        PrescribedWorkoutCard()
+                        PrescribedWorkoutCard(onOpenWorkout: { openedSuggestion = $0 })
                         let blocks = service.todayBlocks(for: now)
                         if blocks.isEmpty {
                             Text("Your day is open. A workout can fit whenever you're ready.")
@@ -132,6 +134,7 @@ struct TodayView: View {
                 graceBannerSection
             }
             .navigationTitle(weekdayTitle)
+            .navigationDestination(item: $openedSuggestion) { SuggestedWorkoutDestination(prescription: $0) }
             .listStyle(.insetGrouped)
             // Dojo ground: layered ink gradient + faint asanoha lattice behind
             // the card stack (the List keeps its inset layout, loses its gray).

@@ -52,7 +52,7 @@ private struct InProgressBanner: View {
                 VStack(alignment: .leading, spacing: Theme.Space.s) {
                     SectionEyebrow(title: "In progress")
                     ForEach(activeLifts, id: \.persistentModelID) { session in
-                        NavigationLink(destination: LiftSessionView(templateName: session.template, autoStart: true)) {
+                        NavigationLink(destination: LiftSessionView(templateName: session.template, autoStart: true, resumeSession: session)) {
                             resumeRow(icon: "figure.strengthtraining.traditional",
                                       title: session.template,
                                       detail: detail(for: session))

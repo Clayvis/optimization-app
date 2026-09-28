@@ -37,6 +37,8 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Scans food barcodes to look up nutrition facts. Only the barcode number is sent to the food database; images stay on your iPhone.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Reads sleep, heart rate, HRV, activity, weight, and nutrition from Apple Health to power daily targets, character state, and weekly review insights.</string>
 	<key>NSHealthUpdateUsageDescription</key>

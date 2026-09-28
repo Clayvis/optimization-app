@@ -12,6 +12,8 @@ struct LiftSessionView: View {
     /// loads instead of waiting on the preview's Start button. Resumes an
     /// existing draft when one is present.
     var autoStart: Bool = false
+    var prescription: PrescribedWorkout? = nil
+    var resumeSession: LiftSession? = nil
 
     @State private var template: LiftTemplate?
     @State private var session: LiftSession?
@@ -22,6 +24,9 @@ struct LiftSessionView: View {
     @State private var restTimerEndsAt: Date?
     @State private var showingAddSet = false
     @State private var addSetExercise: LiftExercise?
+    @State private var editingSet: LiftSet?
+    @State private var setDraft: LiftSetDraft?
+    @State private var setError: String?
     @State private var customExerciseName: String = ""
     @State private var completionCount: Int = 0
     @State private var showingTemplateEditor = false
@@ -121,6 +126,12 @@ struct LiftSessionView: View {
                         Text("\(exercise.targetSets) × \(exercise.targetReps) reps")
                             .font(.body.weight(.medium))
                     }
+                    if let weight = exercise.suggestedWeightLbs {
+                        Text("Suggested load: \(weight.formatted()) lb. Adjust to your ability today.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    if let rest = exercise.restSeconds { Text("Rest: \(rest) seconds").font(.caption) }
+                    if let rir = exercise.targetRIR { Text("Target effort: \(rir) RIR. Log your actual effort after each set.").font(.caption) }
                 }
             }
 
@@ -133,6 +144,7 @@ struct LiftSessionView: View {
                         .font(.body.weight(.semibold))
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("lift.startWorkout")
             }
         }
     }
@@ -175,36 +187,48 @@ struct LiftSessionView: View {
                     // session so the user doesn't lose the workout shape after
                     // tapping Start. Looked up from the template by name; falls
                     // back silently for custom exercises with no template row.
-                    if let target = templateTarget(forExerciseName: exercise.name) {
-                        HStack {
-                            Text("Target")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text("\(sets.count) of \(target.sets) sets · \(target.reps) reps")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(sets.count >= target.sets ? .green : .secondary)
-                        }
+                    HStack {
+                        Text("Target").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Spacer()
+                        Text("\(sets.count) of \(exercise.progressionSets) sets · \(exercise.progressionLowerReps)–\(exercise.progressionUpperReps) reps")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(sets.count >= exercise.progressionSets ? .green : .secondary)
                     }
 
                     ExerciseProgressionView(exercise: exercise)
                     ForEach(sets, id: \.persistentModelID) { set in
-                        HStack {
-                            Text("Set \(set.orderIndex + 1)")
-                                .foregroundStyle(.secondary)
-                                .font(.caption)
-                            Spacer()
-                            Text("\(Int(set.weightLbs)) lbs × \(set.reps)")
-                                .font(.body.weight(.medium))
-                            if let rir = set.repsInReserve { Text("\(rir) RIR").font(.caption).foregroundStyle(.secondary) }
+                        Button {
+                            editingSet = set
+                            addSetExercise = exercise
+                            setDraft = LiftSetDraft(set: set, source: "Edit logged set")
+                            showingAddSet = true
+                        } label: {
+                            HStack {
+                                Text("Set \(set.orderIndex + 1)")
+                                    .foregroundStyle(.secondary).font(.caption)
+                                Spacer()
+                                Text("\(set.weightLbs.formatted(.number.precision(.fractionLength(0...2)))) lb × \(set.reps)")
+                                    .font(.body.weight(.medium))
+                                if let rir = set.repsInReserve { Text("\(rir) RIR").font(.caption).foregroundStyle(.secondary) }
+                                Image(systemName: "pencil").font(.caption)
+                            }
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Edit set \(set.orderIndex + 1), \(exercise.name), \(set.weightLbs) pounds, \(set.reps) reps")
+                        .accessibilityIdentifier("lift.editSet")
                     }
                     Button {
-                        addSetExercise = exercise
-                        showingAddSet = true
+                        do {
+                            editingSet = nil
+                            setDraft = try service.suggestedSet(for: exercise,
+                                target: template?.exercises.first { $0.orderIndex == exercise.orderIndex && $0.name == exercise.name })
+                            addSetExercise = exercise
+                            showingAddSet = true
+                        } catch { setError = error.localizedDescription }
                     } label: {
                         Label("Add set", systemImage: "plus.circle")
                     }
+                    .accessibilityIdentifier("lift.addSet")
                 }
             }
 
@@ -237,14 +261,24 @@ struct LiftSessionView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            if let setError { ErrorBanner(message: setError) { self.setError = nil } }
+        }
         .sheet(isPresented: $showingAddSet, onDismiss: {
             addSetExercise = nil
+            editingSet = nil
+            setDraft = nil
         }) {
-            if let exercise = addSetExercise {
-                AddSetSheet(exercise: exercise) { weight, reps, rest, rir in
-                    _ = try service.logSet(in: session, exerciseName: exercise.name, weightLbs: weight,
-                                           reps: reps, restSeconds: rest, repsInReserve: rir)
-                    if let rest, rest > 0 {
+            if let exercise = addSetExercise, let draft = setDraft {
+                AddSetSheet(exercise: exercise, draft: draft, isEditing: editingSet != nil) { weight, reps, rest, rir in
+                    if let editingSet {
+                        try service.updateSet(editingSet, in: session, weightLbs: weight, reps: reps,
+                                              restSeconds: rest, repsInReserve: rir)
+                    } else {
+                        _ = try service.logSet(in: session, exercise: exercise, weightLbs: weight,
+                                               reps: reps, restSeconds: rest, repsInReserve: rir)
+                    }
+                    if editingSet == nil, let rest, rest > 0 {
                         restTimerEndsAt = Date().addingTimeInterval(TimeInterval(rest))
                     }
                 }
@@ -254,17 +288,6 @@ struct LiftSessionView: View {
 
     private func sortedExercises(session: LiftSession) -> [LiftExercise] {
         (session.exercises ?? []).sorted { $0.orderIndex < $1.orderIndex }
-    }
-
-    /// M4.2 followup: look up an exercise's template target by name so the
-    /// active session keeps showing "X of N sets · R reps" once the user taps
-    /// Start. Returns nil for custom exercises that don't have a template row.
-    private func templateTarget(forExerciseName name: String) -> (sets: Int, reps: Int)? {
-        guard let template,
-              let entry = template.exercises.first(where: { $0.name == name }) else {
-            return nil
-        }
-        return (entry.targetSets, entry.targetReps)
     }
 
     /// M4.2 followup: static mapping from the user's first matching
@@ -368,7 +391,20 @@ struct LiftSessionView: View {
         do {
             let bundled = try LiftTemplatesLoader.load()
             let templates: LiftTemplatesFile
-            if isCustomTemplate {
+            if let resumeSession {
+                let restored = LiftTemplate(name: resumeSession.template, focus: "Continue your saved workout.",
+                    exercises: (resumeSession.exercises ?? []).sorted { $0.orderIndex < $1.orderIndex }.map {
+                        LiftTemplateExercise(name: $0.name, orderIndex: $0.orderIndex,
+                                             targetSets: $0.progressionSets, targetReps: $0.progressionLowerReps)
+                    })
+                templates = LiftTemplatesFile(version: bundled.version, templates: [restored])
+                template = restored
+            } else if let prescription {
+                let plan = try SuggestedLiftPlan.read(prescription)
+                let suggested = plan.template(title: templateName, rationale: prescription.rationale)
+                templates = LiftTemplatesFile(version: bundled.version, templates: [suggested])
+                template = suggested
+            } else if isCustomTemplate {
                 // MARK: try? justified - a missing bundled Lift B only means the custom seed starts empty.
                 let seed = try? LiftTemplatesLoader.template(named: "Lift B", file: bundled)
                 let dto = CustomLiftTemplateStore.loadOrSeed(profile: profiles.first, seed: seed)
@@ -380,7 +416,8 @@ struct LiftSessionView: View {
                 template = try LiftTemplatesLoader.template(named: templateName, file: templates)
             }
             service = LiftService(modelContext: modelContext, templatesFile: templates, healthKit: LiveHealthKitService.shared)
-            hasResumableDraft = inProgressSession(for: templateName) != nil
+            hasResumableDraft = resumeSession != nil || prescription?.sessionUUID != nil
+                || (prescription == nil && inProgressSession(for: templateName) != nil)
             if autoStart, session == nil, let service {
                 promoteToActiveSession(service: service)
             }
@@ -392,7 +429,8 @@ struct LiftSessionView: View {
     /// Promotes the preview to an active session: resumes an existing draft
     /// when one is present, otherwise inserts a fresh `LiftSession` row.
     private func promoteToActiveSession(service: LiftService) {
-        if let resumed = inProgressSession(for: templateName) {
+        if let resumed = resumeSession ?? (prescription == nil ? inProgressSession(for: templateName) : nil) {
+            guard resumed.durationMinutes == 0 else { loadError = LiftServiceError.sessionFinished.localizedDescription; return }
             session = resumed
             startedAt = resumed.date
             beginLiveMetrics(from: resumed.date)
@@ -402,8 +440,14 @@ struct LiftSessionView: View {
             return
         }
         do {
-            let s = try service.startSession(templateName: templateName)
-            startedAt = Date()
+            let s: LiftSession
+            if let prescription, let template {
+                s = try service.startSession(template: template, prescription: prescription)
+            } else {
+                s = try service.startSession(templateName: templateName)
+            }
+            guard s.durationMinutes == 0 else { throw LiftServiceError.sessionFinished }
+            startedAt = s.date
             session = s
             beginLiveMetrics(from: startedAt)
             Task {
@@ -472,20 +516,43 @@ private struct AddSetSheet: View {
     let onConfirm: (Double, Int, Int?, Int?) throws -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var weight: Double = 135
-    @State private var reps: Int = 5
-    @State private var restSeconds: Int = 120
-    @State private var rir = -1
+    let isEditing: Bool
+    let source: String
+    @State private var weight: Double
+    @State private var reps: Int
+    @State private var restSeconds: Int
+    @State private var rir: Int
     @State private var saveError: String?
+
+    init(exercise: LiftExercise, draft: LiftSetDraft, isEditing: Bool,
+         onConfirm: @escaping (Double, Int, Int?, Int?) throws -> Void) {
+        self.exercise = exercise
+        self.isEditing = isEditing
+        self.source = draft.source
+        self.onConfirm = onConfirm
+        _weight = State(initialValue: draft.weightLbs)
+        _reps = State(initialValue: draft.reps)
+        _restSeconds = State(initialValue: draft.restSeconds)
+        _rir = State(initialValue: draft.repsInReserve ?? -1)
+    }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Weight") {
-                    Stepper("\(Int(weight)) lbs", value: $weight, in: 0...700, step: 2.5)
+                Section {
+                    Text(source).font(.caption).foregroundStyle(.secondary)
+                }
+                Section("Weight (lb)") {
+                    TextField("Weight (lb)", value: $weight, format: .number)
+                        .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("lift.setWeight")
+                    Stepper("Adjust by 2.5 lb", value: $weight, in: 0...10_000, step: 2.5)
                 }
                 Section("Reps") {
-                    Stepper("\(reps) reps", value: $reps, in: 1...30)
+                    TextField("Reps", value: $reps, format: .number)
+                        .keyboardType(.numberPad)
+                        .accessibilityIdentifier("lift.setReps")
+                    Stepper("\(reps) reps", value: $reps, in: 1...1_000)
                 }
                 Section("Effort") {
                     Picker("Reps in reserve", selection: $rir) {
@@ -499,12 +566,13 @@ private struct AddSetSheet: View {
                     Stepper("\(restSeconds) sec", value: $restSeconds, in: 0...600, step: 15)
                 }
                 Section {
-                    Button("Log set") {
+                    Button(isEditing ? "Save changes" : "Log set") {
                         do {
                             try onConfirm(weight, reps, restSeconds > 0 ? restSeconds : nil, rir < 0 ? nil : rir)
                             dismiss()
                         } catch { saveError = error.localizedDescription }
                     }
+                    .accessibilityIdentifier("lift.confirmSet")
                 }
             }
             .safeAreaInset(edge: .bottom) {

@@ -644,6 +644,12 @@ Shared value types (`Models/InBodyValues.swift`, `Models/HypertrophyRules.swift`
 
 No personal baseline ships in the app; the user imports their own scans. Lightweight migration from SchemaV11.
 
+## SchemaV13 (suggestion-linked workouts)
+
+Additive only. LiftSession gains `sessionID: UUID?`: nil for rows created before V13, a new UUID for every session created after. PrescribedWorkout's existing `sessionUUIDString` stores the link, so a suggestion resumes and completes the exact workout the user logged. The released V12 workout graph (LiftSession, LiftExercise, LiftSet with the InBody progression and RIR fields) is frozen as nested classes in SchemaV12.swift; V13 uses the live classes.
+
+Rule since the 2026-09-28 data-open failure: never change a persisted model class that a released VersionedSchema references. Freeze the released shape as nested classes in that schema first, add an independent fixture under PersonalOptimizationTests/Fixtures, and extend ReleasedStoreMigrationTests. An "old" store built from modified live classes hides real upgrade failures.
+
 ## Schema Versioning
 
 From M1, all schemas use `VersionedSchema`:

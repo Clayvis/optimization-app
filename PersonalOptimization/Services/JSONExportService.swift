@@ -89,6 +89,7 @@ struct DailyLogDTO: Codable {
 }
 
 struct LiftSessionDTO: Codable {
+    var sessionID: UUID? = nil
     let date: Date
     let template: String
     let exercises: [LiftExerciseDTO]
@@ -327,7 +328,7 @@ extension LiftExerciseDTO {
 extension LiftSessionDTO {
     init(_ m: LiftSession) {
         self.init(
-            date: m.date, template: m.template,
+            sessionID: m.sessionID, date: m.date, template: m.template,
             exercises: (m.exercises ?? []).sorted(by: { $0.orderIndex < $1.orderIndex }).map(LiftExerciseDTO.init),
             totalVolumeLbs: m.totalVolumeLbs, durationMinutes: m.durationMinutes,
             avgHR: m.avgHR, notes: m.notes

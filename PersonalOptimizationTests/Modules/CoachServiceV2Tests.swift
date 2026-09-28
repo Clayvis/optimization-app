@@ -142,6 +142,45 @@ final class CoachServiceV2Tests: XCTestCase {
         XCTAssertTrue(updated.rationale.contains("Updated"))
     }
 
+    /// A finished suggestion stays on its day with its workout link; a new plan
+    /// is added beside it, and once that plan is started the coach refuses to
+    /// replace it, checking the newest plan rather than the finished one.
+    func test_prescribeTodaysWorkout_keepsFinishedPlanAndProtectsStartedReplacement() async throws {
+        var clock = Date(timeIntervalSince1970: 1_800_000_000)
+        let api = PrescribeStubAPI(text: """
+        {"workoutType":"lift_a","rationale":"First","template":{}}
+        """)
+        let service = CoachService(modelContext: context, api: api, now: { clock })
+        let first = try await service.prescribeTodaysWorkout()
+        first.sessionUUID = UUID()
+        first.status = .completed
+        try context.save()
+
+        clock += 60
+        api.text = """
+        {"workoutType":"swim","rationale":"Second","template":{}}
+        """
+        let second = try await service.prescribeTodaysWorkout(forceRefresh: true)
+        XCTAssertFalse(second === first, "The finished plan keeps its row and workout link")
+        XCTAssertEqual(first.status, .completed)
+        XCTAssertEqual(first.workoutType, .liftA)
+        XCTAssertEqual(service.todaysPrescription()?.workoutType, .swim, "Today's plan is the newest one")
+
+        second.sessionUUID = UUID()
+        second.status = .accepted
+        try context.save()
+        clock += 60
+        do {
+            _ = try await service.prescribeTodaysWorkout(forceRefresh: true)
+            XCTFail("A started plan must not be replaced")
+        } catch CoachServiceError.workoutAlreadyStarted {
+            // Expected.
+        }
+        XCTAssertEqual(api.callCount, 2, "The guard runs before any network call")
+        XCTAssertEqual(second.workoutType, .swim)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<PrescribedWorkout>()), 2)
+    }
+
     func test_prescribeTodaysWorkout_invalidJSON_fallsBackToRest() async throws {
         let api = PrescribeStubAPI(text: "this is not json")
         let service = CoachService(modelContext: context, api: api)

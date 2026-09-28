@@ -11,6 +11,9 @@ struct LiftTemplateExercise: Decodable, Sendable {
     let orderIndex: Int
     let targetSets: Int
     let targetReps: Int
+    var suggestedWeightLbs: Double? = nil
+    var restSeconds: Int? = nil
+    var targetRIR: Int? = nil
 }
 
 struct LiftTemplatesFile: Decodable, Sendable {

@@ -20,18 +20,41 @@ final class LiftService {
     /// Starts a new LiftSession from the template and pre-populates exercises (no sets yet).
     func startSession(templateName: String, at date: Date = Date()) throws -> LiftSession {
         let template = try LiftTemplatesLoader.template(named: templateName, file: templatesFile)
-        let session = LiftSession(date: date, template: template.name)
-        modelContext.insert(session)
+        return try startSession(template: template, at: date)
+    }
 
-        var exercises: [LiftExercise] = []
-        for entry in template.exercises {
-            let exercise = LiftExercise(name: entry.name, orderIndex: entry.orderIndex)
-            modelContext.insert(exercise)
-            exercises.append(exercise)
+    /// Creates an explicit user-started workout from a reviewed suggestion.
+    /// Targets are preserved; no suggested set is counted as completed.
+    func startSession(template: LiftTemplate, at date: Date = Date(), prescription: PrescribedWorkout? = nil) throws -> LiftSession {
+        if let prescription, let id = prescription.sessionUUID {
+            let sessions = try modelContext.fetch(FetchDescriptor<LiftSession>())
+            if let existing = sessions.first(where: { $0.sessionID == id }) { return existing }
+            // The linked session may still be arriving through iCloud. Never duplicate it.
+            throw LiftServiceError.linkedSessionUnavailable
         }
-        session.exercises = exercises
-        try modelContext.save()
-        logger.info("Started \(template.name, privacy: .public) with \(exercises.count, privacy: .public) exercises")
+        guard !template.exercises.isEmpty,
+              template.exercises.allSatisfy({ !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                  && (1...10).contains($0.targetSets) && (1...40).contains($0.targetReps) }) else {
+            throw LiftServiceError.invalidPlan
+        }
+        let session = LiftSession(date: date, template: template.name)
+        try modelContext.transaction {
+            modelContext.insert(session)
+            session.exercises = template.exercises.map { entry in
+                let exercise = LiftExercise(name: entry.name, orderIndex: entry.orderIndex)
+                exercise.progressionSets = entry.targetSets
+                exercise.progressionLowerReps = entry.targetReps
+                exercise.progressionUpperReps = entry.targetReps
+                exercise.session = session
+                return exercise
+            }
+            if let prescription {
+                prescription.sessionUUID = session.sessionID
+                prescription.status = .accepted
+            }
+            try modelContext.save()
+        }
+        logger.info("Started \(template.name, privacy: .public) with \(template.exercises.count, privacy: .public) exercises")
         return session
     }
 
@@ -57,19 +80,79 @@ final class LiftService {
     /// Adds a set to the named exercise inside the session. Returns the new set.
     @discardableResult
     func logSet(in session: LiftSession, exerciseName: String, weightLbs: Double, reps: Int, restSeconds: Int? = nil, repsInReserve: Int? = nil) throws -> LiftSet {
-        guard let exercise = (session.exercises ?? []).first(where: { $0.name == exerciseName }) else {
-            throw LiftServiceError.exerciseNotFound(exerciseName)
+        let matches = (session.exercises ?? []).filter { $0.name == exerciseName }
+        guard matches.count == 1, let exercise = matches.first else {
+            throw matches.isEmpty ? LiftServiceError.exerciseNotFound(exerciseName) : LiftServiceError.ambiguousExercise
         }
-        let nextIndex = (exercise.sets ?? []).count
+        return try logSet(in: session, exercise: exercise, weightLbs: weightLbs, reps: reps,
+                          restSeconds: restSeconds, repsInReserve: repsInReserve)
+    }
+
+    /// Logs against the exact exercise, including repeated exercise names.
+    /// Throws for invalid values, foreign exercises, completed sessions or save failures.
+    @discardableResult
+    func logSet(in session: LiftSession, exercise: LiftExercise, weightLbs: Double, reps: Int,
+                restSeconds: Int? = nil, repsInReserve: Int? = nil) throws -> LiftSet {
+        try validateSet(weightLbs: weightLbs, reps: reps, restSeconds: restSeconds, rir: repsInReserve)
+        guard session.durationMinutes == 0 else { throw LiftServiceError.sessionFinished }
+        guard (session.exercises ?? []).contains(where: { $0 === exercise }) else {
+            throw LiftServiceError.exerciseNotFound(exercise.name)
+        }
+        let nextIndex = ((exercise.sets ?? []).map(\.orderIndex).max() ?? -1) + 1
         let set = LiftSet(weightLbs: weightLbs, reps: reps, orderIndex: nextIndex)
         set.restSeconds = restSeconds
-        set.repsInReserve = repsInReserve.map { min(10, max(0, $0)) }
-        modelContext.insert(set)
-        var sets = exercise.sets ?? []
-        sets.append(set)
-        exercise.sets = sets
-        try modelContext.save()
+        set.repsInReserve = repsInReserve
+        try modelContext.transaction {
+            modelContext.insert(set)
+            set.exercise = exercise
+            exercise.sets = (exercise.sets ?? []) + [set]
+            try modelContext.save()
+        }
         return set
+    }
+
+    /// Corrects a logged set in place. Invalid edits leave the original intact.
+    func updateSet(_ set: LiftSet, in session: LiftSession, weightLbs: Double, reps: Int,
+                   restSeconds: Int?, repsInReserve: Int?) throws {
+        try validateSet(weightLbs: weightLbs, reps: reps, restSeconds: restSeconds, rir: repsInReserve)
+        guard session.durationMinutes == 0 else { throw LiftServiceError.sessionFinished }
+        guard (session.exercises ?? []).contains(where: { ($0.sets ?? []).contains(where: { $0 === set }) }) else {
+            throw LiftServiceError.setNotFound
+        }
+        try modelContext.transaction {
+            set.weightLbs = weightLbs
+            set.reps = reps
+            set.restSeconds = restSeconds
+            set.repsInReserve = repsInReserve
+            try modelContext.save()
+        }
+    }
+
+    private func validateSet(weightLbs: Double, reps: Int, restSeconds: Int?, rir: Int?) throws {
+        guard weightLbs.isFinite, (0...10_000).contains(weightLbs), (1...1_000).contains(reps),
+              restSeconds.map({ (0...3_600).contains($0) }) ?? true,
+              rir.map({ (0...10).contains($0) }) ?? true else { throw LiftServiceError.invalidSet }
+    }
+
+    /// Prefills the last set in this session, then the latest completed session
+    /// for this exercise, then the exercise target. Never treats a suggested set
+    /// as performed. Throws fetch errors rather than hiding missing history.
+    func suggestedSet(for exercise: LiftExercise, target: LiftTemplateExercise? = nil, before date: Date = Date()) throws -> LiftSetDraft {
+        if let previous = (exercise.sets ?? []).max(by: { $0.orderIndex < $1.orderIndex }) {
+            return LiftSetDraft(set: previous, source: "Last set")
+        }
+        let name = exercise.name
+        let matches = try modelContext.fetch(FetchDescriptor<LiftExercise>(predicate: #Predicate { $0.name == name }))
+        let history = matches.filter { ($0.session?.durationMinutes ?? 0) > 0 && ($0.session?.date ?? .distantFuture) < date }
+            .sorted { ($0.session?.date ?? .distantPast) > ($1.session?.date ?? .distantPast) }
+        for previousExercise in history {
+            if let previous = (previousExercise.sets ?? []).max(by: { $0.orderIndex < $1.orderIndex }) {
+                return LiftSetDraft(set: previous, source: "Previous workout")
+            }
+        }
+        return LiftSetDraft(weightLbs: target?.suggestedWeightLbs ?? 0, reps: max(1, exercise.progressionLowerReps),
+                            restSeconds: target?.restSeconds ?? 120, repsInReserve: nil,
+                            source: target?.suggestedWeightLbs == nil ? "Plan target · enter your weight" : "Coach suggestion · review the load")
     }
 
     /// Closes the session, recomputing totalVolumeLbs and writing duration/avgHR.
@@ -79,15 +162,24 @@ final class LiftService {
                     durationMinutes: Int,
                     avgHR: Int? = nil,
                     estimatedCalories: Double? = nil) throws {
-        session.totalVolumeLbs = LiftService.totalVolume(session: session)
-        session.durationMinutes = durationMinutes
-        session.avgHR = avgHR
-        try modelContext.save()
+        guard durationMinutes > 0 else { throw LiftServiceError.invalidSet }
+        guard session.durationMinutes == 0 else { return }
+        let prescriptions = try modelContext.fetch(FetchDescriptor<PrescribedWorkout>())
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone.current
         let day = cal.startOfDay(for: session.date)
-        modelContext.insert(WorkoutEvent(date: day, completed: true, source: .lift))
-        try modelContext.save()
+        try modelContext.transaction {
+            session.totalVolumeLbs = LiftService.totalVolume(session: session)
+            session.durationMinutes = durationMinutes
+            session.avgHR = avgHR
+            if let id = session.sessionID {
+                for prescription in prescriptions where prescription.sessionUUID == id {
+                    prescription.status = .completed
+                }
+            }
+            modelContext.insert(WorkoutEvent(date: day, completed: true, source: .lift))
+            try modelContext.save()
+        }
         CompletionHistoryWriter.record(domain: .workout, at: session.date, modelContext: modelContext)
         logger.info("Ended \(session.template, privacy: .public) volume=\(session.totalVolumeLbs, privacy: .public) lbs duration=\(durationMinutes, privacy: .public) min")
 
@@ -129,11 +221,23 @@ final class LiftService {
 enum LiftServiceError: LocalizedError {
     case exerciseNotFound(String)
     case invalidExerciseName
+    case ambiguousExercise
+    case invalidSet
+    case setNotFound
+    case sessionFinished
+    case invalidPlan
+    case linkedSessionUnavailable
 
     var errorDescription: String? {
         switch self {
         case .exerciseNotFound(let name): return "Exercise '\(name)' not found in active session"
         case .invalidExerciseName: return "Exercise name cannot be empty"
+        case .ambiguousExercise: return "Select the exact exercise before logging a set."
+        case .invalidSet: return "Enter a valid weight, positive reps, rest time, and RIR between 0 and 10."
+        case .setNotFound: return "This set does not belong to the workout."
+        case .sessionFinished: return "This workout has already finished."
+        case .invalidPlan: return "The workout needs valid exercise names, sets, and rep targets. Generate a new suggestion."
+        case .linkedSessionUnavailable: return "This workout is already linked to a session that is not available on this device yet. Let iCloud finish syncing before trying again."
         }
     }
 }
@@ -168,5 +272,27 @@ struct LiftVolumeSummary: Sendable {
         formatter.maximumFractionDigits = 0
         let pretty = formatter.string(from: NSNumber(value: totalLbs)) ?? "\(Int(totalLbs))"
         return "\(pretty) lb moved. That's the work."
+    }
+}
+
+/// Editable values only, not a logged performance or a prescription to lift a load.
+struct LiftSetDraft {
+    var weightLbs: Double
+    var reps: Int
+    var restSeconds: Int
+    var repsInReserve: Int?
+    var source: String
+
+    init(weightLbs: Double, reps: Int, restSeconds: Int, repsInReserve: Int?, source: String) {
+        self.weightLbs = weightLbs
+        self.reps = reps
+        self.restSeconds = restSeconds
+        self.repsInReserve = repsInReserve
+        self.source = source
+    }
+
+    init(set: LiftSet, source: String) {
+        self.init(weightLbs: set.weightLbs, reps: set.reps, restSeconds: set.restSeconds ?? 0,
+                  repsInReserve: set.repsInReserve, source: source)
     }
 }

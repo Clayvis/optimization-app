@@ -66,7 +66,39 @@ establishing connection`. Confirm with
 device does not clear it, running on another device (`-destination
 'platform=iOS Simulator,name=iPhone 17'`) has.
 `CODE_SIGNING_ALLOWED=NO` is not the cause; the suite passes with and
-without it once the host launches correctly.
+without it once the host launches correctly. The same flake can hit a UI
+test's app launch: the app starts without `--ui-testing`, so no fixture
+exists and the first wait fails. The app log then shows production-only
+side effects, such as `CKAccountStatusNoAccount`, a notification
+authorization request, or `BG archive submit failed`
+(`xcrun simctl spawn <udid> log show --predicate 'process == "PersonalOptimization"'`).
+It is not a test or app failure. Seen repeatedly on 2026-09-28 during
+back-to-back runs: the simulator relaunched the already-installed app in
+the background, without arguments, 20 to 30 s before the first test, and
+the first test's launch came up the same way. What cleared it was removing
+the app and its UI test runner from the simulator, then booting fully:
+
+```sh
+xcrun simctl uninstall <udid> com.rawlins.PersonalOptimization.uitests.xctrunner
+xcrun simctl uninstall <udid> com.rawlins.PersonalOptimization
+xcrun simctl shutdown <udid>; xcrun simctl boot <udid>; xcrun simctl bootstatus <udid> -b
+```
+
+This is simulator-only test data. Never apply it to a device with real data.
+
+Second environmental failure: dozens of unrelated tests fail at once with
+`NSCocoaErrorDomain Code=260` for bundled JSON (`default_schedule.json`,
+`lift_templates.json`) at a path under `containermanagerd/Dead/`. The
+simulator retired the installed app bundle mid-run, usually after
+back-to-back `xcodebuild test` installs on one device. Check that the built
+`.app` contains the files, shut the simulator down and rerun; it is not a
+code failure.
+
+UI tests: `isHittable` ignores the software keyboard, so a control low in a
+form can report hittable while the tap lands on the number pad. After typing,
+tap such controls with `tapClearOfKeyboard(_:in:)` in
+PersonalOptimizationSmokeTests, which scrolls until the control's center is
+above the keyboard.
 
 ## Test File Organization
 
@@ -89,6 +121,8 @@ PersonalOptimizationTests/
 │   ├── InBodyCoachTests.swift            # scan comparison, coach verdict bands, import, RIR backup, V12 migration
 │   ├── NutritionPhase2Tests.swift        # repeat meals: snapshot copies, all-or-nothing batches, food order, saved-meal backup, Health writes
 │   ├── MascotMotionTests.swift           # companion rig: blink timing, training limbs, gentle recovery, celebration settles
+│   ├── BarcodeLookupTests.swift          # barcode check digits and spellings, Open Food Facts parsing and transport, lookup caching
+│   ├── LiftServiceTests.swift            # set logging, prefill, suggestion-to-session linking, backup of session identity
 │   ├── BiomarkerParserTests.swift
 │   ├── PhenoAgeTests.swift
 │   ├── PatternDetectionTests.swift
@@ -97,6 +131,7 @@ PersonalOptimizationTests/
 ├── Services/
 │   ├── HealthKitServiceTests.swift
 │   ├── ActiveStatusServiceTests.swift    # Lock Screen status text and freshness deadline
+│   ├── ReleasedStoreMigrationTests.swift # stores from released builds (V10, V11, V12) open and upgrade to the current schema
 │   ├── KeychainServiceTests.swift
 │   └── ...
 └── PerformanceTests.swift

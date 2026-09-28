@@ -92,10 +92,12 @@ struct CoachContext: Sendable {
 
 enum CoachServiceError: LocalizedError {
     case missingAPIKey
+    case workoutAlreadyStarted
     case generationFailed(Error)
 
     var errorDescription: String? {
         switch self {
+        case .workoutAlreadyStarted: return "Finish your current suggested workout before replacing its plan."
         case .missingAPIKey: return "Anthropic API key is not set. Add it in Settings."
         case .generationFailed(let underlying): return "Coach insight failed: \(underlying.localizedDescription)"
         }
@@ -251,6 +253,9 @@ final class CoachService {
         if !forceRefresh, let existing = existingPrescription(for: today) {
             return existing
         }
+        if let existing = existingPrescription(for: today), existing.sessionUUID != nil, existing.status != .completed {
+            throw CoachServiceError.workoutAlreadyStarted
+        }
 
         let context = gatherFullContext(profile: resolvedProfile)
         let systemPrompt = CoachPrompts.system(
@@ -273,7 +278,18 @@ final class CoachService {
         }
 
         let parsed = parsePrescription(jsonText: response.text)
-        let prescription = upsertPrescription(for: today)
+        // Recheck after the network suspension: another view may have started it.
+        let current = existingPrescription(for: today)
+        if let current, current.sessionUUID != nil, current.status != .completed {
+            throw CoachServiceError.workoutAlreadyStarted
+        }
+        let prescription: PrescribedWorkout
+        if current?.sessionUUID != nil {
+            prescription = PrescribedWorkout(generatedAt: now(), forDate: today, workoutType: parsed.workoutType)
+            modelContext.insert(prescription)
+        } else {
+            prescription = upsertPrescription(for: today)
+        }
         prescription.generatedAt = now()
         prescription.workoutTypeRaw = parsed.workoutType.rawValue
         prescription.template = parsed.templateJSON
@@ -282,7 +298,7 @@ final class CoachService {
         prescription.statusRaw = PrescribedWorkoutStatus.suggested.rawValue
         prescription.tokenUsage = response.totalTokens
         prescription.modelUsed = resolvedProfile.anthropicModel
-        try? modelContext.save()  // MARK: try? save() is best-effort — failures surface via os_log; in-memory state already updated.
+        try modelContext.save()
         logger.info("Prescription generated type=\(parsed.workoutType.rawValue, privacy: .public) tokens=\(response.totalTokens, privacy: .public)")
         return prescription
     }
@@ -456,10 +472,16 @@ final class CoachService {
         return max(0, waking - blocked)
     }
 
+    /// The day's newest prescription, the same one the suggestion card shows.
+    /// A completed suggestion keeps its row (and its workout link) when a new
+    /// plan is generated, so a day can hold several; without the sort, the
+    /// started-plan guard could check the finished row and replace a live one.
     private func existingPrescription(for day: Date) -> PrescribedWorkout? {
-        let descriptor = FetchDescriptor<PrescribedWorkout>(
-            predicate: #Predicate<PrescribedWorkout> { $0.forDate == day }
+        var descriptor = FetchDescriptor<PrescribedWorkout>(
+            predicate: #Predicate<PrescribedWorkout> { $0.forDate == day },
+            sortBy: [SortDescriptor(\.generatedAt, order: .reverse)]
         )
+        descriptor.fetchLimit = 1
         return modelContext.fetchFirstOrNil(descriptor)
     }
 

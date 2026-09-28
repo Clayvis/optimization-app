@@ -10,6 +10,7 @@ struct AddFoodSheet: View {
     let service: NutritionService
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @State private var mode: Mode = .recent
     @State private var recentMeals: [RecentNutritionMeal] = []
     @State private var savedMeals: [SavedMeal] = []
@@ -20,12 +21,17 @@ struct AddFoodSheet: View {
     @State private var servings: Double = 1
     @State private var draft = FoodDraft()
     @State private var draftServings: Double = 1
+    /// Barcode carried from a scan miss into New food, saved on the food so
+    /// the next scan of the product finds it locally.
+    @State private var draftBarcode: String?
+    @State private var newFoodNote: String?
     @State private var errorMessage: String?
 
     enum Mode: String, CaseIterable, Identifiable {
         case recent = "Recent"
         case frequent = "Frequent"
         case saved = "Saved meals"
+        case scan = "Scan"
         case myFoods = "My foods"
         case newFood = "New food"
         var id: String { rawValue }
@@ -54,6 +60,7 @@ struct AddFoodSheet: View {
                 switch mode {
                 case .recent, .frequent, .myFoods: myFoodsList
                 case .saved: savedMealsList
+                case .scan: scanPanel
                 case .newFood: newFoodForm
                 }
             }
@@ -62,6 +69,12 @@ struct AddFoodSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                }
+                // One tap to the scanner from any tab of the sheet.
+                ToolbarItem(placement: .primaryAction) {
+                    Button { mode = .scan } label: { Image(systemName: "barcode.viewfinder") }
+                        .accessibilityLabel("Scan barcode")
+                        .accessibilityIdentifier("nutrition.scan")
                 }
             }
             .safeAreaInset(edge: .top) {
@@ -178,8 +191,30 @@ struct AddFoodSheet: View {
 
     // MARK: - New food
 
+    private var scanPanel: some View {
+        BarcodeScanPanel(
+            lookup: BarcodeFoodLookup.forUser(modelContext: modelContext),
+            onLog: { food, servings in log(food, servings: servings) },
+            onCreate: { prefill, barcode, note in
+                draft = prefill
+                draftBarcode = barcode
+                newFoodNote = note
+                mode = .newFood
+            })
+    }
+
     private var newFoodForm: some View {
         Form {
+            if newFoodNote != nil || draftBarcode != nil {
+                Section {
+                    if let newFoodNote { Text(newFoodNote).font(.subheadline) }
+                    if let draftBarcode {
+                        Label("Barcode \(draftBarcode)", systemImage: "barcode")
+                            .font(.caption).foregroundStyle(.secondary)
+                            .accessibilityIdentifier("nutrition.newFood.barcode")
+                    }
+                }
+            }
             Section("Food") {
                 TextField("Name", text: $draft.name)
                     .accessibilityIdentifier("nutrition.newFood.name")
@@ -347,7 +382,8 @@ struct AddFoodSheet: View {
                                               brand: draft.brand,
                                               servingSize: draft.servingSize,
                                               servingUnit: draft.servingUnit,
-                                              macros: draft.macros)
+                                              macros: draft.macros,
+                                              barcode: draftBarcode)
             try service.logEntry(food: food, servings: draftServings, meal: slot, at: loggedAt)
             didLog = true
             LogFeedbackCenter.shared.confirm(IdentityCopy.mealLogged)

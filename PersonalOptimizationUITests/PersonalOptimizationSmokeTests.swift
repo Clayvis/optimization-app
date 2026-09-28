@@ -99,10 +99,7 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         protein.tap()
         protein.typeText("20")
 
-        let log = app.buttons["nutrition.newFood.log"]
-        for _ in 0..<4 where !log.isHittable { app.swipeUp() }
-        XCTAssertTrue(log.waitForExistence(timeout: 5))
-        log.tap()
+        tapClearOfKeyboard(app.buttons["nutrition.newFood.log"], in: app)
 
         XCTAssertTrue(app.staticTexts["Test oats"].waitForExistence(timeout: 10))
         let breakfastTotal = app.staticTexts["nutrition.total.breakfast"]
@@ -313,6 +310,124 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Weekend oats"].waitForExistence(timeout: 10), "The new saved meal is listed")
     }
 
+    /// Suggested workout from Train: Review shows the plan, Start creates the
+    /// linked session, and the first set prefills from the coach's load.
+    func test_suggestedLiftReviewStartsWorkoutWithPrefilledSet() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-suggested-lift"]
+        app.launch()
+        app.tabBars.buttons["Train"].tap()
+        let review = app.buttons["Review"]
+        XCTAssertTrue(review.waitForExistence(timeout: 15), "The suggestion card offers Review")
+        for _ in 0..<3 where !review.isHittable { app.swipeUp() }
+        review.tap()
+        XCTAssertTrue(app.staticTexts["Goblet squat"].waitForExistence(timeout: 10), "Review shows the suggested plan")
+        let start = app.buttons["lift.startWorkout"]
+        XCTAssertTrue(start.waitForExistence(timeout: 10))
+        for _ in 0..<4 where !start.isHittable { app.swipeUp() }
+        start.tap()
+        let addSet = app.buttons["lift.addSet"].firstMatch
+        XCTAssertTrue(addSet.waitForExistence(timeout: 10), "Start opens the active workout")
+        for _ in 0..<4 where !addSet.isHittable { app.swipeUp() }
+        addSet.tap()
+        let weight = app.textFields["lift.setWeight"]
+        XCTAssertTrue(weight.waitForExistence(timeout: 10))
+        XCTAssertEqual(weight.value as? String, "40", "The coach's suggested load prefills the first set")
+        // Log set sits at the bottom of the form, created only once scrolled near.
+        let confirm = app.buttons["lift.confirmSet"]
+        for _ in 0..<5 where !(confirm.exists && confirm.isHittable) { app.swipeUp() }
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        XCTAssertTrue(app.buttons["lift.editSet"].firstMatch.waitForExistence(timeout: 10), "The logged set is listed and editable")
+    }
+
+    /// Today shows the same card inside a List; its destination is hosted on
+    /// the List, so Review must still open the plan from there.
+    func test_suggestedLiftOpensFromToday() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-suggested-lift"]
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 15))
+        let review = app.buttons["Review"]
+        let plan = app.buttons["today.trainingPlan"]
+        for _ in 0..<5 where !plan.exists && !review.exists { app.swipeUp() }
+        // The disclosure remembers its state between launches; open it only if closed.
+        if !review.exists, plan.exists { plan.tap() }
+        XCTAssertTrue(review.waitForExistence(timeout: 10), "Today's plan shows the suggestion")
+        for _ in 0..<4 where !review.isHittable { app.swipeUp() }
+        review.tap()
+        XCTAssertTrue(app.staticTexts["Goblet squat"].waitForExistence(timeout: 10), "Review opens the plan from Today")
+        XCTAssertTrue(app.buttons["lift.startWorkout"].waitForExistence(timeout: 10))
+    }
+
+    /// Barcode hit: Quick add, the scan button, the barcode, then one tap logs
+    /// it. UI tests use the typed-barcode path (no camera in the simulator)
+    /// and never touch the network; the fixture food is a cached database hit.
+    func test_scannedBarcodeLogsTheFoundFood() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-repeat-meals", "--ui-testing-barcode-food"]
+        app.launch()
+        let quickAdd = app.buttons["today.quickAddMeal"]
+        XCTAssertTrue(quickAdd.waitForExistence(timeout: 15))
+        quickAdd.tap()
+        app.buttons["nutrition.scan"].tap()
+        lookUpBarcode("4901234567894", in: app)
+        XCTAssertTrue(app.staticTexts["nutrition.barcode.foundName"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["nutrition.barcode.foundName"].label, "Test granola")
+        XCTAssertTrue(app.staticTexts[OpenFoodFactsAttribution.text].exists, "Open Food Facts is credited")
+        app.buttons["nutrition.barcode.log"].tap()
+        // 150 g protein target, 6 g in one serving.
+        XCTAssertTrue(app.staticTexts["144 g protein left"].waitForExistence(timeout: 10), "The scanned food counts toward today")
+        // The logged entry keeps crediting the database it came from.
+        let card = app.buttons["today.nutritionCard"]
+        XCTAssertTrue(card.waitForExistence(timeout: 10))
+        card.tap()
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Test granola")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "The scanned food is logged on today's page")
+        for _ in 0..<3 where !row.isHittable { app.swipeUp() }
+        row.tap()
+        let credit = app.staticTexts["nutrition.edit.attribution"]
+        XCTAssertTrue(credit.waitForExistence(timeout: 10), "The entry detail credits Open Food Facts")
+        XCTAssertEqual(credit.label, OpenFoodFactsAttribution.text)
+    }
+
+    /// Barcode miss: New food opens with the barcode attached, and the next
+    /// scan of the same code finds the food the user created.
+    func test_unknownBarcodeBecomesAFoodTheNextScanFinds() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-repeat-meals"]
+        app.launch()
+        let quickAdd = app.buttons["today.quickAddMeal"]
+        XCTAssertTrue(quickAdd.waitForExistence(timeout: 15))
+        quickAdd.tap()
+        app.buttons["nutrition.scan"].tap()
+        lookUpBarcode("0012345678905", in: app)
+        let barcode = app.staticTexts["nutrition.newFood.barcode"]
+        XCTAssertTrue(barcode.waitForExistence(timeout: 10), "New food carries the scanned barcode")
+        XCTAssertTrue(barcode.label.contains("0012345678905"))
+        type("Corner bakery roll", into: app.textFields["nutrition.newFood.name"], in: app)
+        type("180", into: app.textFields["nutrition.newFood.calories"], in: app)
+        type("5", into: app.textFields["nutrition.newFood.protein"], in: app)
+        tapClearOfKeyboard(app.buttons["nutrition.newFood.log"], in: app)
+        XCTAssertTrue(quickAdd.waitForExistence(timeout: 10))
+        quickAdd.tap()
+        app.buttons["nutrition.scan"].tap()
+        lookUpBarcode("0012345678905", in: app)
+        XCTAssertTrue(app.staticTexts["nutrition.barcode.foundName"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["nutrition.barcode.foundName"].label, "Corner bakery roll")
+    }
+
+    private func lookUpBarcode(_ digits: String, in app: XCUIApplication) {
+        let field = app.textFields["nutrition.barcode.field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "The typed-barcode path is available")
+        type(digits, into: field, in: app)
+        app.buttons["nutrition.barcode.lookup"].tap()
+    }
+
     /// Brings a form field into view and types into it once it holds focus.
     /// A quick flick leaves the form decelerating, and a tap during that
     /// glide only stops the scroll: on shared CI runners the field then never
@@ -339,4 +454,33 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true, "Field holds keyboard focus")
         field.typeText(text)
     }
+
+    /// Taps a control that may sit under the software keyboard. `isHittable`
+    /// does not account for the keyboard, so a control low in a form can
+    /// report hittable while the tap lands on the keyboard instead. A lazy
+    /// form also creates rows only near the viewport, so the control may not
+    /// exist yet. Scroll (slow drags on the label side, never starting on a
+    /// field) until it exists with its center above the keyboard, then tap.
+    private func tapClearOfKeyboard(_ element: XCUIElement, in app: XCUIApplication) {
+        func covered() -> Bool {
+            let keyboard = app.keyboards.firstMatch
+            return keyboard.exists && element.frame.midY > keyboard.frame.minY - 8
+        }
+        // Short-circuit order matters: frame and isHittable need an existing element.
+        for _ in 0..<10 where !element.waitForExistence(timeout: 1) || !element.isHittable || covered() {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.45))
+                .press(forDuration: 0.05,
+                       thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.25)),
+                       withVelocity: .slow,
+                       thenHoldForDuration: 0.4)
+        }
+        XCTAssertTrue(element.exists, "Control exists")
+        XCTAssertTrue(element.isHittable && !covered(), "Control is clear of the keyboard")
+        element.tap()
+    }
+}
+
+/// Mirrors OpenFoodFactsProvider.attribution (UI tests cannot import the app module).
+private enum OpenFoodFactsAttribution {
+    static let text = "Nutrition facts from Open Food Facts, available under the Open Database License (ODbL)."
 }

@@ -12,6 +12,8 @@ struct FoodEntryEditSheet: View {
     @State private var servings: Double
     @State private var meal: MealSlot
     @State private var errorMessage: String?
+    /// Open Food Facts data is ODbL-licensed: credit it wherever its facts show.
+    @State private var fromOpenFoodFacts = false
 
     init(entry: FoodEntry, service: NutritionService) {
         self.entry = entry
@@ -39,6 +41,11 @@ struct FoodEntryEditSheet: View {
                             .font(.caption)
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
+                    }
+                } footer: {
+                    if fromOpenFoodFacts {
+                        Text(OpenFoodFactsProvider.attribution)
+                            .accessibilityIdentifier("nutrition.edit.attribution")
                     }
                 }
                 Section("Servings") {
@@ -85,6 +92,11 @@ struct FoodEntryEditSheet: View {
             }
             .navigationTitle("Edit entry")
             .navigationBarTitleDisplayMode(.inline)
+            .task {
+                // The entry snapshots the facts but not their source; the linked
+                // food carries it. A deleted food simply shows no credit line.
+                fromOpenFoodFacts = entry.foodID.flatMap { service.food(id: $0) }?.sourceValue == .openFoodFacts
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

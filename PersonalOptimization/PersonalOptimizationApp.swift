@@ -55,6 +55,21 @@ struct PersonalOptimizationApp: App {
                             carbsGrams: 200, fatGrams: 65))
                     } catch { Logger.app.error("Repeat-meal UI fixture failed: \(error.localizedDescription)") }
                 }
+                if ProcessInfo.processInfo.arguments.contains("--ui-testing-barcode-food") {
+                    // A cached database hit: scanning its barcode logs without the network.
+                    let granola = FoodItem(name: "Test granola", brand: "Acme", barcode: "4901234567894",
+                                           source: .openFoodFacts, externalID: "4901234567894",
+                                           servingSize: 45, servingUnit: "g", servingsPerContainer: 10,
+                                           calories: 200, protein: 6, carbs: 30, fat: 7)
+                    container.mainContext.insert(granola)
+                }
+                if ProcessInfo.processInfo.arguments.contains("--ui-testing-suggested-lift") {
+                    let plan = #"{"exercises":[{"name":"Goblet squat","sets":3,"reps":10,"weightLbs":40,"restSec":90,"rir":2},{"name":"Seated calf raise","sets":3,"reps":12}]}"#
+                    let suggestion = PrescribedWorkout(generatedAt: Date(), forDate: Calendar.current.startOfDay(for: Date()),
+                                                       workoutType: .liftA, template: plan, rationale: "UI test plan")
+                    suggestion.creativeTitle = "Leg focus"
+                    container.mainContext.insert(suggestion)
+                }
                 try? container.mainContext.save()
             }
             return

@@ -39,6 +39,7 @@ final class ReleasedStoreMigrationTests: XCTestCase {
             if hasNutrition { try verifyNutrition(context: context, healthIDs: healthIDs) }
             let session = try XCTUnwrap(context.fetch(FetchDescriptor<LiftSession>()).first)
             XCTAssertEqual(session.template, "Preserve me")
+            XCTAssertNil(session.sessionID, "Rows created before V13 have no session identity")
             let exercise = try XCTUnwrap(session.exercises?.first)
             XCTAssertEqual(exercise.name, "Calf raise")
             XCTAssertTrue(exercise.isCustom)
@@ -53,6 +54,7 @@ final class ReleasedStoreMigrationTests: XCTestCase {
             XCTAssertNil(set.repsInReserve)
             set.repsInReserve = 2
             exercise.progressionUpperReps = 20
+            context.insert(LiftSession(date: Date(), template: "After upgrade"))
             try context.save()
         }
         // A second launch must recognize the migrated current schema, too.
@@ -60,9 +62,13 @@ final class ReleasedStoreMigrationTests: XCTestCase {
             configurations: [ModelConfiguration(schema: current, url: url, cloudKitDatabase: .none)])
         XCTAssertEqual(try reopened.mainContext.fetch(FetchDescriptor<LiftSet>()).first?.repsInReserve, 2)
         XCTAssertEqual(try reopened.mainContext.fetch(FetchDescriptor<LiftExercise>()).first?.progressionUpperReps, 20)
+        let sessions = try reopened.mainContext.fetch(FetchDescriptor<LiftSession>())
+        XCTAssertNotNil(sessions.first { $0.template == "After upgrade" }?.sessionID, "New sessions get a stable identity")
+        XCTAssertNil(sessions.first { $0.template == "Preserve me" }?.sessionID)
     }
 
-    func test_alreadyReleasedInBodyStoreReopensWithoutLosingNewFields() throws {
+    /// Released V12 (InBody) stores upgrade to V13 without losing fields.
+    func test_upgradeFromReleasedInBodyStorePreservesFieldsAndAddsSessionIdentity() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".store")
         defer { SchemaMigrationTestHarness.cleanup(at: url) }
         let healthIDs = [UUID(), UUID()]
@@ -96,8 +102,19 @@ final class ReleasedStoreMigrationTests: XCTestCase {
         XCTAssertEqual(exercise.progressionUpperReps, 20)
         XCTAssertEqual(exercise.sets?.first?.repsInReserve, 1)
         XCTAssertEqual(exercise.session?.template, "Current workout")
+        XCTAssertNil(exercise.session?.sessionID, "V12 sessions predate stable identity")
         XCTAssertEqual(try context.fetch(FetchDescriptor<InBodyScan>()).first?.weightLb, 200)
         try verifyNutrition(context: context, healthIDs: healthIDs)
+        let linked = LiftSession(date: Date(), template: "Suggested after upgrade")
+        context.insert(linked)
+        try context.save()
+        let id = try XCTUnwrap(linked.sessionID)
+        // The next launch recognizes the upgraded V13 store and keeps the identity.
+        let relaunched = try ModelContainer(for: schema, migrationPlan: AppMigrationPlan.self,
+            configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)])
+        XCTAssertEqual(try relaunched.mainContext.fetch(FetchDescriptor<LiftSession>())
+            .first { $0.template == "Suggested after upgrade" }?.sessionID, id)
+        XCTAssertEqual(try relaunched.mainContext.fetch(FetchDescriptor<LiftSet>()).first?.repsInReserve, 1)
     }
 
     private func seedNutrition(context: ModelContext, healthIDs: [UUID]) {

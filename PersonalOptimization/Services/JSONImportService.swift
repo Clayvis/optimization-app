@@ -244,6 +244,7 @@ enum JSONImportService {
 
     private static func makeLiftSession(from d: LiftSessionDTO) -> LiftSession {
         let session = LiftSession(date: d.date, template: d.template)
+        session.sessionID = d.sessionID ?? session.sessionID
         session.totalVolumeLbs = d.totalVolumeLbs
         session.durationMinutes = d.durationMinutes
         session.avgHR = d.avgHR

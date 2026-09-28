@@ -96,6 +96,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         NSHealthShareUsageDescription: Reads sleep, heart rate, HRV, activity, weight, and nutrition from Apple Health to power daily targets, character state, and weekly review insights.
         NSHealthUpdateUsageDescription: Writes workouts, water intake, and logged meals (calories and macros) to Apple Health so other apps can see them.
+        NSCameraUsageDescription: Scans food barcodes to look up nutrition facts. Only the barcode number is sent to the food database; images stay on your iPhone.
         NSUserNotificationUsageDescription: Sends reminders for hydration, fast transitions, and scheduled blocks.
         NSSupportsLiveActivities: true
         BGTaskSchedulerPermittedIdentifiers:
@@ -179,6 +180,7 @@ targets:
         name: SharedNutrition
         excludes:
           - "Views/**"
+          - "FoodDatabase/**"
       - path: PersonalOptimization/Modules/Character/CharacterStateService.swift
         name: SharedCharacter
       - path: PersonalOptimization/Modules/Engagement/AdaptiveNotificationTiming.swift

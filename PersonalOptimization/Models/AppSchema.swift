@@ -14,9 +14,9 @@ import SwiftData
 enum AppSchema {
     /// The current versioned schema. Bump in one place when a new SchemaVN is
     /// added (and add its migration stage in AppMigrationPlan.stages).
-    /// SchemaV12 adds InBodyScan; LiftSet RIR and exercise progression targets
-    /// are additive default-valued fields. All targets share this schema.
-    static let current: any VersionedSchema.Type = SchemaV12.self
+    /// SchemaV13 adds optional stable lift-session IDs. Historical workout
+    /// models are frozen so every released upgrade path stays recognizable.
+    static let current: any VersionedSchema.Type = SchemaV13.self
 
     /// Builds the Schema object for ModelContainer initialisation.
     static func schema() -> Schema {

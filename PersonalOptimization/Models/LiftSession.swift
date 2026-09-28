@@ -3,6 +3,12 @@ import SwiftData
 
 @Model
 final class LiftSession {
+    /// Stable identity for linking a suggestion to the workout actually logged
+    /// (SchemaV13). Nil for sessions created before V13. Deliberately not named
+    /// `id`: an optional `id` would replace the persistentModelID-based
+    /// Identifiable conformance, so every pre-V13 row would share the nil
+    /// identity in any `ForEach(sessions)`.
+    var sessionID: UUID? = nil
     var date: Date = Date.distantPast
     var template: String = "Lift A"
     @Relationship(deleteRule: .cascade, inverse: \LiftExercise.session)
@@ -13,6 +19,7 @@ final class LiftSession {
     var notes: String?
 
     init(date: Date, template: String) {
+        self.sessionID = UUID()
         self.date = date
         self.template = template
     }
