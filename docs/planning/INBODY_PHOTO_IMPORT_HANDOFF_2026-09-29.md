@@ -16,7 +16,7 @@ User: "the inbody scan would most likely be a picture taken from the phone, so e
 
 ## Status
 
-Implemented 2026-09-29 by Claude. Simulator verification in the Results section; not yet observed on a real iPhone.
+Implemented 2026-09-29 by Claude; pushed as 38deb3a with GitHub CI green. Not yet observed on a real iPhone.
 
 ## Implementation
 
@@ -67,7 +67,7 @@ Failures seen on the way, all resolved:
 
 ## Next steps
 
-1. Commit, push, and confirm GitHub CI; Xcode Cloud then builds TestFlight.
+1. Done: committed and pushed 38deb3a; GitHub CI passed (run 36598987796: guards, Release build, unit and UI tests, zero-warning policy). Xcode Cloud builds TestFlight from main.
 2. Device checks below. If the camera reads worse than a library photo, compare with the same sheet photographed in the Camera app and chosen from the library.
 3. Consider a third recognition pass or a cropped re-read for flagged chart values if device testing shows frequent disagreement.
 

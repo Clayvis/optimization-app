@@ -21,7 +21,7 @@ User, with screenshots of the Train tab: "these two tabs, make no sense, they ha
 
 ## Status
 
-Implemented 2026-09-29 by Claude. Simulator verification in the Results section; not yet observed on the phone.
+Implemented 2026-09-29 by Claude; pushed as 38deb3a with GitHub CI green (run 36598987796). Not yet observed on the phone.
 
 ## Implementation
 
