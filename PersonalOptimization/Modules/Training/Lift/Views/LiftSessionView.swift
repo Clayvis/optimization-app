@@ -14,6 +14,10 @@ struct LiftSessionView: View {
     var autoStart: Bool = false
     var prescription: PrescribedWorkout? = nil
     var resumeSession: LiftSession? = nil
+    /// Starts with no exercises; the user adds them while training.
+    var freestyle: Bool = false
+    /// Repeats a finished workout under its own name and exercise list.
+    var repeatOf: LiftSession? = nil
 
     @State private var template: LiftTemplate?
     @State private var session: LiftSession?
@@ -31,6 +35,8 @@ struct LiftSessionView: View {
     @State private var completionCount: Int = 0
     @State private var showingTemplateEditor = false
     @State private var liveMetrics: LiveWorkoutMetrics?
+    /// Exercises the user has logged before, offered as one-tap additions.
+    @State private var quickPicks: [String] = []
 
     private var isCustomTemplate: Bool {
         templateName == CustomLiftTemplateStore.templateName
@@ -116,7 +122,8 @@ struct LiftSessionView: View {
                 }
             }
 
-            ForEach(template.exercises.sorted(by: { $0.orderIndex < $1.orderIndex }), id: \.name) { exercise in
+            // Keyed by position: a repeated workout can list an exercise twice.
+            ForEach(template.exercises.sorted(by: { $0.orderIndex < $1.orderIndex }), id: \.orderIndex) { exercise in
                 Section(exercise.name) {
                     HStack {
                         Text("Target")
@@ -132,6 +139,9 @@ struct LiftSessionView: View {
                     }
                     if let rest = exercise.restSeconds { Text("Rest: \(rest) seconds").font(.caption) }
                     if let rir = exercise.targetRIR { Text("Target effort: \(rir) RIR. Log your actual effort after each set.").font(.caption) }
+                    if let last = lastTime(for: exercise) {
+                        Text(last).font(.caption).foregroundStyle(.secondary)
+                    }
                 }
             }
 
@@ -175,7 +185,8 @@ struct LiftSessionView: View {
             ForEach(sortedExercises(session: session), id: \.persistentModelID) { exercise in
                 Section(header: HStack {
                     Text(exercise.name)
-                    if exercise.isCustom {
+                    // Everything in a built-as-you-go workout is added by hand.
+                    if exercise.isCustom && !freestyle {
                         Text("CUSTOM")
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.tint)
@@ -232,10 +243,31 @@ struct LiftSessionView: View {
                 }
             }
 
-            Section("Add custom exercise") {
+            Section {
+                if (session.exercises ?? []).isEmpty {
+                    Text(quickPicks.isEmpty
+                         ? "Add your first exercise by name."
+                         : "Add your first exercise. Quick picks are exercises you've logged before.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                if !quickPicks.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: Theme.Space.s) {
+                            ForEach(quickPicks, id: \.self) { name in
+                                Button(name) { addExercise(named: name, service: service, session: session) }
+                                    .buttonStyle(.bordered)
+                                    .accessibilityLabel("Add \(name)")
+                                    .accessibilityIdentifier("lift.quickPick")
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
                 HStack {
                     TextField("Exercise name", text: $customExerciseName)
                         .autocapitalization(.words)
+                        .accessibilityIdentifier("lift.addExercise.name")
                     Button {
                         addCustomExercise(service: service, session: session)
                     } label: {
@@ -246,6 +278,8 @@ struct LiftSessionView: View {
                     .disabled(customExerciseName.trimmingCharacters(in: .whitespaces).isEmpty)
                     .accessibilityLabel("Add custom exercise")
                 }
+            } header: {
+                Text(freestyle ? "Add exercise" : "Add custom exercise")
             }
 
             Section {
@@ -373,8 +407,36 @@ struct LiftSessionView: View {
     private func addCustomExercise(service: LiftService, session: LiftSession) {
         let name = customExerciseName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
-        _ = try? service.addCustomExercise(in: session, name: name)  // MARK: try? justified - best-effort; failure logged inside the called function.
+        addExercise(named: name, service: service, session: session)
         customExerciseName = ""
+    }
+
+    private func addExercise(named name: String, service: LiftService, session: LiftSession) {
+        do {
+            try service.addCustomExercise(in: session, name: name)
+            reloadQuickPicks(service: service, session: session)
+        } catch { setError = error.localizedDescription }
+    }
+
+    /// Exercises logged before, minus the ones already in this workout.
+    private func reloadQuickPicks(service: LiftService, session: LiftSession) {
+        do {
+            quickPicks = try service.recentExerciseNames(excluding: Set((session.exercises ?? []).map(\.name)))
+        } catch {
+            quickPicks = []
+            setError = error.localizedDescription
+        }
+    }
+
+    /// "Last time: 3 sets, top 135 lb × 8" from the workout being repeated.
+    private func lastTime(for exercise: LiftTemplateExercise) -> String? {
+        guard let repeatOf else { return nil }
+        let source = (repeatOf.exercises ?? []).sorted { $0.orderIndex < $1.orderIndex }
+        guard exercise.orderIndex < source.count else { return nil }
+        let sets = source[exercise.orderIndex].sets ?? []
+        guard let top = sets.max(by: { ($0.weightLbs, $0.reps) < ($1.weightLbs, $1.reps) }) else { return nil }
+        let weight = top.weightLbs.formatted(.number.precision(.fractionLength(0...2)))
+        return "Last time: \(sets.count) \(sets.count == 1 ? "set" : "sets"), top \(weight) lb × \(top.reps)"
     }
 
     private func formatRemaining(_ s: TimeInterval) -> String {
@@ -404,6 +466,14 @@ struct LiftSessionView: View {
                 let suggested = plan.template(title: templateName, rationale: prescription.rationale)
                 templates = LiftTemplatesFile(version: bundled.version, templates: [suggested])
                 template = suggested
+            } else if freestyle {
+                let empty = LiftTemplate(name: templateName, focus: "Add exercises as you train.", exercises: [])
+                templates = LiftTemplatesFile(version: bundled.version, templates: [empty])
+                template = empty
+            } else if let repeatOf {
+                guard let repeated = LiftService.template(repeating: repeatOf) else { throw LiftServiceError.invalidPlan }
+                templates = LiftTemplatesFile(version: bundled.version, templates: [repeated])
+                template = repeated
             } else if isCustomTemplate {
                 // MARK: try? justified - a missing bundled Lift B only means the custom seed starts empty.
                 let seed = try? LiftTemplatesLoader.template(named: "Lift B", file: bundled)
@@ -433,6 +503,7 @@ struct LiftSessionView: View {
             guard resumed.durationMinutes == 0 else { loadError = LiftServiceError.sessionFinished.localizedDescription; return }
             session = resumed
             startedAt = resumed.date
+            reloadQuickPicks(service: service, session: resumed)
             beginLiveMetrics(from: resumed.date)
             Task {
                 _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)
@@ -443,12 +514,17 @@ struct LiftSessionView: View {
             let s: LiftSession
             if let prescription, let template {
                 s = try service.startSession(template: template, prescription: prescription)
+            } else if freestyle {
+                s = try service.startFreestyleSession(name: templateName)
+            } else if repeatOf != nil, let template {
+                s = try service.startSession(template: template)
             } else {
                 s = try service.startSession(templateName: templateName)
             }
             guard s.durationMinutes == 0 else { throw LiftServiceError.sessionFinished }
             startedAt = s.date
             session = s
+            reloadQuickPicks(service: service, session: s)
             beginLiveMetrics(from: startedAt)
             Task {
                 _ = await WorkoutLiveActivityController.start(workoutType: templateName, startDate: startedAt)

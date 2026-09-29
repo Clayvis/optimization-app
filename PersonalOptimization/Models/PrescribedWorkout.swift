@@ -59,10 +59,10 @@ enum PrescribedWorkoutType: String, Codable, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .liftA:      return "Lift A"
-        // lift_b stays the coach-facing key; the user-facing name follows
-        // the Training hub's custom workout slot.
-        case .liftB:      return "My Workout"
+        // lift_a / lift_b stay the coach-facing keys. The coach names each plan
+        // (creativeTitle); this is only the fallback, and no longer a fixed
+        // template name, since the user's workouts vary day to day.
+        case .liftA, .liftB: return "Strength"
         case .basketball: return "Basketball"
         case .swim:       return "Swim"
         case .rest:       return "Rest"

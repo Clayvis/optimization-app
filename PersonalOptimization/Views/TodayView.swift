@@ -729,7 +729,7 @@ struct TodayView: View {
 
     /// M4.2 followup: wraps blockRow in a NavigationLink when the block's
     /// module maps to a session view, otherwise renders the plain row. Today
-    /// the user can tap a Lift A / Lift B / Basketball / Swim / cardio /
+    /// the user can tap a lift / Basketball / Swim / cardio /
     /// learning block and land directly on the matching logging surface.
     @ViewBuilder
     private func tappableBlock(block: ScheduleBlock) -> some View {
@@ -740,14 +740,11 @@ struct TodayView: View {
             } label: {
                 blockRow(block: block, isCurrent: isCurrent(block))
             }
-        } else if module == "lift_a" {
-            NavigationLink { LiftSessionView(templateName: "Lift A") } label: {
-                blockRow(block: block, isCurrent: isCurrent(block))
-            }
-        } else if module == "lift_b" {
-            // lift_b schedule blocks land on the user's custom workout now
-            // that the hub's second lift slot is "My Workout".
-            NavigationLink { LiftSessionView(templateName: CustomLiftTemplateStore.templateName) } label: {
+        } else if module == "lift_a" || module == "lift_b" {
+            // Lift blocks open the same start screen as Train: today's coach
+            // plan, an empty workout, or a recent workout to repeat. Workouts
+            // vary, so a block no longer implies a fixed template.
+            NavigationLink { NewLiftWorkoutView() } label: {
                 blockRow(block: block, isCurrent: isCurrent(block))
             }
         } else if module == "basketball" {

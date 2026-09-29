@@ -220,7 +220,7 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         XCTAssertTrue(entry.waitForExistence(timeout: 15))
         entry.tap()
         app.buttons["Add or import InBody scans"].tap()
-        app.buttons["Add scan"].tap()
+        app.buttons["Type values"].tap()
         for (label, value) in [("Height (in)", "70"), ("Weight (lb)", "200"),
                                ("Skeletal muscle (lb)", "90"), ("Lean body mass (lb)", "160"),
                                ("Body-fat mass (lb)", "40"), ("Body fat (%)", "20")] {
@@ -229,6 +229,71 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         app.buttons["inbody.save"].tap()
         XCTAssertTrue(app.staticTexts["Estimated skeletal muscle"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Edit latest scan"].exists)
+    }
+
+    /// A photo of the result sheet prefills the editor for review. The UI-test
+    /// hook reads a synthetic sample sheet through the real recognizer, since
+    /// tests cannot drive the system photo picker.
+    func testInBodyPhotoPrefillsValuesForReview() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-inbody-photo"]
+        app.launch()
+        app.tabBars.buttons["Train"].tap()
+        let entry = app.buttons["InBody Progress Coach"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 15))
+        entry.tap()
+        app.buttons["Add or import InBody scans"].tap()
+        app.buttons["Choose photo"].tap()
+        let summary = app.descendants(matching: .any)["inbody.photo.summary"]
+        XCTAssertTrue(summary.waitForExistence(timeout: 30), "The sheet is read and the editor opens for review")
+        XCTAssertEqual(app.textFields["Weight (lb)"].value as? String, "200")
+        XCTAssertEqual(app.textFields["Skeletal muscle (lb)"].value as? String, "88.2")
+        XCTAssertEqual(app.textFields["Body fat (%)"].value as? String, "22.5")
+        app.buttons["inbody.save"].tap()
+        // A labeled row also exposes its label and value as one combined text.
+        XCTAssertTrue(app.staticTexts["Estimated skeletal muscle, 88.2 lb"].waitForExistence(timeout: 10),
+                      "The reviewed values were saved")
+        XCTAssertTrue(app.staticTexts["200.0 lb"].exists)
+        XCTAssertTrue(app.staticTexts["March 14, 2026"].exists, "The sheet's test date, not today")
+    }
+
+    /// Train: "New workout" starts empty and named by the user, exercises are
+    /// added as you go, and the finished workout becomes the repeat tile.
+    func test_newWorkoutBuildsAsYouGoAndBecomesTheRepeatTile() {
+        continueAfterFailure = false
+        let app = launchApp()
+        app.tabBars.buttons["Train"].tap()
+        let newWorkout = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "New workout")).firstMatch
+        XCTAssertTrue(newWorkout.waitForExistence(timeout: 15))
+        for _ in 0..<4 where !newWorkout.isHittable { app.swipeUp() }
+        newWorkout.tap()
+        type("Pull day", into: app.textFields["lift.new.name"], in: app)
+        let start = app.buttons["lift.new.start"]
+        XCTAssertTrue(waitUntilHittable(start))
+        start.tap()
+        let exerciseName = app.textFields["lift.addExercise.name"]
+        XCTAssertTrue(exerciseName.waitForExistence(timeout: 10), "The empty workout asks for its first exercise")
+        type("Chin-up", into: exerciseName, in: app)
+        tapClearOfKeyboard(app.buttons["Add custom exercise"], in: app)
+        tapClearOfKeyboard(app.buttons["lift.addSet"].firstMatch, in: app)
+        let confirm = app.buttons["lift.confirmSet"]
+        for _ in 0..<5 where !(confirm.exists && confirm.isHittable) { app.swipeUp() }
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        XCTAssertTrue(app.buttons["lift.editSet"].firstMatch.waitForExistence(timeout: 10), "The set is logged")
+        let end = app.buttons["End workout"]
+        for _ in 0..<6 where !(end.exists && end.isHittable) { app.swipeUp() }
+        end.tap()
+        XCTAssertTrue(app.navigationBars["New workout"].waitForExistence(timeout: 10), "Ending returns to the start screen")
+        app.navigationBars["New workout"].buttons.element(boundBy: 0).tap()
+        let repeatTile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Pull day")).firstMatch
+        XCTAssertTrue(repeatTile.waitForExistence(timeout: 10), "The finished workout is offered by its own name")
+        for _ in 0..<4 where !repeatTile.isHittable { app.swipeUp() }
+        repeatTile.tap()
+        XCTAssertTrue(app.staticTexts["Chin-up"].waitForExistence(timeout: 10), "Repeat lists the same exercises")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Last time")).firstMatch.exists)
+        XCTAssertTrue(app.buttons["lift.startWorkout"].exists)
     }
 
     func test_recentWholeMealLogsFromHomeInTwoTaps() {
@@ -301,9 +366,14 @@ final class PersonalOptimizationSmokeTests: XCTestCase {
         app.buttons["nutrition.mealAction.confirm"].tap()
         XCTAssertTrue(app.staticTexts["Test oats"].waitForExistence(timeout: 10), "Confirm appends the copied food")
 
-        // The saved meal is durable and reachable from Home.
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        // The saved meal is durable and reachable from Home. Back responds only
+        // once the copy sheet has finished closing; under load a tap sent
+        // during that animation was lost, so wait for it and retry once.
+        let back = app.navigationBars.buttons["BackButton"]
+        XCTAssertTrue(waitUntilHittable(back), "Back to Today")
+        back.tap()
         let quickAdd = app.buttons["today.quickAddMeal"]
+        if !quickAdd.waitForExistence(timeout: 5), back.exists, back.isHittable { back.tap() }
         XCTAssertTrue(quickAdd.waitForExistence(timeout: 10))
         quickAdd.tap()
         app.buttons["Saved meals"].tap()

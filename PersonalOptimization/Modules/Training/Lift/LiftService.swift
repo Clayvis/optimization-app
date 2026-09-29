@@ -68,13 +68,114 @@ final class LiftService {
             throw LiftServiceError.invalidExerciseName
         }
         let nextIndex = (session.exercises ?? []).map { $0.orderIndex }.max().map { $0 + 1 } ?? 0
-        let exercise = LiftExercise(name: trimmed, orderIndex: nextIndex, isCustom: true)
+        // Reuse the spelling and targets from the last finished workout with this
+        // exercise, so history, prefill and progression stay linked by name.
+        let previous = try lastCompletedExercise(named: trimmed, before: session.date)
+        let exercise = LiftExercise(name: previous?.name ?? trimmed, orderIndex: nextIndex, isCustom: true)
+        if let previous {
+            exercise.progressionSets = previous.progressionSets
+            exercise.progressionLowerReps = previous.progressionLowerReps
+            exercise.progressionUpperReps = previous.progressionUpperReps
+        }
         modelContext.insert(exercise)
         var current = session.exercises ?? []
         current.append(exercise)
         session.exercises = current
         try modelContext.save()
         return exercise
+    }
+
+    // MARK: - Workouts that change from day to day
+
+    /// Title for a workout built as you go when the user leaves the name blank.
+    static let freestyleName = "Workout"
+
+    /// Starts a workout with no exercises; the user adds them as they train.
+    func startFreestyleSession(name: String, at date: Date = Date()) throws -> LiftSession {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let session = LiftSession(date: date, template: trimmed.isEmpty ? Self.freestyleName : trimmed)
+        try modelContext.transaction {
+            modelContext.insert(session)
+            session.exercises = []
+            try modelContext.save()
+        }
+        logger.info("Started \(session.template, privacy: .public) with no exercises")
+        return session
+    }
+
+    /// Finished workouts with at least one exercise, newest first, one per
+    /// title and exercise list so a repeated routine appears once.
+    func recentWorkouts(limit: Int = 5, before date: Date = Date()) throws -> [LiftSession] {
+        let sessions = try modelContext.fetch(FetchDescriptor<LiftSession>(
+            predicate: #Predicate { $0.durationMinutes > 0 && $0.date <= date },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]))
+        var seen = Set<String>()
+        var result: [LiftSession] = []
+        for session in sessions {
+            let names = (session.exercises ?? []).sorted { $0.orderIndex < $1.orderIndex }.map(\.name)
+            guard !names.isEmpty, seen.insert(([session.template] + names).joined(separator: "\u{1F}")).inserted else {
+                continue
+            }
+            result.append(session)
+            if result.count == limit { break }
+        }
+        return result
+    }
+
+    /// Exercise names with at least one logged set in a finished workout, most
+    /// often trained first, then most recent. Feeds the quick picks.
+    func recentExerciseNames(limit: Int = 12, excluding: Set<String> = []) throws -> [String] {
+        let exercises = try modelContext.fetch(FetchDescriptor<LiftExercise>())
+        var counts: [String: (count: Int, last: Date)] = [:]
+        for exercise in exercises where !(exercise.sets ?? []).isEmpty {
+            guard let session = exercise.session, session.durationMinutes > 0 else { continue }
+            let entry = counts[exercise.name] ?? (0, .distantPast)
+            counts[exercise.name] = (entry.count + 1, max(entry.last, session.date))
+        }
+        let excluded = Set(excluding.map { $0.lowercased() })
+        return counts.filter { !excluded.contains($0.key.lowercased()) }
+            .sorted { $0.value.count != $1.value.count ? $0.value.count > $1.value.count : $0.value.last > $1.value.last }
+            .prefix(limit).map(\.key)
+    }
+
+    /// A plan that repeats a finished workout: the same exercises in order,
+    /// the number of sets performed and the most common rep count. Loads come
+    /// from history when sets are added, so nothing performed is copied as done.
+    static func template(repeating session: LiftSession) -> LiftTemplate? {
+        let exercises = (session.exercises ?? []).sorted { $0.orderIndex < $1.orderIndex }
+        guard !exercises.isEmpty else { return nil }
+        var entries: [LiftTemplateExercise] = []
+        for (index, exercise) in exercises.enumerated() {
+            let sets: [LiftSet] = (exercise.sets ?? []).sorted { $0.orderIndex < $1.orderIndex }
+            let performedSets: Int = sets.isEmpty ? exercise.progressionSets : sets.count
+            let reps: Int = mostCommon(sets.map(\.reps)) ?? exercise.progressionLowerReps
+            entries.append(LiftTemplateExercise(name: exercise.name, orderIndex: index,
+                                                targetSets: min(10, max(1, performedSets)),
+                                                targetReps: min(40, max(1, reps)),
+                                                restSeconds: sets.compactMap(\.restSeconds).last))
+        }
+        return LiftTemplate(name: session.template, focus: "Repeats your \(session.template) workout.", exercises: entries)
+    }
+
+    /// The most frequent value; ties go to the larger one. Nil when empty.
+    private static func mostCommon(_ values: [Int]) -> Int? {
+        var counts: [Int: Int] = [:]
+        for value in values { counts[value, default: 0] += 1 }
+        var best: (value: Int, count: Int)?
+        for (value, count) in counts {
+            if let current = best, current.count > count || (current.count == count && current.value >= value) { continue }
+            best = (value, count)
+        }
+        return best?.value
+    }
+
+    /// The newest finished-workout exercise with this name, compared without case.
+    private func lastCompletedExercise(named name: String, before date: Date) throws -> LiftExercise? {
+        let exercises = try modelContext.fetch(FetchDescriptor<LiftExercise>())
+        return exercises
+            .filter { $0.name.caseInsensitiveCompare(name) == .orderedSame
+                && ($0.session?.durationMinutes ?? 0) > 0 && ($0.session?.date ?? .distantFuture) < date }
+            .max { ($0.session?.date ?? .distantPast) < ($1.session?.date ?? .distantPast) }
     }
 
     /// Adds a set to the named exercise inside the session. Returns the new set.

@@ -100,7 +100,9 @@ struct RootView: View {
                 .tag(AppTab.training)
             DojoHubView()
                 .tabItem {
-                    Label("Dojo", systemImage: "torii.gate")
+                    // SF Symbols has no torii gate; ToriiGate is a template
+                    // vector in Assets.xcassets, so it tints like the others.
+                    Label("Dojo", image: "ToriiGate")
                 }
                 .tag(AppTab.dojo)
         }
@@ -282,9 +284,12 @@ private struct DojoHubView: View {
                     ZStack {
                         Circle()
                             .fill(Theme.kurenai.opacity(0.14))
-                        Image(systemName: "torii.gate")
-                            .font(.system(size: 32, weight: .semibold))
+                        Image("ToriiGate")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 32, height: 32)
                             .foregroundStyle(Theme.kurenai)
+                            .accessibilityHidden(true)
                     }
                     .frame(width: 64, height: 64)
                 }

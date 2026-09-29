@@ -2,6 +2,8 @@ import SwiftUI
 import SwiftData
 import Charts
 import UniformTypeIdentifiers
+import PhotosUI
+import AVFoundation
 
 struct InBodyProgressView: View {
     @Environment(\.modelContext) private var context
@@ -11,6 +13,12 @@ struct InBodyProgressView: View {
     @State private var editing: InBodyScan?
     @State private var importing = false
     @State private var error: String?
+    @State private var choosingPhoto = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var takingPhoto = false
+    @State private var readingPhoto = false
+    /// Values read from a photo, shown in the editor for review before saving.
+    @State private var photoReading: InBodyPhotoReading?
     @State private var focus = HypertrophyFocus()
     @State private var selectedPrevious: UUID?
     private var previous: InBodyScan? {
@@ -79,7 +87,7 @@ struct InBodyProgressView: View {
                 }
             } else {
                 ContentUnavailableView("InBody Progress Coach", systemImage: "figure.strengthtraining.traditional",
-                    description: Text("Add a scan or import a JSON scan file. Your scans stay in your private iCloud data."))
+                    description: Text("Take or choose a photo of your InBody result sheet, type the values, or import a JSON file. Your scans stay in your private iCloud data."))
             }
             focusSection
             if focus.enabled {
@@ -110,14 +118,44 @@ struct InBodyProgressView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button("Add scan", systemImage: "plus") { adding = true }
-                    Button("Import scans", systemImage: "square.and.arrow.down") { importing = true }
+                    if InBodyCameraPicker.isAvailable {
+                        Button("Take photo of results", systemImage: "camera") { Task { await takePhoto() } }
+                    }
+                    Button("Choose photo", systemImage: "photo.on.rectangle") { choosePhoto() }
+                    Button("Type values", systemImage: "square.and.pencil") { adding = true }
+                    Button("Import JSON file", systemImage: "square.and.arrow.down") { importing = true }
                 } label: { Image(systemName: "plus") }.accessibilityLabel("Add or import InBody scans")
             }
         }
         .onAppear { focus = InBodyService.focus(profile: profiles.first) }
         .sheet(isPresented: $adding) { InBodyScanEditor(scan: nil) }
         .sheet(item: $editing) { InBodyScanEditor(scan: $0) }
+        .sheet(item: $photoReading) { InBodyScanEditor(scan: nil, reading: $0) }
+        .photosPicker(isPresented: $choosingPhoto, selection: $photoItem, matching: .images)
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            photoItem = nil
+            Task { await readPhoto(item) }
+        }
+        .fullScreenCover(isPresented: $takingPhoto) {
+            InBodyCameraPicker { image in
+                takingPhoto = false
+                guard let data = image.uprightJPEGData() else { error = InBodyPhotoError.unreadableImage.localizedDescription; return }
+                read([data])
+            } onCancel: {
+                takingPhoto = false
+            }
+            .ignoresSafeArea()
+        }
+        .overlay {
+            if readingPhoto {
+                ProgressView("Reading your scan…")
+                    .padding(Theme.Space.l)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+                    .accessibilityIdentifier("inbody.photo.reading")
+            }
+        }
+        .disabled(readingPhoto)
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             do {
                 let url = try result.get()
@@ -127,6 +165,59 @@ struct InBodyProgressView: View {
                 let values = try decoder.decode([InBodyValues].self, from: Data(contentsOf: url))
                 try InBodyService.save(values, context: context)
             } catch { self.error = error.localizedDescription }
+        }
+    }
+
+    // MARK: - Photo of a result sheet
+
+    private func choosePhoto() {
+        #if DEBUG
+        // UI tests cannot drive the system photo picker; read the sample sheet.
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-inbody-photo") {
+            read([InBodySampleSheet.pngData()])
+            return
+        }
+        #endif
+        choosingPhoto = true
+    }
+
+    /// The camera asks for access on first use; a refusal points to Settings
+    /// and to choosing a photo instead.
+    private func takePhoto() async {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            takingPhoto = true
+        case .notDetermined:
+            if await AVCaptureDevice.requestAccess(for: .video) { takingPhoto = true }
+        default:
+            error = "Camera access is off for this app. Allow it in Settings, or choose a photo of your results instead."
+        }
+    }
+
+    private func readPhoto(_ item: PhotosPickerItem) async {
+        readingPhoto = true
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self) else { throw InBodyPhotoError.unreadableImage }
+            read([data])
+        } catch {
+            readingPhoto = false
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Reads on a background thread; the editor opens with the values for review.
+    private func read(_ pages: [Data]) {
+        readingPhoto = true
+        let calendar = UserCalendar.current(modelContext: context)
+        Task {
+            let outcome = await Task.detached(priority: .userInitiated) {
+                Result { try InBodySheetRecognizer.read(imageData: pages, now: Date(), calendar: calendar) }
+            }.value
+            readingPhoto = false
+            switch outcome {
+            case .success(let reading): photoReading = reading
+            case .failure(let failure): error = failure.localizedDescription
+            }
         }
     }
 
@@ -189,36 +280,44 @@ struct InBodyProgressView: View {
 
 private struct InBodyScanEditor: View {
     let scan: InBodyScan?
+    /// Values read from a photo. Every one is shown for review; nothing is
+    /// saved until the user taps Save.
+    var reading: InBodyPhotoReading? = nil
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @State private var draft = InBodyValues()
     @State private var error: String?
+    @State private var loaded = false
     var body: some View {
         NavigationStack {
             Form {
                 if let error { ErrorBanner(message: error) { self.error = nil } }
-                DatePicker("Scan date", selection: $draft.date, in: ...Date(), displayedComponents: .date)
+                if let reading { photoSummary(reading) }
+                HStack {
+                    DatePicker("Scan date", selection: $draft.date, in: ...Date(), displayedComponents: .date)
+                    photoMark(.date)
+                }
                 Section("Whole body") {
-                    number("Height (in)", $draft.heightInches)
-                    number("Weight (lb)", $draft.weightLb)
-                    number("Skeletal muscle (lb)", $draft.skeletalMuscleMassLb)
-                    number("Lean body mass (lb)", $draft.leanBodyMassLb)
-                    number("Body-fat mass (lb)", $draft.bodyFatMassLb)
-                    number("Body fat (%)", $draft.bodyFatPercent)
+                    number("Height (in)", $draft.heightInches, .height)
+                    number("Weight (lb)", $draft.weightLb, .weight)
+                    number("Skeletal muscle (lb)", $draft.skeletalMuscleMassLb, .skeletalMuscle)
+                    number("Lean body mass (lb)", $draft.leanBodyMassLb, .leanBodyMass)
+                    number("Body-fat mass (lb)", $draft.bodyFatMassLb, .bodyFatMass)
+                    number("Body fat (%)", $draft.bodyFatPercent, .bodyFatPercent)
                 }
                 Section("Optional scan measurements") {
-                    optional("Visceral fat area (cm²)", $draft.visceralFatAreaCm2)
-                    optional("Total body water (lb)", $draft.totalBodyWaterLb)
-                    optional("ECW/TBW ratio", $draft.ecwTbwRatio)
-                    optional("BMR (kcal)", $draft.basalMetabolicRateKcal)
-                    optional("Right arm lean (lb)", $draft.rightArmLb)
-                    optional("Left arm lean (lb)", $draft.leftArmLb)
-                    optional("Trunk lean (lb)", $draft.trunkLb)
-                    optional("Right leg lean (lb)", $draft.rightLegLb)
-                    optional("Left leg lean (lb)", $draft.leftLegLb)
+                    optional("Visceral fat area (cm²)", $draft.visceralFatAreaCm2, .visceralFatArea)
+                    optional("Total body water (lb)", $draft.totalBodyWaterLb, .totalBodyWater)
+                    optional("ECW/TBW ratio", $draft.ecwTbwRatio, .ecwTbwRatio)
+                    optional("BMR (kcal)", $draft.basalMetabolicRateKcal, .basalMetabolicRate)
+                    optional("Right arm lean (lb)", $draft.rightArmLb, .rightArm)
+                    optional("Left arm lean (lb)", $draft.leftArmLb, .leftArm)
+                    optional("Trunk lean (lb)", $draft.trunkLb, .trunk)
+                    optional("Right leg lean (lb)", $draft.rightLegLb, .rightLeg)
+                    optional("Left leg lean (lb)", $draft.leftLegLb, .leftLeg)
                 }
             }
-            .navigationTitle(scan == nil ? "Add scan" : "Edit scan")
+            .navigationTitle(scan != nil ? "Edit scan" : reading != nil ? "Check scan" : "Add scan")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -228,20 +327,129 @@ private struct InBodyScanEditor: View {
                     }.accessibilityIdentifier("inbody.save")
                 }
             }
-            .onAppear { if let scan { draft = scan.values } }
+            .onAppear {
+                guard !loaded else { return }
+                loaded = true
+                if let scan { draft = scan.values } else if let reading { draft = reading.values }
+            }
         }
     }
-    private func number(_ label: String, _ value: Binding<Double>) -> some View {
+
+    private func photoSummary(_ reading: InBodyPhotoReading) -> some View {
+        let missing = InBodyField.allCases.filter { !reading.read.contains($0) }
+        return Section {
+            VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                Label("Read \(reading.read.count) of \(InBodyField.allCases.count) values from your photo",
+                      systemImage: "text.viewfinder")
+                    .font(.headline)
+                Text("Check each value against your sheet before saving. The photo was read on this iPhone and wasn't saved.")
+                    .font(.caption)
+                if !reading.uncertain.isEmpty {
+                    Label("Values marked with a warning were hard to read or don't add up. Compare them closely.",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+                if !reading.read.contains(.date) {
+                    Text("The test date wasn't found. Set it below.").font(.caption)
+                }
+                if reading.convertedFromKilograms {
+                    Text("The sheet was in kilograms; masses were converted to pounds.").font(.caption)
+                }
+                if !missing.isEmpty {
+                    Text("Not found: \(missing.map(\.label).joined(separator: ", ")).")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("inbody.photo.summary")
+        }
+    }
+
+    /// Marks a value the photo supplied, in orange when it needs a closer look.
+    @ViewBuilder
+    private func photoMark(_ field: InBodyField) -> some View {
+        if let reading, reading.read.contains(field) {
+            if reading.uncertain[field] != nil {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .accessibilityLabel("Check against the sheet")
+            } else {
+                Image(systemName: "text.viewfinder")
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Read from photo")
+            }
+        }
+    }
+
+    /// The readings behind a doubtful value, each one tap to use.
+    @ViewBuilder
+    private func alternatives(_ field: InBodyField) -> some View {
+        if let options = reading?.uncertain[field] {
+            HStack(spacing: Theme.Space.s) {
+                Text(options.count > 1 ? "Read as" : "Doesn't add up. Check")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                ForEach(options, id: \.self) { option in
+                    Button(option.formatted()) { InBodySheetParser.set(field, option, on: &draft) }
+                        .buttonStyle(.bordered)
+                        .controlSize(.mini)
+                        .accessibilityLabel("Use \(option.formatted())")
+                        .accessibilityIdentifier("inbody.photo.option")
+                }
+            }
+        }
+    }
+
+    private func number(_ label: String, _ value: Binding<Double>, _ field: InBodyField) -> some View {
         let display = Binding<Double?>(get: { value.wrappedValue == 0 ? nil : value.wrappedValue },
                                       set: { value.wrappedValue = $0 ?? 0 })
-        return HStack {
-            Text(label)
-            TextField("Required", value: display, format: .number)
-                .keyboardType(.decimalPad).multilineTextAlignment(.trailing).accessibilityIdentifier(label)
+        return VStack(alignment: .leading, spacing: Theme.Space.xs) {
+            HStack {
+                Text(label)
+                photoMark(field)
+                TextField("Required", value: display, format: .number)
+                    .keyboardType(.decimalPad).multilineTextAlignment(.trailing).accessibilityIdentifier(label)
+            }
+            alternatives(field)
         }
     }
-    private func optional(_ label: String, _ value: Binding<Double?>) -> some View {
-        HStack { Text(label); TextField("Not measured", value: value, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
+
+    private func optional(_ label: String, _ value: Binding<Double?>, _ field: InBodyField) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.xs) {
+            HStack {
+                Text(label)
+                photoMark(field)
+                TextField("Not measured", value: value, format: .number)
+                    .keyboardType(.decimalPad).multilineTextAlignment(.trailing).accessibilityIdentifier(label)
+            }
+            alternatives(field)
+        }
+    }
+}
+
+private extension InBodyField {
+    /// Name in the editor's "not found" list.
+    var label: String {
+        switch self {
+        case .date: return "test date"
+        case .height: return "height"
+        case .weight: return "weight"
+        case .skeletalMuscle: return "skeletal muscle"
+        case .leanBodyMass: return "lean body mass"
+        case .bodyFatMass: return "body-fat mass"
+        case .bodyFatPercent: return "body fat %"
+        case .totalBodyWater: return "total body water"
+        case .ecwTbwRatio: return "ECW/TBW"
+        case .visceralFatArea: return "visceral fat area"
+        case .basalMetabolicRate: return "BMR"
+        case .rightArm: return "right arm"
+        case .leftArm: return "left arm"
+        case .trunk: return "trunk"
+        case .rightLeg: return "right leg"
+        case .leftLeg: return "left leg"
+        }
     }
 }
 

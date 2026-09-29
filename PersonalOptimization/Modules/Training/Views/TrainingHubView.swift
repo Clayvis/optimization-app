@@ -228,6 +228,14 @@ private struct WeekDayDots: View {
 private struct StartSessionGrid: View {
     @Query(sort: [SortDescriptor(\CustomActivityTemplate.createdAt, order: .forward)])
     private var templates: [CustomActivityTemplate]
+    @Query(filter: #Predicate<LiftSession> { $0.durationMinutes > 0 },
+           sort: [SortDescriptor(\LiftSession.date, order: .reverse)])
+    private var finishedLifts: [LiftSession]
+
+    /// The newest finished workout with exercises: the one to repeat.
+    private var lastLift: LiftSession? {
+        finishedLifts.first { !($0.exercises ?? []).isEmpty }
+    }
 
     /// Latest completed workout recap per tile, keyed by tile identity.
     @State private var recaps: [String: WorkoutRecap] = [:]
@@ -245,19 +253,24 @@ private struct StartSessionGrid: View {
         VStack(alignment: .leading, spacing: Theme.Space.m) {
             SectionEyebrow(title: "Start a session")
             LazyVGrid(columns: columns, spacing: Theme.Space.m) {
+                // Workouts vary, so neither tile has a fixed plan: one builds a
+                // workout as you go, the other repeats the last one by name.
                 ActivityTile(icon: "figure.strengthtraining.traditional",
-                             title: "Lift A",
-                             subtitle: "legs, push, pull",
+                             title: "New workout",
+                             subtitle: "Add exercises as you go",
                              tint: Theme.kurenai,
                              recap: recaps["lift"]?.line) {
-                    LiftSessionView(templateName: "Lift A")
+                    NewLiftWorkoutView()
                 }
-                ActivityTile(icon: "figure.strengthtraining.functional",
-                             title: "My Workout",
-                             subtitle: "your custom lift",
-                             tint: Theme.kurenai,
-                             recap: recaps["lift"]?.line) {
-                    LiftSessionView(templateName: CustomLiftTemplateStore.templateName)
+                if let lastLift {
+                    ActivityTile(icon: "arrow.counterclockwise",
+                                 title: lastLift.template,
+                                 subtitle: (lastLift.exercises ?? []).sorted { $0.orderIndex < $1.orderIndex }
+                                    .prefix(3).map(\.name).joined(separator: ", "),
+                                 tint: Theme.kurenai,
+                                 recap: "Repeat · \(lastLift.date.formatted(.relative(presentation: .named)))") {
+                        LiftSessionView(templateName: lastLift.template, repeatOf: lastLift)
+                    }
                 }
                 ActivityTile(icon: "basketball.fill",
                              title: "Basketball",

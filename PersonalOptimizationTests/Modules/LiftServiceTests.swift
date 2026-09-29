@@ -178,6 +178,76 @@ final class LiftServiceTests: XCTestCase {
         XCTAssertEqual(restoredPlan.sessionUUID, restored.sessionID)
     }
 
+    // MARK: - Workouts that vary (no fixed template)
+
+    private func finishedSession(_ name: String, day: Int, exercises: [(String, [Int])]) throws -> LiftSession {
+        let session = try service.startFreestyleSession(name: name, at: Date(timeIntervalSince1970: TimeInterval(day) * 86_400))
+        for (exerciseName, reps) in exercises {
+            let exercise = try service.addCustomExercise(in: session, name: exerciseName)
+            for rep in reps { try service.logSet(in: session, exercise: exercise, weightLbs: 100, reps: rep, restSeconds: 90) }
+        }
+        session.durationMinutes = 40
+        try context.save()
+        return session
+    }
+
+    func test_freestyleWorkoutStartsEmptyWithItsOwnName() throws {
+        let unnamed = try service.startFreestyleSession(name: "  ")
+        XCTAssertEqual(unnamed.template, LiftService.freestyleName)
+        XCTAssertEqual(unnamed.exercises?.count, 0)
+        XCTAssertNotNil(unnamed.sessionID)
+        XCTAssertEqual(try service.startFreestyleSession(name: " Pull day ").template, "Pull day")
+    }
+
+    func test_addedExerciseReusesHistorySpellingAndTargets() throws {
+        let old = try service.startSession(templateName: "Lift A", at: Date(timeIntervalSince1970: 100))
+        old.durationMinutes = 30
+        try context.save()
+        let today = try service.startFreestyleSession(name: "Legs")
+        let added = try service.addCustomExercise(in: today, name: "back squat")
+        XCTAssertEqual(added.name, "Back Squat", "History spelling keeps prefill and progress linked")
+        XCTAssertEqual(added.progressionSets, 4)
+        XCTAssertEqual(added.progressionLowerReps, 5)
+        let new = try service.addCustomExercise(in: today, name: "Sissy squat")
+        XCTAssertEqual(new.progressionSets, 3, "An exercise with no history keeps the defaults")
+    }
+
+    func test_recentWorkoutsAreFinishedDistinctAndNewestFirst() throws {
+        _ = try finishedSession("Legs", day: 1, exercises: [("Squat", [5]), ("Calf raise", [12])])
+        _ = try finishedSession("Pull", day: 2, exercises: [("Row", [8])])
+        let latestLegs = try finishedSession("Legs", day: 3, exercises: [("Squat", [5]), ("Calf raise", [12])])
+        _ = try finishedSession("Empty", day: 4, exercises: [])
+        _ = try service.startFreestyleSession(name: "Unfinished", at: Date(timeIntervalSince1970: 5 * 86_400))
+        let recent = try service.recentWorkouts(limit: 5, before: Date(timeIntervalSince1970: 10 * 86_400))
+        XCTAssertEqual(recent.map(\.template), ["Legs", "Pull"])
+        XCTAssertTrue(recent.first === latestLegs)
+    }
+
+    func test_quickPicksRankByUseAndSkipCurrentExercises() throws {
+        _ = try finishedSession("A", day: 1, exercises: [("Squat", [5]), ("Row", [8])])
+        _ = try finishedSession("B", day: 2, exercises: [("Squat", [5]), ("Dip", [10])])
+        _ = try finishedSession("C", day: 3, exercises: [("Planned only", [])])
+        XCTAssertEqual(try service.recentExerciseNames(), ["Squat", "Dip", "Row"])
+        XCTAssertEqual(try service.recentExerciseNames(excluding: ["squat"]), ["Dip", "Row"])
+    }
+
+    func test_repeatPlanCopiesExercisesAndPerformedShapeButNoSets() throws {
+        let source = try finishedSession("Leg focus", day: 1, exercises: [("Goblet squat", [10, 10, 8]), ("Calf raise", [])])
+        let plan = try XCTUnwrap(LiftService.template(repeating: source))
+        XCTAssertEqual(plan.name, "Leg focus")
+        XCTAssertEqual(plan.exercises.map(\.name), ["Goblet squat", "Calf raise"])
+        XCTAssertEqual(plan.exercises[0].targetSets, 3)
+        XCTAssertEqual(plan.exercises[0].targetReps, 10)
+        XCTAssertEqual(plan.exercises[0].restSeconds, 90)
+        XCTAssertEqual(plan.exercises[1].targetSets, 3, "No sets logged: the exercise's own target")
+        let repeated = try service.startSession(template: plan)
+        XCTAssertEqual(repeated.template, "Leg focus")
+        XCTAssertEqual((repeated.exercises ?? []).flatMap { $0.sets ?? [] }.count, 0, "Nothing is copied as performed")
+        let squat = try XCTUnwrap(repeated.exercises?.first { $0.name == "Goblet squat" })
+        XCTAssertEqual(try service.suggestedSet(for: squat).weightLbs, 100, "Loads prefill from last time")
+        XCTAssertNil(LiftService.template(repeating: try service.startFreestyleSession(name: "Nothing yet")))
+    }
+
     // MARK: - Templates loader
 
     func test_loadTemplates_fromBundle_decodesBothTemplates() throws {

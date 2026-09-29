@@ -1,6 +1,8 @@
 import Foundation
 
-/// Values read from a scan, never inferred from weight or a photograph.
+/// Values printed on an InBody result: typed, imported, or read from a photo
+/// of the result sheet and confirmed by the user before saving. Never
+/// estimated from body weight or from a photo of the body.
 struct InBodyValues: Codable, Equatable, Sendable {
     var id: UUID = UUID()
     var date: Date = Date()

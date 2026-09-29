@@ -94,6 +94,15 @@ back-to-back `xcodebuild test` installs on one device. Check that the built
 `.app` contains the files, shut the simulator down and rerun; it is not a
 code failure.
 
+InBody photo reading is tested without any real scan: `InBodySampleSheet`
+(Debug builds only) is a synthetic 770-style sheet with made-up values and
+the sheet's traps (graph scales, ranges, the control, segmental-fat and
+history sections, pound and percent sub-rows, split decimals). Parser tests
+use its text layout; `InBodySheetRecognizerTests` renders it and reads it
+through Vision; the UI test reads it through `--ui-testing-inbody-photo`,
+since tests cannot drive the system photo picker. Never commit a real scan
+photo or its values: the repository is public.
+
 UI tests: `isHittable` ignores the software keyboard, so a control low in a
 form can report hittable while the tap lands on the number pad. After typing,
 tap such controls with `tapClearOfKeyboard(_:in:)` in
@@ -122,7 +131,8 @@ PersonalOptimizationTests/
 │   ├── NutritionPhase2Tests.swift        # repeat meals: snapshot copies, all-or-nothing batches, food order, saved-meal backup, Health writes
 │   ├── MascotMotionTests.swift           # companion rig: blink timing, training limbs, gentle recovery, celebration settles
 │   ├── BarcodeLookupTests.swift          # barcode check digits and spellings, Open Food Facts parsing and transport, lookup caching
-│   ├── LiftServiceTests.swift            # set logging, prefill, suggestion-to-session linking, backup of session identity
+│   ├── LiftServiceTests.swift            # set logging, prefill, suggestion-to-session linking, backup of session identity, workouts built as you go, repeats, quick picks
+│   ├── InBodyPhotoReaderTests.swift      # result-sheet reading: labels, columns, charts, skipped sections, units, dates, two-pass consensus, Vision end to end
 │   ├── BiomarkerParserTests.swift
 │   ├── PhenoAgeTests.swift
 │   ├── PatternDetectionTests.swift
